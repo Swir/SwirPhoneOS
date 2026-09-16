@@ -1,0 +1,20 @@
+<resources>
+    <string name="app_name">Swir Einstellungen</string>
+    <string name="subtitle">Steuere dein Telefon an einem übersichtlichen Ort.</string>
+    <string name="search_hint">Einstellungen suchen</string>
+    <string name="device_section">Dieses Gerät</string>
+    <string name="device_summary">%1$s • Android %2$s • API %3$d</string>
+    <string name="security_note">Die maßgeblichen Android-Einstellungsseiten werden direkt geöffnet. Diese App fordert keine Berechtigungen an.</string>
+    <string name="no_results">Keine passenden Einstellungen</string>
+    <string name="open_failed">Diese Einstellungsseite ist in diesem Build nicht verfügbar.</string>
+    <string name="wifi">WLAN</string>
+    <string name="bluetooth">Bluetooth</string>
+    <string name="display">Anzeige</string>
+    <string name="sound">Ton und Vibration</string>
+    <string name="security">Sicherheit</string>
+    <string name="privacy">Datenschutz</string>
+    <string name="accessibility">Bedienungshilfen</string>
+    <string name="language_region">Sprache und Region</string>
+    <string name="storage">Speicher</string>
+    <string name="apps">Apps</string>
+</resources>
