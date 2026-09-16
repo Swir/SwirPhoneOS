@@ -32,7 +32,8 @@ class StageManifestFragmentTests(unittest.TestCase):
             root = Path(temp)
             result = stage_product_tree(self._product(root), root / "aosp")
             self.assertEqual(result["file_count"], 3)
-            self.assertTrue(any(item["destination"].endswith("vendor/swir/apps/Test/Android.bp") for item in result["files"]))
+            normalized = [item["destination"].replace("\\", "/") for item in result["files"]]
+            self.assertTrue(any(path.endswith("vendor/swir/apps/Test/Android.bp") for path in normalized))
 
     def test_duplicate_destination_across_fragment_is_rejected(self):
         with tempfile.TemporaryDirectory() as temp:
