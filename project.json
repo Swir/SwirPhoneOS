@@ -1,0 +1,118 @@
+{
+  "schema_version": 1,
+  "version": "0.0.2.dev0",
+  "candidate_commit": null,
+  "milestones": [
+    {
+      "id": "foundation",
+      "weight": 2,
+      "complete": true,
+      "evidence": [
+        "ARCHITECTURE.md",
+        "BETA_RELEASE_GATE.md",
+        "tests/test_readiness.py"
+      ]
+    },
+    {
+      "id": "desktop_diagnostics",
+      "weight": 8,
+      "complete": false,
+      "evidence": []
+    },
+    {
+      "id": "aosp_baseline",
+      "weight": 10,
+      "complete": false,
+      "evidence": []
+    },
+    {
+      "id": "emulator_boot",
+      "weight": 10,
+      "complete": false,
+      "evidence": []
+    },
+    {
+      "id": "gsi_validation",
+      "weight": 10,
+      "complete": false,
+      "evidence": []
+    },
+    {
+      "id": "reference_hardware",
+      "weight": 25,
+      "complete": false,
+      "evidence": []
+    },
+    {
+      "id": "install_restore",
+      "weight": 15,
+      "complete": false,
+      "evidence": []
+    },
+    {
+      "id": "swir_ux",
+      "weight": 8,
+      "complete": false,
+      "evidence": []
+    },
+    {
+      "id": "security_ota",
+      "weight": 8,
+      "complete": false,
+      "evidence": []
+    },
+    {
+      "id": "beta_release",
+      "weight": 4,
+      "complete": false,
+      "evidence": []
+    }
+  ],
+  "beta_gates": [
+    {
+      "id": "system_build",
+      "passed": false,
+      "evidence": []
+    },
+    {
+      "id": "physical_boot",
+      "passed": false,
+      "evidence": []
+    },
+    {
+      "id": "core_hardware",
+      "passed": false,
+      "evidence": []
+    },
+    {
+      "id": "install_restore",
+      "passed": false,
+      "evidence": []
+    },
+    {
+      "id": "windows_runtime",
+      "passed": false,
+      "evidence": []
+    },
+    {
+      "id": "security_review",
+      "passed": false,
+      "evidence": []
+    },
+    {
+      "id": "artifact_trust",
+      "passed": false,
+      "evidence": []
+    },
+    {
+      "id": "final_ci",
+      "passed": false,
+      "evidence": []
+    },
+    {
+      "id": "release_docs",
+      "passed": false,
+      "evidence": []
+    }
+  ]
+}

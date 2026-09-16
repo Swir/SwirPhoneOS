@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "id": "oneplus/avicii",
+  "display_name": "OnePlus Nord AC2003",
+  "codename": "avicii",
+  "model_allowlist": ["AC2003"],
+  "status": "PLANNED_NOT_SUPPORTED",
+  "flash_enabled": false,
+  "firmware_baseline": null,
+  "verified_partition_map": null,
+  "validated_builds": [],
+  "flash_operations": [],
+  "recovery_evidence": [],
+  "notes": "Metadata placeholder only. Not consumed as a trusted hardware identity or flashing authorization.",
+  "sources": ["https://wiki.lineageos.org/devices/avicii/"]
+}

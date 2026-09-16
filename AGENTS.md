@@ -1,0 +1,17 @@
+# Development Instructions
+
+`Swir/SwirPhoneOS` is the sole source of truth for the mobile SwirOS project. Do not change SWIR OS Desktop, Konofix, KaliPhoneStudio or their schedules here.
+
+Inspect current main, open PRs, recent commits, CI, README, ROADMAP, CHANGELOG, BUILD_STATUS and BETA_RELEASE_GATE before editing. Each scheduled run should implement the largest safe, coherent, testable package in the available run. Choose 1–3 high-impact areas; prefer code, builds, runtime integration and meaningful tests over cosmetic edits. Never manufacture commits or results. Future execution is discrete scheduled work, not continuous background computation.
+
+All repository-facing content is English. Owner reports are Polish. Keep the custom icon, and include `by Swir` and the GitHub link in future UI. Initialize GUI language from the OS with English fallback and extensible translations. Do not claim GUI features before implementation.
+
+Keep `project.json`, README and ROADMAP progress aligned. Milestones have explicit weights totaling 100; a checkbox requires the promised evidence. Host tests never substitute for system builds or hardware gates. Keep the 20-segment bar and honest progress. Preserve known-good functionality. Re-read current file SHA before replacement and avoid overwriting concurrent work; use non-forced fast-forward updates or reviewed PRs. Verify actual final-commit CI.
+
+Use current primary upstream sources and pinned manifests/Action commits. Do not start unbounded AOSP downloads or buy runners/services. Handle missing build resources by recording the concrete blocker and working on feasible milestones. Do not silently widen supported-device lists.
+
+Read-only first. No unattended unlock, erase, flash, root, reboot, relock or phone restoration. Write workflows require explicit local owner confirmation and exact-device evidence. Do not assume a universal backup or restore path. No OEM/account-security bypasses. Keep keys, IMEI, serials, unlock tokens and private logs out of GitHub. Never redistribute vendor binaries without permission.
+
+Beta publication is part of the same development task, not a second automation. Publish a real GitHub prerelease only after all BETA_RELEASE_GATE requirements genuinely pass for the exact candidate, including a physical working OS and tested Windows package. The current `gate` command is intentionally blocked; implement independent evidence/artifact verification before treating a ledger as publishable. Do not weaken a gate merely to release. Verify release assets after publishing and notify the owner with the tested scope.
+
+After each run report actual commit/PR, meaningful changes, test/CI status, true progress, beta blocker and the next highest-impact step. No hourly ZIPs. Continue along the roadmap unless the owner stops development.
