@@ -1,98 +1,66 @@
 # SwirPhoneOS System Apps
 
-SwirPhoneOS is intended to be a complete everyday mobile operating system, not only a bootable Android image. The operating system therefore owns a coherent first-party system-app suite and a shared design language.
+SwirPhoneOS is intended to be a complete everyday mobile operating system, not only a bootable image. It therefore owns a coherent first-party application suite and one original design language.
 
-This document defines product scope. An app is not considered implemented merely because a package, screen or static mockup exists. Completion requires usable functionality appropriate to the current platform stage plus integration and tests where practical.
+An app is not considered implemented merely because a package, screen or static mockup exists. Registry states deliberately distinguish planning/host contracts, checked-in Android source, Android runtime evidence and physical-device verification.
+
+## Status model
+
+- `HOST_CONTRACT` — product/API requirements exist; no Android source claim.
+- `ANDROID_SOURCE` — meaningful Android source is checked in and source-level validation exists, but no Android build/runtime claim is allowed.
+- `ANDROID_RUNTIME` — the app has been built into the pinned SwirPhoneOS product and exercised in the target Android runtime.
+- `HARDWARE_VERIFIED` — hardware-dependent capability has also passed exact-device evidence.
+
+The current registry contains 20 apps: **19 `HOST_CONTRACT`, 1 `ANDROID_SOURCE`, 0 `ANDROID_RUNTIME`, 0 `HARDWARE_VERIFIED`.**
+
+## First source-ready app: SwirCalculator
+
+SwirCalculator is the first application at `ANDROID_SOURCE`. It contains real AOSP `android_app` source, a pure-Java BigDecimal state machine, basic arithmetic/decimal/sign/percent/backspace/error handling, an original vector icon and dark/cyan SwirPhoneOS UI. It requests no Android permissions. Source checks reject network/process/root primitives, package drift, localization-key drift and incomplete staging.
+
+Android string resources currently cover English, Polish, Norwegian Bokmal, German, Spanish, French, Portuguese and Arabic. Layout direction follows the locale and the UI exposes accessibility descriptions. Scientific-math functionality remains a target rather than an implemented capability. No APK/Cuttlefish claim is made until the pinned AOSP product actually builds and the app is launched/tested there.
 
 ## Design principles
 
-All first-party apps should feel unmistakably like SwirPhoneOS while remaining fast and simple to use.
-
-- One shared SwirPhoneOS design system: typography, spacing, motion, surfaces, icons and navigation.
-- Original visual identity rather than copying Pixel, Samsung One UI, MIUI/HyperOS, Magisk or another product.
-- Responsive layouts for different phone sizes and orientations.
-- Accessibility-first semantics, scalable text and touch targets.
-- System-language startup with English fallback and an extensible translation architecture.
-- Dark and light presentation where appropriate, with a distinctive SwirPhoneOS dark/neon identity.
+- Shared SwirPhoneOS typography, spacing, motion, surfaces, icons and navigation.
+- Original visual identity rather than copying Pixel, One UI, HyperOS, Magisk or another product.
+- Responsive phone layouts, scalable text, meaningful accessibility semantics and useful touch targets.
+- System-language startup, English fallback and data/resource-driven localization.
+- RTL-aware layouts plus locale-specific date/time/number/unit formatting where applicable.
+- Dark/light presentation where appropriate, with a distinctive SwirPhoneOS dark/neon identity.
 - Offline-capable core functions whenever the feature itself does not require a network service.
-- Clear permission requests, privacy surfaces and diagnostics instead of hidden background behavior.
-- Every app receives its own SwirPhoneOS icon and integrates with common system components instead of duplicating platform logic.
+- Clear permission/privacy/diagnostic surfaces instead of hidden behavior.
+- A dedicated SwirPhoneOS icon for every app.
 
-## Essential first-party suite
+## Essential suite
 
-### Communication
+**Communication:** Swir Phone, Contacts, Messages.
 
-- **Swir Phone** — dialer, in-call surface, recent calls, voicemail integration where the carrier/device stack supports it, emergency-call behavior inherited from the validated telephony platform.
-- **Swir Contacts** — local contacts, import/export and account-provider integration when available.
-- **Swir Messages** — SMS/MMS first; richer messaging features may be added only when a dependable service path exists.
+**Media/capture:** Swir Camera, Gallery, Recorder.
 
-### Media and capture
+**Daily tools:** Swir Files, Browser, Clock, Calculator, Notes, Calendar, Weather.
 
-- **Swir Camera** — photo/video capture through the validated Android camera stack. Capability is device-profile dependent and must never be claimed before hardware testing.
-- **Swir Gallery** — local photos/videos, metadata, albums, share/edit entry points and safe deletion/recovery behavior.
-- **Swir Recorder** — voice/audio recording with clear microphone state and file management integration.
+**System/trust:** Swir Settings, Update, Backup, Privacy, Device Care, Apps/Software Center and SwirRoot.
 
-### Daily tools
-
-- **Swir Files** — local storage browser, search, copy/move/rename/share, storage-provider integration and safe destructive actions.
-- **Swir Browser** — standards-based web browsing using an auditable maintained engine rather than a custom insecure web engine.
-- **Swir Clock** — alarms, timers, stopwatch and world clock.
-- **Swir Calculator** — basic and scientific calculation modes.
-- **Swir Notes** — fast offline notes with export/share and future optional sync adapters.
-- **Swir Calendar** — local calendar plus provider integration when configured.
-- **Swir Weather** — optional network-backed weather surface with transparent provider attribution/configuration.
-
-### System control and trust
-
-- **Swir Settings** — authoritative user-facing system configuration, search and device-status surfaces.
-- **Swir Update** — signed OTA/update metadata, staged update status, rollback/recovery hand-off and release-channel controls.
-- **Swir Backup** — local backup/restore orchestration for supported data and device-specific recovery metadata. It must not promise impossible full backups on unsupported hardware.
-- **Swir Privacy** — permissions, privacy indicators, app access review and security-relevant system status.
-- **Swir Device Care** — storage, battery, thermal, hardware and service diagnostics based on validated platform APIs.
-- **Swir Apps** — first-party software/app center and package-management front end. Source trust, signatures and update provenance must be visible; no silent unknown-source installation.
-- **SwirRoot** — owner-controlled root manager for supported SwirPhoneOS device profiles.
-
-## SwirRoot
-
-SwirRoot is a first-party system component, not a bootloader exploit tool and not a Magisk clone.
-
-### Product goals
-
-- Show an unambiguous `ROOT OFF`, `ROOT ON` or `UNAVAILABLE` state.
-- Provide a guided enable-root flow only when the current build/device profile explicitly supports it.
-- Provide a guided unroot flow that restores the expected non-root boot/system state for the exact build/profile.
-- Create and verify required rollback material before enabling root.
-- Keep a durable operation journal and useful diagnostics.
-- Integrate root state with Swir Update, recovery and SwirPhoneStudio so an OTA or restore cannot silently invalidate the expected state.
-- Require explicit owner confirmation for state-changing operations.
-- Never bypass a locked bootloader, OEM protection or platform security control through an exploit.
-
-### Future permission manager
-
-When the underlying root service is implemented, SwirRoot should expose per-app root authorization with deny-by-default behavior, explicit grants, revocation, timestamps/audit history and an emergency global disable path. Root must not automatically imply unrestricted background access for every installed app.
+Phone/SMS/Camera/Recorder and other hardware-backed functions are declared only after validation against the exact reference-device stack.
 
 ## Delivery order
 
-The app suite is developed alongside the platform rather than after it.
+### Emulator-ready core
 
-### Stage A — pre-boot/platform foundation
+Prioritize Swir Settings, Files, Update, Privacy, Device Care, Clock and Calculator. Source can be developed in parallel, but runtime completion requires a real SwirPhoneOS Cuttlefish build/boot.
 
-Define the common app design system, icon rules, localization structure, package naming, permission conventions, shared settings contracts and test strategy. Build non-hardware-dependent prototypes only where they can later become real platform code.
+### Reference hardware
 
-### Stage B — emulator-ready core
+Bring up Phone, Contacts, Messages, Camera, Gallery, Recorder, Backup and hardware-backed Device Care as telephony, audio, camera, storage, sensors, power and encryption become validated for the reference device.
 
-Prioritize **Swir Settings**, **Swir Files**, **Swir Update**, **Swir Privacy**, **Swir Device Care**, Clock and Calculator because they can be exercised meaningfully on the emulator and are required for a usable developer image.
+### Beta integration
 
-### Stage C — reference hardware
+Polish cross-app navigation, sharing, search, notifications, permissions, accessibility, localization, crash handling, backup/recovery, app/update signing and visual consistency.
 
-Bring up **Phone**, **Contacts**, **Messages**, **Camera**, Gallery, Recorder, Backup and hardware-backed Device Care functionality as the reference device gains validated telephony, audio, camera, storage, sensors, power and encryption support.
+## SwirRoot
 
-### Stage D — beta-quality integration
-
-Polish cross-app navigation, sharing, search, notifications, permissions, accessibility, localization, crash handling, backup/recovery interaction, app/update signing and visual consistency. SwirRoot may be enabled only on profiles where enable, disable and recovery paths have been physically verified.
+SwirRoot is a first-party owner-controlled root manager, not a bootloader exploit tool and not a Magisk clone. It must show authoritative root state, require explicit exact-build support and owner confirmation, verify rollback material before mutation, keep an operation journal, provide tested unroot/recovery, and integrate with Update/recovery/SwirPhoneStudio. Per-app root is deny-by-default and auditable when the service exists. Locked bootloaders and OEM protections are never bypassed through exploits.
 
 ## Beta policy
 
-A beta does not require every future app feature to be complete, but it must provide a coherent usable core and must accurately disclose hardware-dependent limitations. At minimum the beta candidate must have functional Settings, Files, update/recovery status, diagnostics/device basics and the system surfaces required to recover from failure. Telephony, camera and SwirRoot capability are declared per exact supported device/build, never globally.
-
-No app-only mockup increases the global completion percentage. Roadmap credit follows the verified engineering gates in `ROADMAP.md` and `project.json`.
+A beta requires a coherent usable core plus accurate device-specific limitations. At minimum Settings, Files, update/recovery status and device diagnostics must be functional, and recovery from failure must be possible. Telephony, camera and SwirRoot are declared per exact tested device/build. App source alone never increases the global weighted percentage.

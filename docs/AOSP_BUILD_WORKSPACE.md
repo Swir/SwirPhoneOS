@@ -1,18 +1,16 @@
 # Reproducible AOSP build workspace
 
-SwirPhoneOS pins its current development baseline in `platform/aosp_baseline.json`. The current baseline is Android 17 / API 37 at the exact release revision `android-17.0.0_r1`. A pinned baseline is not the same thing as a completed Android build.
-
-This document defines the evidence path from the checked-in baseline to the first real Cuttlefish build while keeping host-side tooling fail-closed and avoiding any phone write operation.
+SwirPhoneOS pins Android 17 / API 37 at exact revision `android-17.0.0_r1`. A pinned baseline and checked-in source are not the same thing as a completed Android build.
 
 ## 1. Host preflight
 
-Run on the intended Linux x86-64 AOSP builder:
+Run on the intended Linux x86-64 builder:
 
 ```bash
 python -m swirphoneos build-preflight --workspace /path/to/aosp
 ```
 
-The command is read-only. It does not install packages, initialize Repo, download Android sources or alter the host.
+This is read-only: it installs nothing, initializes nothing and downloads nothing.
 
 ## 2. Generate the exact-tag plan
 
@@ -20,34 +18,20 @@ The command is read-only. It does not install packages, initialize Repo, downloa
 python -m swirphoneos aosp-plan --workspace /path/to/aosp --jobs 16
 ```
 
-The JSON output is a plan only. It must report:
+The plan records the official manifest, pinned revision, Repo init/sync commands, resolved-manifest capture, explicit source staging and Cuttlefish build command. It always reports `device_write_allowed: false`, `build_verified: false` and `boot_verified: false`.
 
-- the official Android manifest repository;
-- the exact pinned release revision;
-- the SwirPhoneOS Cuttlefish lunch choice;
-- argv-oriented Repo init/sync commands;
-- the resolved-manifest capture step;
-- the explicit product-staging step;
-- the final Kati/Soong build command;
-- `device_write_allowed: false`;
-- `build_verified: false` and `boot_verified: false`.
+## 3. Sync and preserve immutable source evidence
 
-Do not mark the AOSP roadmap gate complete from this plan.
-
-## 3. Initialize and sync AOSP
-
-Use the generated commands on the dedicated build host. The current contract initializes the official manifest at the exact release tag and performs a current-manifest sync. Preserve the terminal log and tool versions used for the build.
-
-After sync, capture an immutable manifest snapshot:
+After using the generated exact-tag Repo commands on a dedicated build host:
 
 ```bash
 repo manifest -r -o swirphoneos-pinned-manifest.xml
 python -m swirphoneos aosp-manifest --file swirphoneos-pinned-manifest.xml
 ```
 
-`aosp-manifest` requires every project entry to resolve to a full 40-character Git revision and returns a SHA-256 digest for the snapshot. Store the snapshot and digest with build evidence.
+Every project must resolve to a full 40-character Git SHA. Preserve the manifest, SHA-256 digest, Repo/Git/JDK/host versions and complete build log.
 
-## 4. Stage the SwirPhoneOS product
+## 4. Stage the SwirPhoneOS source bundle
 
 Dry-run first:
 
@@ -55,22 +39,25 @@ Dry-run first:
 python -m swirphoneos stage-product --workspace /path/to/aosp
 ```
 
-The default mode does not write anything. To copy the two checked-in product makefiles into an already initialized AOSP checkout:
+Then, only inside an initialized AOSP checkout:
 
 ```bash
 python -m swirphoneos stage-product --workspace /path/to/aosp --execute
 ```
 
-The execute path refuses a directory that does not contain both `.repo/` and `build/envsetup.sh`. It copies only:
+Staging is driven by `platform/aosp_product/stage_manifest.json`. Every source and destination is explicit; destination paths must stay under `vendor/swir/`; traversal, duplicate paths, symlink sources, missing files and oversized bundles are rejected. The current bundle stages the Swir product definition plus the source/resources required to build SwirCalculator. It never uses a recursive arbitrary copy and never communicates with a phone.
 
-- `AndroidProducts.mk`
-- `swirphoneos_cf_x86_64.mk`
+## 5. Validate checked-in Android application source
 
-into `vendor/swir/products/`. It does not modify a phone, unlock a bootloader or run Fastboot.
+Before starting a full AOSP build:
 
-## 5. Build
+```bash
+python -m swirphoneos android-apps
+```
 
-From the synchronized AOSP checkout, the planned build path is equivalent to:
+The current validator checks SwirCalculator package identity, AOSP module contract, `PRODUCT_PACKAGES` integration, permission-free manifest, RTL/backup policy, Java package identity, forbidden process/network/root primitives, eight locale catalogs and complete stage coverage. Its result is `SOURCE_READY_NOT_BUILT`; it is not APK/runtime evidence.
+
+## 6. Build
 
 ```bash
 source build/envsetup.sh
@@ -78,12 +65,12 @@ lunch swirphoneos_cf_x86_64-aosp_current-userdebug
 m -j16
 ```
 
-A successful host command alone is not emulator-boot evidence. Preserve the complete build log, the resolved manifest snapshot/digest and the exact output artifact identities before changing platform status.
+A successful host command is build evidence only after its outputs/logs are preserved. It is not emulator-boot evidence.
 
-## 6. Boot evidence
+## 7. Boot evidence
 
-The next milestone after a successful build is a real Cuttlefish boot using the produced images, with recorded runtime evidence including `sys.boot_completed=1`, basic SystemUI/Settings usability and regression results. Only then may the emulator boot gate move forward.
+Launch Cuttlefish from the produced artifacts and record at minimum `sys.boot_completed=1`, SystemUI/Settings usability, SwirCalculator package/activity runtime and regression results. Only verified runtime may move an app from `ANDROID_SOURCE` toward `ANDROID_RUNTIME` or advance emulator-gate evidence.
 
 ## Safety boundary
 
-These tools are for an owner-controlled AOSP build workspace. They never provide a generic phone flash command. Physical installation remains device-profile-specific and requires separate recovery/rollback evidence. SwirRoot remains unavailable until exact-build boot/update/recovery contracts are sufficiently verified.
+These tools operate on an owner-controlled build workspace. They do not unlock, erase, boot, flash, root, relock or restore a phone. Physical installation remains device-profile-specific and requires separate rollback/recovery evidence. SwirRoot stays unavailable until exact-build boot/update/recovery contracts are verified.

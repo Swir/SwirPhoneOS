@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Swir Rechner</string><string name="display_description">Rechneranzeige</string><string name="clear">Löschen</string><string name="positive_negative">Vorzeichen ändern</string><string name="percent">Prozent</string><string name="backspace">Letzte Ziffer löschen</string><string name="decimal">Dezimaltrennzeichen</string><string name="plus">Addieren</string><string name="minus">Subtrahieren</string><string name="multiply">Multiplizieren</string><string name="divide">Dividieren</string><string name="equals">Ergebnis</string><string name="error">Fehler</string>
+</resources>

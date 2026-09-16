@@ -8,3 +8,7 @@ PRODUCT_DEVICE := vsoc_x86_64_only
 PRODUCT_BRAND := Swir
 PRODUCT_MANUFACTURER := Swir
 PRODUCT_MODEL := SwirPhoneOS Cuttlefish Developer
+
+# First real SwirPhoneOS app source. Runtime status remains unverified until an AOSP build/boot succeeds.
+PRODUCT_PACKAGES += \
+    SwirCalculator
