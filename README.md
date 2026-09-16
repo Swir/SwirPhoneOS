@@ -38,31 +38,25 @@ The current baseline is pinned to **Android 17 / API 37** at `android-17.0.0_r1`
 
 The repository contains a SwirPhoneOS x86_64 Cuttlefish product definition and a reproducible workspace/evidence toolchain. `aosp-plan` emits the exact-tag Repo/build plan; `aosp-manifest` validates a captured `repo manifest -r`; and `stage-product` stages only manifest-whitelisted files under `vendor/swir/` into an already initialized AOSP checkout. None of these tools writes to a phone.
 
-### First functional Android application source
+### Functional Android application sources
 
-`platform/aosp_product/apps/SwirCalculator/` is the first real SwirPhoneOS application source wired into `PRODUCT_PACKAGES`.
+Two first-party applications are now wired into `PRODUCT_PACKAGES` as meaningful **`ANDROID_SOURCE`**. They are deliberately not `ANDROID_RUNTIME` until the pinned AOSP product builds and the apps are exercised in Cuttlefish.
 
-- package: `org.swir.phoneos.calculator`;
-- AOSP `android_app` module;
-- original SwirPhoneOS vector icon and dark/cyan interface;
-- pure-Java BigDecimal calculation engine;
-- basic arithmetic, decimals, sign, percent, backspace and divide-by-zero handling;
-- no Android permissions and no network/root/process execution primitive;
-- locale-aware decimal display, RTL-aware layout and accessibility descriptions;
-- Android resources for English, Polish, Norwegian Bokmal, German, Spanish, French, Portuguese and Arabic;
-- dependency-free host Java engine test plus source/manifest/localization/staging validation in CI.
+**SwirCalculator** (`org.swir.phoneos.calculator`) provides a pure-Java BigDecimal engine for basic arithmetic, decimals, sign, percent, backspace and divide-by-zero handling, an original vector icon and dark/cyan UI, locale-aware decimal display, RTL-aware layout and accessibility descriptions. It requests no Android permissions and has a dependency-free host Java engine test. Scientific mode remains unfinished.
 
-Its registry state is **`ANDROID_SOURCE`**, deliberately below `ANDROID_RUNTIME`. The source has not yet been compiled inside the pinned AOSP tree or exercised in Cuttlefish, and scientific mode remains unfinished. Therefore it does not complete the Calculator roadmap checkbox or increase global progress.
+**SwirSettings** (`org.swir.phoneos.settings`) is the first beta-critical source-ready app. It provides an original dark/cyan settings hub, localized search, real device/build status and permission-free hand-off to reviewed authoritative Android settings pages for Wi-Fi, Bluetooth, display, sound, security, privacy, accessibility, language/region, storage and apps. Its pure-Java route catalog is host-tested, and source validation rejects unreviewed settings actions rather than silently broadening control.
+
+Both apps ship Android resources for English, Polish, Norwegian Bokmal, German, Spanish, French, Portuguese and Arabic. Their source, manifests, package identities, localization parity and AOSP staging are checked in host CI. No APK/Cuttlefish/runtime claim is made yet, so these source milestones do not increase global progress.
 
 ### Complete system-app plan and SwirRoot
 
-The machine-readable first-party suite contains 20 applications: Phone, Contacts, Messages, Camera, Gallery, Files, Settings, Browser, Clock, Calculator, Notes, Recorder, Calendar, Weather, Update, Backup, Privacy, Device Care, Apps/Software Center and SwirRoot. Nineteen remain `HOST_CONTRACT`; Calculator is the first `ANDROID_SOURCE`; zero are `ANDROID_RUNTIME` or `HARDWARE_VERIFIED`.
+The machine-readable first-party suite contains 20 applications: Phone, Contacts, Messages, Camera, Gallery, Files, Settings, Browser, Clock, Calculator, Notes, Recorder, Calendar, Weather, Update, Backup, Privacy, Device Care, Apps/Software Center and SwirRoot. Eighteen remain `HOST_CONTRACT`; Calculator and Settings are `ANDROID_SOURCE`; zero are `ANDROID_RUNTIME` or `HARDWARE_VERIFIED`.
 
 SwirRoot remains a fail-closed engineering contract. Unverified builds expose `UNAVAILABLE`; authorization is deny-by-default; rollback material, journaling, exact-build/profile checks and explicit owner confirmation are mandatory; exploit/bypass methods are forbidden; write operations are disabled; supported root builds remain zero.
 
 ### Global localization
 
-Host localization is data-driven with system-locale detection and English fallback. The current desktop/Calculator language set is English, Polish, Norwegian Bokmal, German, Spanish, French, Portuguese and Arabic. The mobile contract covers first setup, launcher, SystemUI, Settings, recovery, updater, SwirRoot and all bundled apps, including RTL, fonts/scripts, plural rules, accessibility and locale-specific formatting.
+Host localization is data-driven with system-locale detection and English fallback. The current desktop/Calculator/Settings language set is English, Polish, Norwegian Bokmal, German, Spanish, French, Portuguese and Arabic. The mobile contract covers first setup, launcher, SystemUI, Settings, recovery, updater, SwirRoot and all bundled apps, including RTL, fonts/scripts, plural rules, accessibility and locale-specific formatting.
 
 ## Developer commands
 
