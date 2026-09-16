@@ -48,6 +48,12 @@ jobs:
           mkdir -p _java-test
           javac -d _java-test platform/aosp_product/apps/SwirCalculator/src/org/swir/phoneos/calculator/CalculatorEngine.java platform/aosp_product/apps/SwirCalculator/hosttest/CalculatorEngineHostTest.java
           java -cp _java-test org.swir.phoneos.calculator.CalculatorEngineHostTest
+      - name: Host-test SwirSettings route catalog
+        if: runner.os == 'Linux' && matrix.python == '3.14'
+        run: |
+          mkdir -p _settings-java-test
+          javac -d _settings-java-test platform/aosp_product/apps/SwirSettings/src/org/swir/phoneos/settings/SettingsCatalog.java platform/aosp_product/apps/SwirSettings/hosttest/SettingsCatalogHostTest.java
+          java -cp _settings-java-test org.swir.phoneos.settings.SettingsCatalogHostTest
       - name: Inspect AOSP host preflight contract
         run: python -m swirphoneos build-preflight --workspace .
       - name: Validate global localization catalogs

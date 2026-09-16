@@ -1,0 +1,20 @@
+<resources>
+    <string name="app_name">Ajustes Swir</string>
+    <string name="subtitle">Controla tu teléfono desde un único lugar claro.</string>
+    <string name="search_hint">Buscar ajustes</string>
+    <string name="device_section">Este dispositivo</string>
+    <string name="device_summary">%1$s • Android %2$s • API %3$d</string>
+    <string name="security_note">Se abren directamente las páginas oficiales de ajustes de Android. Esta app no solicita permisos.</string>
+    <string name="no_results">No hay ajustes coincidentes</string>
+    <string name="open_failed">Esta página de ajustes no está disponible en esta compilación.</string>
+    <string name="wifi">Wi‑Fi</string>
+    <string name="bluetooth">Bluetooth</string>
+    <string name="display">Pantalla</string>
+    <string name="sound">Sonido y vibración</string>
+    <string name="security">Seguridad</string>
+    <string name="privacy">Privacidad</string>
+    <string name="accessibility">Accesibilidad</string>
+    <string name="language_region">Idioma y región</string>
+    <string name="storage">Almacenamiento</string>
+    <string name="apps">Aplicaciones</string>
+</resources>

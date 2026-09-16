@@ -1,0 +1,20 @@
+<resources>
+    <string name="app_name">Paramètres Swir</string>
+    <string name="subtitle">Contrôlez votre téléphone depuis un seul endroit clair.</string>
+    <string name="search_hint">Rechercher dans les paramètres</string>
+    <string name="device_section">Cet appareil</string>
+    <string name="device_summary">%1$s • Android %2$s • API %3$d</string>
+    <string name="security_note">Les pages de paramètres Android faisant autorité sont ouvertes directement. Cette application ne demande aucune autorisation.</string>
+    <string name="no_results">Aucun paramètre correspondant</string>
+    <string name="open_failed">Cette page de paramètres n’est pas disponible dans cette version.</string>
+    <string name="wifi">Wi‑Fi</string>
+    <string name="bluetooth">Bluetooth</string>
+    <string name="display">Affichage</string>
+    <string name="sound">Son et vibrations</string>
+    <string name="security">Sécurité</string>
+    <string name="privacy">Confidentialité</string>
+    <string name="accessibility">Accessibilité</string>
+    <string name="language_region">Langue et région</string>
+    <string name="storage">Stockage</string>
+    <string name="apps">Applications</string>
+</resources>

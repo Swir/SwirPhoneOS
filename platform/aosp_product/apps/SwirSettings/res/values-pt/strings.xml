@@ -1,0 +1,20 @@
+<resources>
+    <string name="app_name">Definições Swir</string>
+    <string name="subtitle">Controle o telefone a partir de um único local claro.</string>
+    <string name="search_hint">Pesquisar definições</string>
+    <string name="device_section">Este dispositivo</string>
+    <string name="device_summary">%1$s • Android %2$s • API %3$d</string>
+    <string name="security_note">As páginas oficiais de definições do Android são abertas diretamente. Esta aplicação não pede permissões.</string>
+    <string name="no_results">Nenhuma definição correspondente</string>
+    <string name="open_failed">Esta página de definições não está disponível nesta compilação.</string>
+    <string name="wifi">Wi‑Fi</string>
+    <string name="bluetooth">Bluetooth</string>
+    <string name="display">Ecrã</string>
+    <string name="sound">Som e vibração</string>
+    <string name="security">Segurança</string>
+    <string name="privacy">Privacidade</string>
+    <string name="accessibility">Acessibilidade</string>
+    <string name="language_region">Idioma e região</string>
+    <string name="storage">Armazenamento</string>
+    <string name="apps">Aplicações</string>
+</resources>

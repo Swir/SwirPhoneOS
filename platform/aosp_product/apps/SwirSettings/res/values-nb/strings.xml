@@ -1,0 +1,20 @@
+<resources>
+    <string name="app_name">Swir-innstillinger</string>
+    <string name="subtitle">Styr telefonen fra ett oversiktlig sted.</string>
+    <string name="search_hint">Søk i innstillinger</string>
+    <string name="device_section">Denne enheten</string>
+    <string name="device_summary">%1$s • Android %2$s • API %3$d</string>
+    <string name="security_note">Autoritative Android-innstillinger åpnes direkte. Appen ber ikke om tillatelser.</string>
+    <string name="no_results">Ingen samsvarende innstillinger</string>
+    <string name="open_failed">Denne innstillingssiden er ikke tilgjengelig i denne versjonen.</string>
+    <string name="wifi">Wi‑Fi</string>
+    <string name="bluetooth">Bluetooth</string>
+    <string name="display">Skjerm</string>
+    <string name="sound">Lyd og vibrasjon</string>
+    <string name="security">Sikkerhet</string>
+    <string name="privacy">Personvern</string>
+    <string name="accessibility">Tilgjengelighet</string>
+    <string name="language_region">Språk og region</string>
+    <string name="storage">Lagring</string>
+    <string name="apps">Apper</string>
+</resources>

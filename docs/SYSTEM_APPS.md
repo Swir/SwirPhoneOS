@@ -11,13 +11,21 @@ An app is not considered implemented merely because a package, screen or static 
 - `ANDROID_RUNTIME` — the app has been built into the pinned SwirPhoneOS product and exercised in the target Android runtime.
 - `HARDWARE_VERIFIED` — hardware-dependent capability has also passed exact-device evidence.
 
-The current registry contains 20 apps: **19 `HOST_CONTRACT`, 1 `ANDROID_SOURCE`, 0 `ANDROID_RUNTIME`, 0 `HARDWARE_VERIFIED`.**
+The current registry contains 20 apps: **18 `HOST_CONTRACT`, 2 `ANDROID_SOURCE`, 0 `ANDROID_RUNTIME`, 0 `HARDWARE_VERIFIED`.**
 
-## First source-ready app: SwirCalculator
+## Source-ready apps
 
-SwirCalculator is the first application at `ANDROID_SOURCE`. It contains real AOSP `android_app` source, a pure-Java BigDecimal state machine, basic arithmetic/decimal/sign/percent/backspace/error handling, an original vector icon and dark/cyan SwirPhoneOS UI. It requests no Android permissions. Source checks reject network/process/root primitives, package drift, localization-key drift and incomplete staging.
+### SwirCalculator
+
+SwirCalculator contains real AOSP `android_app` source, a pure-Java BigDecimal state machine, basic arithmetic/decimal/sign/percent/backspace/error handling, an original vector icon and dark/cyan SwirPhoneOS UI. It requests no Android permissions. Source checks reject network/process/root primitives, package drift, localization-key drift and incomplete staging.
 
 Android string resources currently cover English, Polish, Norwegian Bokmal, German, Spanish, French, Portuguese and Arabic. Layout direction follows the locale and the UI exposes accessibility descriptions. Scientific-math functionality remains a target rather than an implemented capability. No APK/Cuttlefish claim is made until the pinned AOSP product actually builds and the app is launched/tested there.
+
+### SwirSettings
+
+SwirSettings is the first beta-critical app at `ANDROID_SOURCE`. It is a permission-free settings hub with an original SwirPhoneOS icon and dark/cyan UI, localized search, real `Build.MODEL` / Android version / API status and reviewed hand-off routes to authoritative Android settings pages for Wi-Fi, Bluetooth, display, sound, security, privacy, accessibility, language/region, storage and apps.
+
+The app does not silently mutate platform settings and requests no permissions. Its route catalog is pure Java and host-tested; source validation requires the exact reviewed `android.settings.*` action allowlist and rejects unreviewed settings routes. It ships the same EN/PL/NB/DE/ES/FR/PT/AR resource set and follows locale layout direction. It remains source-only until a pinned AOSP build and Cuttlefish runtime test prove the integration.
 
 ## Design principles
 
@@ -47,7 +55,7 @@ Phone/SMS/Camera/Recorder and other hardware-backed functions are declared only 
 
 ### Emulator-ready core
 
-Prioritize Swir Settings, Files, Update, Privacy, Device Care, Clock and Calculator. Source can be developed in parallel, but runtime completion requires a real SwirPhoneOS Cuttlefish build/boot.
+Prioritize Swir Settings, Files, Update, Privacy, Device Care, Clock and Calculator. Calculator and Settings now have meaningful Android source, but runtime completion still requires a real SwirPhoneOS Cuttlefish build/boot. Continue moving Files, Update, Privacy and Device Care from host contracts into real source without overstating runtime status.
 
 ### Reference hardware
 
