@@ -8,9 +8,11 @@ Added a strict schema-v1 device profile registry and `profiles` CLI command. The
 
 Added the first **SwirPhoneStudio** desktop GUI source as a read-only developer preview. It exposes profile validation, ADB inspection and Fastboot/FastbootD inspection without any write controls; uses a dark desktop layout; detects Polish/Norwegian/English from the OS locale with English fallback; includes a `by Swir` GitHub footer; and supports sanitized JSON report export. The report exporter rejects sensitive identifier fields including serial/IMEI/MEID and applies bounded JSON validation before writing.
 
-Added unit coverage for locale mapping, translation fallback and privacy-checked report export. The GUI is lazily imported so headless status/gate CI remains independent of Tk availability.
+Added an offline Android 17 / API 37 AOSP baseline candidate record plus strict validation and a `baseline` CLI command. On the 2026-09-16 upstream check, `android-latest-release` resolved to `android17-release`; the candidate references `android-17.0.0_r1` / `CP2A.260605.016`. Status remains `CANDIDATE_NOT_PINNED`: no source sync or platform build is claimed. Added an upstream pinning/reproducibility policy and CI checks for both the device registry and baseline metadata.
 
-This does not add supported phones, flashing, bootloader unlocking, image booting, restore capability, a packaged Windows EXE or beta readiness. Project progress remains 2% until the full desktop-diagnostics gate has the required real Windows/USB evidence.
+Added unit coverage for locale mapping, translation fallback, privacy-checked report export and platform-baseline overclaim prevention. The GUI is lazily imported so headless status/gate CI remains independent of Tk availability.
+
+This does not add supported phones, flashing, bootloader unlocking, image booting, restore capability, a packaged Windows EXE or beta readiness. Project progress remains 2% until evidence-backed roadmap gates actually complete.
 
 ## 0.0.2.dev0 — 2026-09-16 — Developer foundation, no release
 
