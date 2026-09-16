@@ -1,0 +1,64 @@
+"""Fail-closed SwirRoot policy checks."""
+from __future__ import annotations
+
+from copy import deepcopy
+import json
+from pathlib import Path
+import unittest
+
+from swirphoneos.swirroot import SwirRootPolicyError, load_policy, public_policy_summary, validate_policy
+
+POLICY = Path("swirroot/policy.json")
+
+
+class SwirRootPolicyTests(unittest.TestCase):
+    def setUp(self):
+        self.data = json.loads(POLICY.read_text(encoding="utf-8"))
+
+    def test_repository_policy_fails_closed(self):
+        summary = public_policy_summary(load_policy(POLICY))
+        self.assertEqual(summary["default_state"], "UNAVAILABLE")
+        self.assertEqual(summary["authorization_default"], "deny")
+        self.assertFalse(summary["write_operations_enabled"])
+        self.assertFalse(summary["root_available"])
+        self.assertEqual(summary["supported_build_count"], 0)
+
+    def test_root_writes_without_exact_supported_build_are_rejected(self):
+        bad = deepcopy(self.data)
+        bad["write_operations_enabled"] = True
+        with self.assertRaises(SwirRootPolicyError):
+            validate_policy(bad)
+
+    def test_supported_build_claim_without_enabled_implementation_is_rejected(self):
+        bad = deepcopy(self.data)
+        bad["supported_builds"] = ["example-build"]
+        with self.assertRaises(SwirRootPolicyError):
+            validate_policy(bad)
+
+    def test_authorization_must_be_deny_by_default(self):
+        bad = deepcopy(self.data)
+        bad["authorization"]["default"] = "allow"
+        with self.assertRaises(SwirRootPolicyError):
+            validate_policy(bad)
+
+    def test_required_rollback_gate_cannot_be_removed(self):
+        bad = deepcopy(self.data)
+        bad["enable_requirements"].remove("rollback_material_verified")
+        with self.assertRaises(SwirRootPolicyError):
+            validate_policy(bad)
+
+    def test_forbidden_exploit_policy_cannot_be_removed(self):
+        bad = deepcopy(self.data)
+        bad["forbidden_methods"].remove("bootloader_exploit")
+        with self.assertRaises(SwirRootPolicyError):
+            validate_policy(bad)
+
+    def test_default_state_cannot_pretend_root_is_off_on_unverified_build(self):
+        bad = deepcopy(self.data)
+        bad["default_state"] = "ROOT_OFF"
+        with self.assertRaises(SwirRootPolicyError):
+            validate_policy(bad)
+
+
+if __name__ == "__main__":
+    unittest.main()
