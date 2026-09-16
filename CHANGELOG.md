@@ -2,13 +2,19 @@
 
 ## Unreleased
 
+### SwirClock and Cuttlefish runtime evidence
+
+Added `SwirClock` as the seventh meaningful first-party Android source application. It provides locale-formatted local/UTC time, a foreground stopwatch, a bounded foreground timer and an explicit user-visible hand-off to Android's alarm creation surface. It requests no Android permissions, does not request exact-alarm privileges and does not silently create alarms. Its pure-Java `ClockCore` is host-tested for timer bounds, alarm-time validation, stopwatch/timer calculations, duration formatting and world-time formatting. SwirClock includes an original icon/UI plus EN/PL/NB/DE/ES/FR/PT/AR resources and is integrated into bounded AOSP staging and `PRODUCT_PACKAGES`.
+
+Added a strict read-only local Cuttlefish runtime-evidence collector. It can record `sys.boot_completed`, exact SwirPhoneOS product identity, build fingerprint/SHA-256, Android/security-patch/locale state and presence of all source-ready packages from one local emulator transport. It rejects remote ADB transports and mutating commands and never promotes app registry states automatically. The registry is now **7 `ANDROID_SOURCE`, 13 `HOST_CONTRACT`, 0 `ANDROID_RUNTIME`, 0 hardware-verified**. No actual AOSP build/boot evidence exists yet, so weighted progress remains **2%** and Beta remains **0/9**.
+
 ### SwirUpdate and SwirPrivacy Android sources
 
 Added two more beta-critical first-party Android source applications. `SwirUpdate` is intentionally read-only at this source stage: it exposes real local build/channel status, build fingerprint/security-patch information, a safe route to Android's existing system-update settings, and a pure-Java SHA-256/RSA detached-signature verifier. Host tests generate a keypair, verify valid signed metadata, reject tampering and verify deterministic SHA-256 output. No network permission, downloader, package staging, recovery install or silent write path exists; `staged_update_state` and `recovery_handoff` remain future capabilities.
 
 Added `SwirPrivacy` as a permission-free searchable privacy center backed by an exact reviewed allowlist of Android privacy, permission, location, application and special-access settings routes. Its pure-Java catalog is host-tested, and source validation rejects unreviewed routes. Live privacy indicators and access history remain explicit platform-integration targets, not claimed functionality.
 
-Both apps have original SwirPhoneOS icons/UI, EN/PL/NB/DE/ES/FR/PT/AR resources with RTL-aware layout, explicit AOSP staging and `PRODUCT_PACKAGES` integration. Android-source validation now covers six apps and fails closed on Update verification drift, accidental install primitives, privacy-route drift, permission growth, localization drift and incomplete staging. The registry is now **6 `ANDROID_SOURCE`, 14 `HOST_CONTRACT`, 0 `ANDROID_RUNTIME`, 0 hardware-verified**. No AOSP build/runtime claim is made; weighted progress remains **2%** and Beta remains **0/9**.
+Both apps have original SwirPhoneOS icons/UI, EN/PL/NB/DE/ES/FR/PT/AR resources with RTL-aware layout, explicit AOSP staging and `PRODUCT_PACKAGES` integration. Android-source validation now covers six apps and fails closed on Update verification drift, accidental install primitives, privacy-route drift, permission growth, localization drift and incomplete staging. The registry is now **6 `ANDROID_SOURCE`, 14 `HOST_CONTRACT`, 0 `ANDROID_RUNTIME`, 0 hardware-verified** at this step. No AOSP build/runtime claim is made; weighted progress remains **2%** and Beta remains **0/9**.
 
 ### SwirFiles and SwirDeviceCare Android sources
 
