@@ -8,6 +8,7 @@ from . import __version__
 from .android_apps import AndroidAppSourceError, public_android_app_source_summary, validate_android_app_sources
 from .aosp_workspace import AospWorkspaceError, make_workspace_plan, public_manifest_evidence, public_workspace_plan, stage_product_tree, validate_resolved_manifest
 from .build_preflight import BuildPreflightError, capture_host, evaluate_preflight
+from .cuttlefish_evidence import CuttlefishEvidenceCollector, CuttlefishEvidenceError
 from .diagnostics import DiagnosticError, ReadOnlyAdb
 from .fastboot import FastbootDiagnosticError, ReadOnlyFastboot
 from .i18n import LocalizationError, catalog_summary
@@ -32,6 +33,7 @@ def main(argv: list[str] | None = None) -> int:
     aosp_plan=sub.add_parser("aosp-plan",help="Generate an argv-only exact-tag AOSP sync/stage/build plan without executing it"); aosp_plan.add_argument("--workspace",type=Path,required=True); aosp_plan.add_argument("--jobs",type=int,default=8); aosp_plan.add_argument("--baseline",type=Path,default=Path("platform/aosp_baseline.json")); aosp_plan.add_argument("--product-root",type=Path,default=Path("platform/aosp_product"))
     resolved_manifest=sub.add_parser("aosp-manifest",help="Validate a captured repo manifest -r snapshot and report SHA-256"); resolved_manifest.add_argument("--file",type=Path,required=True)
     stage_product=sub.add_parser("stage-product",help="Plan or explicitly stage manifest-whitelisted Swir AOSP product/app source"); stage_product.add_argument("--workspace",type=Path,required=True); stage_product.add_argument("--product-root",type=Path,default=Path("platform/aosp_product")); stage_product.add_argument("--execute",action="store_true")
+    cuttlefish=sub.add_parser("cuttlefish-evidence",help="Capture strict read-only runtime evidence from one local Cuttlefish/emulator"); cuttlefish.add_argument("--adb",required=True,type=Path,help="Absolute path to a trusted Android SDK adb executable"); cuttlefish.add_argument("--manifest",type=Path,default=Path("system_apps/manifest.json"))
     sub.add_parser("i18n",help="Validate shared localization catalogs and show translation coverage")
     apps=sub.add_parser("apps",help="Validate the essential first-party system-app registry"); apps.add_argument("--manifest",type=Path,default=Path("system_apps/manifest.json"))
     android_apps=sub.add_parser("android-apps",help="Validate checked-in first-party Android app source without claiming build/runtime"); android_apps.add_argument("--product-root",type=Path,default=Path("platform/aosp_product")); android_apps.add_argument("--manifest",type=Path,default=Path("system_apps/manifest.json"))
@@ -50,12 +52,13 @@ def main(argv: list[str] | None = None) -> int:
         elif args.command=="aosp-plan": result=public_workspace_plan(make_workspace_plan(load_baseline(args.baseline),validate_product_contract(args.product_root),args.workspace,jobs=args.jobs))
         elif args.command=="aosp-manifest": result=public_manifest_evidence(validate_resolved_manifest(args.file))
         elif args.command=="stage-product": validate_product_contract(args.product_root); result=stage_product_tree(args.product_root,args.workspace,execute=args.execute)
+        elif args.command=="cuttlefish-evidence": result=CuttlefishEvidenceCollector(args.adb).inspect(load_registry(args.manifest))
         elif args.command=="i18n": result=catalog_summary()
         elif args.command=="apps": result=public_registry_summary(load_registry(args.manifest))
         elif args.command=="android-apps": result=public_android_app_source_summary(validate_android_app_sources(args.product_root,args.manifest))
         elif args.command=="root-policy": result=public_policy_summary(load_policy(args.policy))
         else: result=evaluate(load_ledger(args.ledger))
         print(json.dumps(result,indent=2,ensure_ascii=True)); return 2 if args.command=="gate" and not result["beta_release_allowed"] else 0
-    except (AndroidAppSourceError,AospWorkspaceError,BuildPreflightError,DiagnosticError,FastbootDiagnosticError,IdentityAssessmentError,LocalizationError,PlatformBaselineError,ProductContractError,ProfileError,SwirRootPolicyError,SystemAppRegistryError,OSError,ValueError):
+    except (AndroidAppSourceError,AospWorkspaceError,BuildPreflightError,CuttlefishEvidenceError,DiagnosticError,FastbootDiagnosticError,IdentityAssessmentError,LocalizationError,PlatformBaselineError,ProductContractError,ProfileError,SwirRootPolicyError,SystemAppRegistryError,OSError,ValueError):
         print("Operation failed: check project metadata or the trusted Android SDK tool path, USB mode, AOSP workspace/evidence/app source, host workspace and single-device connection. Raw errors are withheld for privacy.",file=sys.stderr); return 1
 if __name__=="__main__": raise SystemExit(main())

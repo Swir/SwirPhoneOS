@@ -36,11 +36,11 @@ SwirPhoneStudio is a runnable dark/blue desktop GUI with the custom SwirPhoneOS 
 
 The current baseline is pinned to **Android 17 / API 37** at `android-17.0.0_r1`. The exact manifest identity is recorded in [`platform/aosp_baseline.json`](platform/aosp_baseline.json). Status remains `PINNED_NOT_BUILT`: no completed AOSP source sync, Kati/Soong build or Cuttlefish boot is claimed.
 
-The repository contains a SwirPhoneOS x86_64 Cuttlefish product definition and a reproducible workspace/evidence toolchain. `aosp-plan` emits the exact-tag Repo/build plan; `aosp-manifest` validates a captured `repo manifest -r`; and `stage-product` stages only manifest-whitelisted files under `vendor/swir/` into an already initialized AOSP checkout. None of these tools writes to a phone.
+The repository contains a SwirPhoneOS x86_64 Cuttlefish product definition and a reproducible workspace/evidence toolchain. `aosp-plan` emits the exact-tag Repo/build plan; `aosp-manifest` validates a captured `repo manifest -r`; `stage-product` stages only manifest-whitelisted files under `vendor/swir/`; and `cuttlefish-evidence` can later capture a strict read-only boot/product/package report from exactly one local emulator transport. None of these tools writes to a phone, and the evidence collector never promotes status automatically.
 
 ### Functional Android application sources
 
-Six first-party applications are now wired into `PRODUCT_PACKAGES` as meaningful **`ANDROID_SOURCE`**. They are deliberately not `ANDROID_RUNTIME` until the pinned AOSP product builds and the apps are exercised in Cuttlefish.
+Seven first-party applications are now wired into `PRODUCT_PACKAGES` as meaningful **`ANDROID_SOURCE`**. They are deliberately not `ANDROID_RUNTIME` until the pinned AOSP product builds and the apps are exercised in Cuttlefish.
 
 **SwirCalculator** (`org.swir.phoneos.calculator`) provides a pure-Java BigDecimal engine for basic arithmetic, decimals, sign, percent, backspace and divide-by-zero handling, an original vector icon and dark/cyan UI, locale-aware decimal display, RTL-aware layout and accessibility descriptions. It requests no Android permissions and has a dependency-free host Java engine test. Scientific mode remains unfinished.
 
@@ -54,17 +54,19 @@ Six first-party applications are now wired into `PRODUCT_PACKAGES` as meaningful
 
 **SwirPrivacy** (`org.swir.phoneos.privacy`) is a beta-critical permission-free privacy center. It searches and opens only an exact reviewed allowlist of authoritative Android privacy, permission, location, application and special-access settings. Live privacy indicators and access history remain unimplemented platform-integration targets rather than placeholder claims.
 
-All six apps ship Android resources for English, Polish, Norwegian Bokmal, German, Spanish, French, Portuguese and Arabic and follow locale layout direction. Their source, manifests, package identities, permission boundaries, localization parity and AOSP staging are checked in host CI. No APK/Cuttlefish/runtime claim is made yet, so these source milestones do not increase global progress.
+**SwirClock** (`org.swir.phoneos.clock`) is a permission-free daily-use clock source with localized local/UTC time, a foreground stopwatch, a bounded foreground timer and a user-visible hand-off to Android's alarm creation surface. Its pure-Java clock core validates timer/alarm inputs and time calculations in host CI. It intentionally does not request exact-alarm privileges or silently create alarms.
+
+All seven apps ship Android resources for English, Polish, Norwegian Bokmal, German, Spanish, French, Portuguese and Arabic and follow locale layout direction. Their source, manifests, package identities, permission boundaries, localization parity and AOSP staging are checked in host CI. No APK/Cuttlefish/runtime claim is made yet, so these source milestones do not increase global progress.
 
 ### Complete system-app plan and SwirRoot
 
-The machine-readable first-party suite contains 20 applications: Phone, Contacts, Messages, Camera, Gallery, Files, Settings, Browser, Clock, Calculator, Notes, Recorder, Calendar, Weather, Update, Backup, Privacy, Device Care, Apps/Software Center and SwirRoot. Fourteen remain `HOST_CONTRACT`; Calculator, Settings, Files, Device Care, Update and Privacy are `ANDROID_SOURCE`; zero are `ANDROID_RUNTIME` or `HARDWARE_VERIFIED`.
+The machine-readable first-party suite contains 20 applications: Phone, Contacts, Messages, Camera, Gallery, Files, Settings, Browser, Clock, Calculator, Notes, Recorder, Calendar, Weather, Update, Backup, Privacy, Device Care, Apps/Software Center and SwirRoot. Thirteen remain `HOST_CONTRACT`; Calculator, Settings, Files, Device Care, Update, Privacy and Clock are `ANDROID_SOURCE`; zero are `ANDROID_RUNTIME` or `HARDWARE_VERIFIED`.
 
 SwirRoot remains a fail-closed engineering contract. Unverified builds expose `UNAVAILABLE`; authorization is deny-by-default; rollback material, journaling, exact-build/profile checks and explicit owner confirmation are mandatory; exploit/bypass methods are forbidden; write operations are disabled; supported root builds remain zero.
 
 ### Global localization
 
-Host localization is data-driven with system-locale detection and English fallback. The current desktop and six Android source apps use English, Polish, Norwegian Bokmal, German, Spanish, French, Portuguese and Arabic resources. The mobile contract covers first setup, launcher, SystemUI, Settings, recovery, updater, SwirRoot and all bundled apps, including RTL, fonts/scripts, plural rules, accessibility and locale-specific formatting.
+Host localization is data-driven with system-locale detection and English fallback. The current desktop and seven Android source apps use English, Polish, Norwegian Bokmal, German, Spanish, French, Portuguese and Arabic resources. The mobile contract covers first setup, launcher, SystemUI, Settings, recovery, updater, SwirRoot and all bundled apps, including RTL, fonts/scripts, plural rules, accessibility and locale-specific formatting.
 
 ## Developer commands
 
@@ -80,13 +82,14 @@ python -m swirphoneos product-contract
 python -m swirphoneos aosp-plan --workspace /path/to/aosp --jobs 16
 python -m swirphoneos android-apps
 python -m swirphoneos build-preflight --workspace /path/to/aosp
+python -m swirphoneos cuttlefish-evidence --adb /absolute/path/to/adb
 python -m swirphoneos i18n
 python -m swirphoneos apps
 python -m swirphoneos root-policy
 python -m swirphoneos.studio
 ```
 
-`gate` intentionally exits blocked while mandatory beta evidence is missing. `android-apps` validates checked-in source only and must never be interpreted as build/runtime evidence.
+`gate` intentionally exits blocked while mandatory beta evidence is missing. `android-apps` validates checked-in source only and must never be interpreted as build/runtime evidence. `cuttlefish-evidence` is read-only emulator evidence and does not promote registry states automatically.
 
 ## Product direction
 
@@ -106,7 +109,7 @@ The first planned reference device is OnePlus Nord AC2003 (`avicii`), but it is 
 
 A beta Release requires a reproducible OS build, real boot path, safe install/rollback/recovery, at least one physically verified phone profile, usable core system functionality and verified release artifacts/checksums. Telephony, camera and root capability are stated per tested device/build. **No beta is published now.**
 
-[Architecture](ARCHITECTURE.md) · [Roadmap](ROADMAP.md) · [Build status](BUILD_STATUS.md) · [System Apps](docs/SYSTEM_APPS.md) · [Global i18n](docs/I18N.md) · [AOSP workspace](docs/AOSP_BUILD_WORKSPACE.md) · [SwirRoot](docs/SWIRROOT.md) · [Changelog](CHANGELOG.md)
+[Architecture](ARCHITECTURE.md) · [Roadmap](ROADMAP.md) · [Build status](BUILD_STATUS.md) · [System Apps](docs/SYSTEM_APPS.md) · [Global i18n](docs/I18N.md) · [AOSP workspace](docs/AOSP_BUILD_WORKSPACE.md) · [Runtime evidence](docs/AOSP_RUNTIME_EVIDENCE.md) · [SwirRoot](docs/SWIRROOT.md) · [Changelog](CHANGELOG.md)
 
 ---
 **by Swir** · [GitHub](https://github.com/Swir)

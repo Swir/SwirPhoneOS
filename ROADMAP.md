@@ -52,15 +52,15 @@ Read-only ADB/Fastboot/FastbootD diagnostics, metadata-only profile hints, multi
 
 ### Platform
 
-Android 17 / API 37 is pinned to `android-17.0.0_r1`. A read-only build-host preflight, exact-tag workspace plan, resolved-manifest validator and bounded source staging path exist. The x86_64 Cuttlefish product definition is checked in. No completed source sync, Kati/Soong build or Cuttlefish boot is claimed, so `aosp_baseline` and `emulator_boot` remain incomplete.
+Android 17 / API 37 is pinned to `android-17.0.0_r1`. A read-only build-host preflight, exact-tag workspace plan, resolved-manifest validator and bounded source staging path exist. The x86_64 Cuttlefish product definition is checked in. A new strict read-only `cuttlefish-evidence` collector is ready to verify `sys.boot_completed=1`, exact product identity, build fingerprint and source-ready package presence once a real image exists. No completed source sync, Kati/Soong build or Cuttlefish boot is claimed, so `aosp_baseline` and `emulator_boot` remain incomplete.
 
 ### Android application source
 
-SwirCalculator, SwirSettings, SwirFiles, SwirDeviceCare, SwirUpdate and SwirPrivacy are now **`ANDROID_SOURCE`** and included in the SwirPhoneOS Cuttlefish product definition. Calculator provides host-tested BigDecimal basic math. Settings exposes localized search, real build/device status and reviewed settings routes. Files uses a user-granted Storage Access Framework tree rather than broad storage permissions. Device Care reads real framework device/security-patch, battery/charging, storage, memory and thermal state without privileged permissions.
+SwirCalculator, SwirSettings, SwirFiles, SwirDeviceCare, SwirUpdate, SwirPrivacy and SwirClock are now **`ANDROID_SOURCE`** and included in the SwirPhoneOS Cuttlefish product definition. Calculator provides host-tested BigDecimal basic math. Settings exposes localized search, real build/device status and reviewed settings routes. Files uses a user-granted Storage Access Framework tree rather than broad storage permissions. Device Care reads real framework device/security-patch, battery/charging, storage, memory and thermal state without privileged permissions.
 
-Update adds real local channel/build state and host-tested SHA-256/RSA signed-metadata verification, while deliberately omitting package download/staging/recovery installation until the platform update path is designed and verified. Privacy adds a host-tested exact allowlist of authoritative Android privacy/permission settings routes, while live privacy indicators and access history remain future platform work.
+Update adds real local channel/build state and host-tested SHA-256/RSA signed-metadata verification, while deliberately omitting package download/staging/recovery installation until the platform update path is designed and verified. Privacy adds a host-tested exact allowlist of authoritative Android privacy/permission settings routes, while live privacy indicators and access history remain future platform work. Clock adds localized local/UTC time, a foreground stopwatch/timer and a user-visible alarm hand-off without exact-alarm privileges or silent alarm creation.
 
-All six have original icons/UI, eight locale resource sets including Arabic/RTL metadata, source-level safety validation and bounded AOSP staging. **None is `ANDROID_RUNTIME`: no pinned-AOSP APK build or emulator execution has happened yet.** Calculator scientific math, Update staged/recovery state and Privacy live indicators/access history remain declared targets, not implemented capabilities. Source-only progress therefore does not complete the emulator/core delivery checkboxes or change the weighted project percentage.
+All seven have original icons/UI, eight locale resource sets including Arabic/RTL metadata, source-level safety validation and bounded AOSP staging. **None is `ANDROID_RUNTIME`: no pinned-AOSP APK build or emulator execution has happened yet.** Calculator scientific math, Update staged/recovery state and Privacy live indicators/access history remain declared targets, not implemented capabilities. Source-only progress therefore does not complete the emulator/core delivery checkboxes or change the weighted project percentage.
 
 ### SwirRoot
 
@@ -77,7 +77,7 @@ SwirRoot is still a fail-closed policy only. No exact-build root service, mutati
 - [ ] Swir Privacy and Swir Device Care expose real emulator/platform state rather than placeholder cards.
 - [ ] Swir Clock and Swir Calculator provide functional daily-use baseline apps.
 
-> Source progress: SwirCalculator, SwirSettings, SwirFiles, SwirDeviceCare, SwirUpdate and SwirPrivacy now contain meaningful Android source and host-tested pure-Java logic/contracts, but their checkboxes stay open until the relevant capabilities are built and exercised inside the SwirPhoneOS emulator image. Source-only work receives no weighted gate credit.
+> Source progress: SwirCalculator, SwirSettings, SwirFiles, SwirDeviceCare, SwirUpdate, SwirPrivacy and SwirClock now contain meaningful Android source and host-tested pure-Java logic/contracts, but their checkboxes stay open until the relevant capabilities are built and exercised inside the SwirPhoneOS emulator image. Source-only work receives no weighted gate credit.
 
 ### Reference-hardware phase
 
@@ -101,9 +101,9 @@ These sub-deliverables do not independently change the ten-gate weighted percent
 ## Next engineering work
 
 1. On a capable Linux x86-64 AOSP builder, run preflight, initialize/sync exact `android-17.0.0_r1`, preserve `repo manifest -r` + SHA-256/tool versions, stage the manifest-whitelisted `vendor/swir/` product/app bundle, and compile `swirphoneos_cf_x86_64-aosp_current-userdebug`.
-2. Boot the resulting image in Cuttlefish and preserve `sys.boot_completed=1`, SystemUI plus Calculator/Settings/Files/DeviceCare/Update/Privacy runtime evidence. Only then can source status move toward `ANDROID_RUNTIME` and platform/emulator gates be reconsidered.
+2. Boot the resulting image in Cuttlefish and preserve `sys.boot_completed=1`, SystemUI plus Calculator/Settings/Files/DeviceCare/Update/Privacy/Clock runtime evidence. Use the read-only `cuttlefish-evidence` collector together with the exact manifest/build checksums; only reviewed evidence can move source status toward `ANDROID_RUNTIME`.
 3. After the real runtime exists, connect SwirUpdate to a signed metadata/channel service and a rollback-aware staged update/recovery contract; add platform-backed privacy indicators/access-history only through reviewed Android APIs. Keep all write/install paths disabled until rollback/recovery is proven.
-4. Add Swir Clock as the next permission-minimal daily-use emulator app and continue the shared SwirPhoneOS visual/accessibility system.
+4. Continue the shared SwirPhoneOS visual/accessibility system and move the next permission-minimal daily app (likely Notes or Calendar) from contract to meaningful source only when it has real behavior and tests.
 5. Continue hardening SwirPhoneStudio; the next desktop gate evidence is an actual Windows USB read-only ADB + Fastboot/FastbootD smoke on an owner-controlled device.
 6. After emulator/GSI evidence, expand device packs into reviewed installation/recovery plans. Never enable generic writes from Treble/codename/unlocked state alone.
 

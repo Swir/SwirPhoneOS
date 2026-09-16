@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Swir Clock</string>
+    <string name="subtitle">Czas, minutniki i alarmy w przejrzystym przepływie kontrolowanym przez użytkownika.</string>
+    <string name="now">Teraz</string>
+    <string name="stopwatch">Stoper</string>
+    <string name="timer">Minutnik</string>
+    <string name="alarm">Alarm</string>
+    <string name="start">Start</string>
+    <string name="pause">Pauza</string>
+    <string name="reset">Resetuj</string>
+    <string name="start_timer">Uruchom minutnik</string>
+    <string name="cancel">Anuluj</string>
+    <string name="timer_minutes_hint">Minuty (1-1440)</string>
+    <string name="invalid_timer">Wpisz czas od 1 do 1440 minut.</string>
+    <string name="timer_finished">Minutnik zakończony.</string>
+    <string name="hour_hint">Godzina 0-23</string>
+    <string name="minute_hint">Minuta 0-59</string>
+    <string name="set_alarm">Ustaw alarm</string>
+    <string name="invalid_alarm">Wpisz prawidłowy czas alarmu w formacie 24-godzinnym.</string>
+    <string name="alarm_body">Tworzenie alarmu otwiera systemowy ekran alarmów, aby można było go sprawdzić przed zapisaniem.</string>
+    <string name="alarm_message">Alarm Swir Clock</string>
+    <string name="alarm_unavailable">Brak zgodnej aplikacji alarmu.</string>
+    <string name="utc_format">UTC: %1$s</string>
+</resources>

@@ -84,6 +84,13 @@ _SPECS = {
         "hosttest/PrivacyCatalogHostTest.java", "res/drawable/ic_privacy.xml",
         ("permission_review",),
     ),
+    "clock": _AppSpec(
+        "clock", "SwirClock", "SwirClock", "org.swir.phoneos.clock",
+        "src/org/swir/phoneos/clock/ClockCore.java",
+        "src/org/swir/phoneos/clock/MainActivity.java",
+        "hosttest/ClockCoreHostTest.java", "res/drawable/ic_clock.xml",
+        ("alarms", "timers", "stopwatch", "world_clock"),
+    ),
 }
 _SETTINGS_ACTIONS = frozenset({
     "android.settings.WIFI_SETTINGS", "android.settings.BLUETOOTH_SETTINGS",
@@ -281,6 +288,17 @@ def _validate_privacy(logic: str, activity: str) -> None:
         raise AndroidAppSourceError("SwirPrivacy must route only through reviewed authoritative Android settings surfaces.")
 
 
+def _validate_clock(logic: str, activity: str) -> None:
+    required_logic = ("timerMillis", "validAlarmTime", "stopwatchElapsed", "timerRemaining", "worldTime")
+    required_activity = (
+        "SystemClock.elapsedRealtime", "AlarmClock.ACTION_SET_ALARM", "AlarmClock.EXTRA_HOUR",
+        "AlarmClock.EXTRA_MINUTES", "AlarmClock.EXTRA_SKIP_UI, false", "ClockCore.timerRemaining",
+        "ClockCore.stopwatchElapsed", "ClockCore.worldTime",
+    )
+    if any(token not in logic for token in required_logic) or any(token not in activity for token in required_activity):
+        raise AndroidAppSourceError("SwirClock must retain its host-tested daily clock core and user-visible alarm hand-off.")
+
+
 def validate_android_app_sources(product_root: Path = Path("platform/aosp_product"), registry_path: Path = Path("system_apps/manifest.json")) -> AndroidAppSourceSummary:
     """Validate all checked-in source-ready apps without claiming Android build/runtime evidence."""
     registry: SystemAppRegistry = load_registry(registry_path)
@@ -309,6 +327,7 @@ def validate_android_app_sources(product_root: Path = Path("platform/aosp_produc
         elif app.app_id == "device_care": _validate_device_care(logic, activity)
         elif app.app_id == "update": _validate_update(logic, activity)
         elif app.app_id == "privacy": _validate_privacy(logic, activity)
+        elif app.app_id == "clock": _validate_clock(logic, activity)
         localized += count
         source_files += staged_count
         ids.append(app.app_id)

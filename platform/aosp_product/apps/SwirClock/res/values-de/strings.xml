@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Swir Clock</string>
+    <string name="subtitle">Zeit, Timer und Alarme mit einem klaren, nutzergesteuerten Ablauf.</string>
+    <string name="now">Jetzt</string>
+    <string name="stopwatch">Stoppuhr</string>
+    <string name="timer">Timer</string>
+    <string name="alarm">Alarm</string>
+    <string name="start">Start</string>
+    <string name="pause">Pause</string>
+    <string name="reset">Zurücksetzen</string>
+    <string name="start_timer">Timer starten</string>
+    <string name="cancel">Abbrechen</string>
+    <string name="timer_minutes_hint">Minuten (1-1440)</string>
+    <string name="invalid_timer">Gib eine Dauer von 1 bis 1440 Minuten ein.</string>
+    <string name="timer_finished">Timer beendet.</string>
+    <string name="hour_hint">Stunde 0-23</string>
+    <string name="minute_hint">Minute 0-59</string>
+    <string name="set_alarm">Alarm einstellen</string>
+    <string name="invalid_alarm">Gib eine gültige Alarmzeit im 24-Stunden-Format ein.</string>
+    <string name="alarm_body">Beim Erstellen eines Alarms wird die Systemoberfläche geöffnet, damit du ihn vor dem Speichern prüfen kannst.</string>
+    <string name="alarm_message">Swir Clock Alarm</string>
+    <string name="alarm_unavailable">Keine kompatible Alarm-App verfügbar.</string>
+    <string name="utc_format">UTC: %1$s</string>
+</resources>
