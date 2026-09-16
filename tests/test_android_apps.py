@@ -17,14 +17,14 @@ class AndroidAppSourceTests(unittest.TestCase):
     def test_repository_source_apps_are_complete_but_not_runtime_claimed(self):
         summary = public_android_app_source_summary(validate_android_app_sources())
         self.assertEqual(summary["status"], "SOURCE_READY_NOT_BUILT")
-        self.assertEqual(set(summary["source_ready_apps"]), {"calculator", "settings", "files", "device_care", "update", "privacy"})
-        self.assertEqual(summary["source_ready_count"], 6)
-        self.assertEqual(summary["localized_catalogs"], 48)
+        self.assertEqual(set(summary["source_ready_apps"]), {"calculator", "settings", "files", "device_care", "update", "privacy", "clock"})
+        self.assertEqual(summary["source_ready_count"], 7)
+        self.assertEqual(summary["localized_catalogs"], 56)
         for capability in (
             "basic_math", "system_settings", "search", "device_status", "browse",
             "copy_move_rename", "share", "safe_delete", "storage_status",
             "battery_status", "thermal_status", "hardware_diagnostics", "channel_status",
-            "signed_metadata", "permission_review",
+            "signed_metadata", "permission_review", "alarms", "timers", "stopwatch", "world_clock",
         ):
             self.assertIn(capability, summary["implemented_capabilities"])
         self.assertEqual(
@@ -137,6 +137,15 @@ class AndroidAppSourceTests(unittest.TestCase):
                 "android.settings.PRIVACY_SETTINGS", "android.settings.MANAGE_UNKNOWN_APP_SOURCES", 1
             )
             catalog.write_text(text, encoding="utf-8")
+            with self.assertRaises(AndroidAppSourceError):
+                validate_android_app_sources(product, registry)
+
+    def test_clock_must_keep_user_visible_alarm_handoff(self):
+        temp, product, registry = self._copy_fixture()
+        with temp:
+            activity = product / "apps/SwirClock/src/org/swir/phoneos/clock/MainActivity.java"
+            text = activity.read_text(encoding="utf-8").replace("AlarmClock.ACTION_SET_ALARM", "Intent.ACTION_VIEW", 1)
+            activity.write_text(text, encoding="utf-8")
             with self.assertRaises(AndroidAppSourceError):
                 validate_android_app_sources(product, registry)
 
