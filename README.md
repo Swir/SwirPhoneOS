@@ -83,6 +83,10 @@ Manufacturer/model/bootloader/Treble/Fastboot values are device-reported hints, 
 
 **SwirPhoneOS Core:** maintainable AOSP/Linux integration beginning from a reproducibly pinned Android 17 candidate after build-host preflight; ARM64 GSI where compatible; device-specific ports where necessary; custom launcher/SystemUI/settings; polished dark/neon visual design; privacy controls; and signed OTA updates. Android app compatibility is a goal; Google services and individual apps are not guaranteed.
 
+**First-party system apps:** SwirPhoneOS is planned as a complete everyday phone OS, not only a bootable image. The canonical suite includes Swir Phone, Contacts, Messages, Camera, Gallery, Files, Settings, Browser, Clock, Calculator, Notes, Recorder, Calendar, Weather, Update, Backup, Privacy, Device Care, Apps/Software Center and SwirRoot. All apps share one original SwirPhoneOS design system, icon family, localization/accessibility rules and system-level integration. See [System Apps](docs/SYSTEM_APPS.md).
+
+**SwirRoot:** a first-party owner-controlled root manager for explicitly supported SwirPhoneOS builds/device profiles. The design requires clear root state, verified rollback material, explicit confirmation, diagnostics, a tested unroot path and integration with Swir Update/recovery/SwirPhoneStudio. It must not bypass locked bootloaders or OEM protections with exploits, and it is not counted as working until enable/disable/recovery behavior is physically verified.
+
 **SwirPhoneOS Flash Studio / SwirPhoneStudio:** a Windows-first, Linux-capable desktop companion. The first read-only GUI slice is implemented. The host core now also contains strict Fastboot/FastbootD diagnostics and a non-executable device registry. Planned next capabilities include GUI integration of those diagnostics, verified downloads, bounded pre-flight checks, packaged Windows delivery, user-confirmed installation plans, a transaction journal and tested per-device recovery before any write controls are enabled.
 
 **First planned reference:** OnePlus Nord AC2003 (`avicii`). Its profile is explicitly `PLANNED_NOT_SUPPORTED`, with no firmware baseline, validated partition map or flash operations. Metadata is not a working port.
@@ -103,7 +107,7 @@ A beta Release must contain a usable tested system image and verified Windows co
 
 This repository is the sole source of truth for the mobile project previously called SwirOS foundation v0.0.1. It is separate from SWIR OS Desktop, Konofix and KaliPhoneStudio. Repository-facing content is English, with localized runtime translation catalogs; progress reports to the owner are Polish. Scheduled development must follow [AGENTS.md](AGENTS.md), not inflate completion or claim unattended continuous computation.
 
-[Architecture](ARCHITECTURE.md) · [Roadmap](ROADMAP.md) · [Changelog](CHANGELOG.md) · [AOSP baseline](docs/UPSTREAM_BASELINE.md) · [Licensing policy](LICENSES.md)
+[Architecture](ARCHITECTURE.md) · [Roadmap](ROADMAP.md) · [System Apps](docs/SYSTEM_APPS.md) · [Changelog](CHANGELOG.md) · [AOSP baseline](docs/UPSTREAM_BASELINE.md) · [Licensing policy](LICENSES.md)
 
 ---
 **by Swir** · [GitHub](https://github.com/Swir)
