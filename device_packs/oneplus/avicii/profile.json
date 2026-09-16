@@ -1,0 +1,8 @@
+{
+  "schema_version": 1,
+  "id": "oneplus/avicii",
+  "codename": "avicii",
+  "models": ["AC2003"],
+  "abi": "arm64-v8a",
+  "support_status": "PLANNED"
+}

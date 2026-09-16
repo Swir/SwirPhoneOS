@@ -1,0 +1,56 @@
+{
+  "schema_version": 1,
+  "total_weight": 100,
+  "milestones": [
+    {
+      "id": "M00",
+      "weight": 2,
+      "complete": true
+    },
+    {
+      "id": "M01",
+      "weight": 10,
+      "complete": false
+    },
+    {
+      "id": "M02",
+      "weight": 10,
+      "complete": false
+    },
+    {
+      "id": "M03",
+      "weight": 12,
+      "complete": false
+    },
+    {
+      "id": "M04",
+      "weight": 12,
+      "complete": false
+    },
+    {
+      "id": "M05",
+      "weight": 20,
+      "complete": false
+    },
+    {
+      "id": "M06",
+      "weight": 10,
+      "complete": false
+    },
+    {
+      "id": "M07",
+      "weight": 10,
+      "complete": false
+    },
+    {
+      "id": "M08",
+      "weight": 8,
+      "complete": false
+    },
+    {
+      "id": "M09",
+      "weight": 6,
+      "complete": false
+    }
+  ]
+}
