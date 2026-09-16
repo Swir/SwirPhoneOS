@@ -9,7 +9,7 @@ on:
         default: '16'
         type: string
       collect_runtime:
-        description: Collect evidence from an already-running local Cuttlefish instance after build
+        description: Launch the exact built Cuttlefish product, wait for verified boot, and collect runtime plus app-launch smoke evidence
         required: true
         default: false
         type: boolean
@@ -46,6 +46,10 @@ jobs:
           : "${SWIR_AOSP_WORKSPACE:?Set SWIR_AOSP_WORKSPACE on the dedicated self-hosted runner}"
           test "${{ inputs.jobs }}" -ge 1
           test "${{ inputs.jobs }}" -le 256
+          if ${{ inputs.collect_runtime }}; then
+            test -x "${{ inputs.adb_path }}"
+            test "$(basename "${{ inputs.adb_path }}")" = "adb"
+          fi
           cd tools
           python -m swirphoneos build-preflight --workspace "$SWIR_AOSP_WORKSPACE"
           python -m swirphoneos aosp-plan --workspace "$SWIR_AOSP_WORKSPACE" --jobs "${{ inputs.jobs }}" > "$GITHUB_WORKSPACE/aosp-plan.json"
@@ -76,14 +80,78 @@ jobs:
         run: |
           set -euo pipefail
           PYTHONPATH="$GITHUB_WORKSPACE/tools" python -m swirphoneos build-evidence --workspace "$SWIR_AOSP_WORKSPACE" --manifest "$SWIR_AOSP_WORKSPACE/swirphoneos-pinned-manifest.xml" --baseline "$GITHUB_WORKSPACE/tools/platform/aosp_baseline.json" > "$GITHUB_WORKSPACE/build-evidence.json"
-      - name: Collect read-only Cuttlefish runtime evidence
+      - name: Launch exact built Cuttlefish product
+        if: ${{ inputs.collect_runtime }}
+        shell: bash
+        env:
+          SWIR_CVD_HOME: ${{ github.workspace }}/cuttlefish-home
+        run: |
+          set -euo pipefail
+          rm -rf "$SWIR_CVD_HOME"
+          mkdir -p "$SWIR_CVD_HOME"
+          cd "$SWIR_AOSP_WORKSPACE"
+          source build/envsetup.sh
+          lunch swirphoneos_cf_x86_64-aosp_current-userdebug >/dev/null
+          export HOME="$SWIR_CVD_HOME"
+          LAUNCH_CVD="$(command -v launch_cvd || true)"
+          test -n "$LAUNCH_CVD"
+          test -x "$LAUNCH_CVD"
+          "$LAUNCH_CVD" --daemon --report_anonymous_usage_stats=n
+      - name: Wait for exact runtime identity and verified Android boot
         if: ${{ inputs.collect_runtime }}
         shell: bash
         run: |
           set -euo pipefail
-          PYTHONPATH="$GITHUB_WORKSPACE/tools" python -m swirphoneos cuttlefish-evidence --adb "${{ inputs.adb_path }}" --manifest "$GITHUB_WORKSPACE/tools/system_apps/manifest.json" > "$GITHUB_WORKSPACE/runtime-evidence.json"
+          rm -f "$GITHUB_WORKSPACE/runtime-evidence.json" "$GITHUB_WORKSPACE/runtime-evidence.tmp"
+          ready=0
+          for attempt in $(seq 1 180); do
+            if PYTHONPATH="$GITHUB_WORKSPACE/tools" python -m swirphoneos cuttlefish-evidence --adb "${{ inputs.adb_path }}" --manifest "$GITHUB_WORKSPACE/tools/system_apps/manifest.json" > "$GITHUB_WORKSPACE/runtime-evidence.tmp" 2>/dev/null; then
+              if python - "$GITHUB_WORKSPACE/runtime-evidence.tmp" <<'PY'
+          import json
+          import pathlib
+          import sys
+          report = json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"))
+          raise SystemExit(0 if report.get("runtime_evidence_complete") is True else 1)
+          PY
+              then
+                mv "$GITHUB_WORKSPACE/runtime-evidence.tmp" "$GITHUB_WORKSPACE/runtime-evidence.json"
+                ready=1
+                break
+              fi
+            fi
+            sleep 2
+          done
+          test "$ready" -eq 1
+      - name: Exercise every source-ready app on exact local Cuttlefish
+        if: ${{ inputs.collect_runtime }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH="$GITHUB_WORKSPACE/tools" python -m swirphoneos.cuttlefish_smoke --adb "${{ inputs.adb_path }}" --manifest "$GITHUB_WORKSPACE/tools/system_apps/manifest.json" > "$GITHUB_WORKSPACE/app-smoke-evidence.json"
+      - name: Bind build and runtime evidence
+        if: ${{ inputs.collect_runtime }}
+        shell: bash
+        run: |
+          set -euo pipefail
           PYTHONPATH="$GITHUB_WORKSPACE/tools" python -m swirphoneos evidence-bundle --build "$GITHUB_WORKSPACE/build-evidence.json" --runtime "$GITHUB_WORKSPACE/runtime-evidence.json" > "$GITHUB_WORKSPACE/evidence-bundle.json"
+      - name: Stop local Cuttlefish instance
+        if: ${{ always() && inputs.collect_runtime }}
+        shell: bash
+        env:
+          SWIR_CVD_HOME: ${{ github.workspace }}/cuttlefish-home
+        run: |
+          set +e
+          cd "$SWIR_AOSP_WORKSPACE"
+          source build/envsetup.sh
+          lunch swirphoneos_cf_x86_64-aosp_current-userdebug >/dev/null 2>&1
+          export HOME="$SWIR_CVD_HOME"
+          STOP_CVD="$(command -v stop_cvd || true)"
+          if test -n "$STOP_CVD" && test -x "$STOP_CVD"; then
+            "$STOP_CVD"
+          fi
+          exit 0
       - name: Upload immutable evidence files
+        if: ${{ always() }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: swirphoneos-aosp-evidence-${{ github.sha }}
@@ -95,4 +163,5 @@ jobs:
             stage-report.json
             build-evidence.json
             runtime-evidence.json
+            app-smoke-evidence.json
             evidence-bundle.json
