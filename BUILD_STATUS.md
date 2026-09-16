@@ -10,10 +10,10 @@ Version: **0.0.2.dev0 + unreleased Android-source/platform hardening**. Updated:
 | SwirPhoneStudio | Multilingual ADB/Fastboot inspection GUI and Windows developer packaging; no write controls |
 | Android 17 AOSP baseline | Exact `android-17.0.0_r1` identity preserved; `PINNED_NOT_BUILT` |
 | AOSP workspace | Exact-tag plan, resolved-manifest SHA validation, bounded manifest/fragment staging and fail-closed build-artifact provenance tooling implemented |
-| Dedicated AOSP builder workflow | Manual-only self-hosted exact-tag sync/stage/build path now optionally launches the exact built Cuttlefish product, waits for strict boot evidence, app-smokes all source-ready packages and cleans up; no successful AOSP run recorded yet |
+| Dedicated AOSP builder workflow | Manual-only self-hosted exact-tag sync/stage/build path optionally launches the exact built Cuttlefish product, waits for strict boot evidence, app-smokes all source-ready packages and cleans up; no successful AOSP run recorded yet |
 | Cuttlefish runtime evidence | Read-only exact product/device/manufacturer/API/build-type/fingerprint/package/launcher collector plus build/runtime fingerprint binding implemented; not yet run against a built SwirPhoneOS image |
 | Cuttlefish app launch smoke | Exact-identity local-emulator gate + package-local `am start -W` + resumed-activity confirmation implemented for all source-ready apps; not yet run against a built SwirPhoneOS image |
-| Cuttlefish product | `PRODUCT_PACKAGES` includes Calculator, Settings, Files, DeviceCare, Update, Privacy, Clock, Notes and Calendar; **not built or booted** |
+| Cuttlefish product | `PRODUCT_PACKAGES` includes Calculator, Settings, Files, DeviceCare, Update, Privacy, Clock, Notes, Calendar and SwirRoot; **not built or booted** |
 | SwirCalculator | `ANDROID_SOURCE`; basic math host-tested; Android runtime not verified |
 | SwirSettings | `ANDROID_SOURCE`; reviewed settings routes/search/device state; Android runtime not verified |
 | SwirFiles | `ANDROID_SOURCE`; user-granted SAF file operations; Android runtime not verified |
@@ -23,8 +23,10 @@ Version: **0.0.2.dev0 + unreleased Android-source/platform hardening**. Updated:
 | SwirClock | `ANDROID_SOURCE`; time/stopwatch/timer/user-visible alarm hand-off |
 | SwirNotes | `ANDROID_SOURCE`; local SQLite CRUD/search/share/Markdown export, 8 locales |
 | SwirCalendar | `ANDROID_SOURCE`; local SQLite agenda/date-time editing/share/ICS export, 8 locales; provider bridge not implemented |
-| System apps | 20-app registry: **9 `ANDROID_SOURCE`, 11 `HOST_CONTRACT`, 0 `ANDROID_RUNTIME`, 0 hardware-verified** |
-| SwirRoot | Fail-closed policy only; writes disabled; supported root builds = 0 |
+| SwirRoot | `ANDROID_SOURCE`; original localized owner UI + non-exported status/diagnostic service + bounded private review audit + host-tested gate policy; mutation backend hard-disabled, supported builds = 0, state = `UNAVAILABLE`; guided enable/unroot not implemented |
+| Android source safety | Validator checks all production Java files for forbidden execution/network/storage primitives; SwirRoot additionally requires disabled mutation support and exact-build/profile/rollback/journal/owner gates |
+| System apps | 20-app registry: **10 `ANDROID_SOURCE`, 10 `HOST_CONTRACT`, 0 `ANDROID_RUNTIME`, 0 hardware-verified** |
+| SwirRoot host policy | `write_operations_enabled=false`; supported root builds = 0; exploit/bypass methods forbidden |
 | Resolved full AOSP source manifest | Not captured from a real synchronized workspace |
 | Android/GSI image | Not built |
 | Cuttlefish boot | Not performed; no `sys.boot_completed=1` evidence |
@@ -34,4 +36,4 @@ Version: **0.0.2.dev0 + unreleased Android-source/platform hardening**. Updated:
 | Project ledger | **2%**, 1/10 weighted milestones; **Beta 0/9** |
 | Beta Release | Blocked; no release published |
 
-Host CI can verify Python contracts, provenance/bundle rejection logic, desktop startup/packaging, staging safety, Cuttlefish smoke allowlist/parsing logic and pure-Java logic/policies for the nine source-ready apps. It cannot establish Android runtime compatibility or hardware support. AOSP/platform credit remains blocked until the pinned source synchronizes and builds; emulator credit remains blocked until the resulting exact image boots and reviewed runtime plus app-smoke evidence is recorded.
+Host CI can verify Python contracts, provenance/bundle rejection logic, desktop startup/packaging, staging safety, Cuttlefish smoke allowlist/parsing logic, source-wide Android safety rules and pure-Java logic/policies for the ten source-ready apps. It cannot establish Android runtime compatibility, working root, recovery safety or hardware support. AOSP/platform credit remains blocked until the pinned source synchronizes and builds; emulator credit remains blocked until the resulting exact image boots and reviewed runtime plus app-smoke evidence is recorded.
