@@ -9,6 +9,7 @@ PRODUCT_BRAND := Swir
 PRODUCT_MANUFACTURER := Swir
 PRODUCT_MODEL := SwirPhoneOS Cuttlefish Developer
 
-# First real SwirPhoneOS app source. Runtime status remains unverified until an AOSP build/boot succeeds.
+# Source-ready first-party apps. Runtime status remains unverified until an AOSP build/boot succeeds.
 PRODUCT_PACKAGES += \
-    SwirCalculator
+    SwirCalculator \
+    SwirSettings
