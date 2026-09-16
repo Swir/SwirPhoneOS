@@ -32,3 +32,18 @@ jobs:
         run: python -m unittest discover -s tests -v
       - name: Validate project ledger
         run: python -m swirphoneos status
+      - name: Linux native Tk runtime (synthetic data, virtual display)
+        if: runner.os == 'Linux'
+        env:
+          SWIR_GUI_TESTS: '1'
+        run: |
+          xvfb-run -a python -m unittest discover -s tests -p test_studio_gui.py -v
+          xvfb-run -a python -m swirphoneos.studio --smoke-test
+      - name: Windows native Tk runtime (synthetic data)
+        if: runner.os == 'Windows'
+        env:
+          SWIR_GUI_TESTS: '1'
+        run: |
+          python -m unittest discover -s tests -p test_studio_gui.py -v
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python -m swirphoneos.studio --smoke-test
