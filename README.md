@@ -2,7 +2,7 @@
 <h1 align="center">SwirPhoneOS</h1>
 <p align="center">An Android-compatible mobile OS and a safety-first PC companion. By Swir.</p>
 
-> **Developer foundation, not a ROM release.** No bootable SwirPhoneOS image, supported phone, installer, backup or stock-restore implementation is available yet. Runnable components are host-side diagnostics and SwirPhoneStudio. Android application source now exists, but no APK/runtime claim is made before a real AOSP build and boot.
+> **Developer foundation, not a ROM release.** No bootable SwirPhoneOS image, supported phone, installer, backup or stock-restore implementation is available yet. Runnable components are host-side diagnostics and SwirPhoneStudio. Meaningful Android application source exists, but no APK/runtime claim is made before a real pinned-AOSP build and boot.
 
 <!-- SWIR-ROADMAP-STANDARD:v1 -->
 ![CI](https://github.com/Swir/SwirPhoneOS/actions/workflows/ci.yml/badge.svg)
@@ -40,7 +40,7 @@ The repository contains a SwirPhoneOS x86_64 Cuttlefish product definition and a
 
 ### Functional Android application sources
 
-Four first-party applications are now wired into `PRODUCT_PACKAGES` as meaningful **`ANDROID_SOURCE`**. They are deliberately not `ANDROID_RUNTIME` until the pinned AOSP product builds and the apps are exercised in Cuttlefish.
+Six first-party applications are now wired into `PRODUCT_PACKAGES` as meaningful **`ANDROID_SOURCE`**. They are deliberately not `ANDROID_RUNTIME` until the pinned AOSP product builds and the apps are exercised in Cuttlefish.
 
 **SwirCalculator** (`org.swir.phoneos.calculator`) provides a pure-Java BigDecimal engine for basic arithmetic, decimals, sign, percent, backspace and divide-by-zero handling, an original vector icon and dark/cyan UI, locale-aware decimal display, RTL-aware layout and accessibility descriptions. It requests no Android permissions and has a dependency-free host Java engine test. Scientific mode remains unfinished.
 
@@ -50,17 +50,21 @@ Four first-party applications are now wired into `PRODUCT_PACKAGES` as meaningfu
 
 **SwirDeviceCare** (`org.swir.phoneos.device_care`) is a beta-critical diagnostics source that reads real framework state without privileged permissions: device/security-patch identity, battery/charging state, data-partition storage usage, memory availability and Android thermal status. Its health calculations are kept in host-tested pure Java.
 
-All four apps ship Android resources for English, Polish, Norwegian Bokmal, German, Spanish, French, Portuguese and Arabic and follow locale layout direction. Their source, manifests, package identities, localization parity and AOSP staging are checked in host CI. No APK/Cuttlefish/runtime claim is made yet, so these source milestones do not increase global progress.
+**SwirUpdate** (`org.swir.phoneos.update`) is a beta-critical read-only update-status source. It shows the real local build fingerprint/security patch, maps build type/tags to a development channel and contains a host-tested SHA-256/RSA detached-signature verification policy with tamper rejection. It has **no network permission, package downloader, staging or recovery-install path**; those capabilities remain blocked until the signed OTA/recovery architecture exists and is runtime-tested.
+
+**SwirPrivacy** (`org.swir.phoneos.privacy`) is a beta-critical permission-free privacy center. It searches and opens only an exact reviewed allowlist of authoritative Android privacy, permission, location, application and special-access settings. Live privacy indicators and access history remain unimplemented platform-integration targets rather than placeholder claims.
+
+All six apps ship Android resources for English, Polish, Norwegian Bokmal, German, Spanish, French, Portuguese and Arabic and follow locale layout direction. Their source, manifests, package identities, permission boundaries, localization parity and AOSP staging are checked in host CI. No APK/Cuttlefish/runtime claim is made yet, so these source milestones do not increase global progress.
 
 ### Complete system-app plan and SwirRoot
 
-The machine-readable first-party suite contains 20 applications: Phone, Contacts, Messages, Camera, Gallery, Files, Settings, Browser, Clock, Calculator, Notes, Recorder, Calendar, Weather, Update, Backup, Privacy, Device Care, Apps/Software Center and SwirRoot. Sixteen remain `HOST_CONTRACT`; Calculator, Settings, Files and Device Care are `ANDROID_SOURCE`; zero are `ANDROID_RUNTIME` or `HARDWARE_VERIFIED`.
+The machine-readable first-party suite contains 20 applications: Phone, Contacts, Messages, Camera, Gallery, Files, Settings, Browser, Clock, Calculator, Notes, Recorder, Calendar, Weather, Update, Backup, Privacy, Device Care, Apps/Software Center and SwirRoot. Fourteen remain `HOST_CONTRACT`; Calculator, Settings, Files, Device Care, Update and Privacy are `ANDROID_SOURCE`; zero are `ANDROID_RUNTIME` or `HARDWARE_VERIFIED`.
 
 SwirRoot remains a fail-closed engineering contract. Unverified builds expose `UNAVAILABLE`; authorization is deny-by-default; rollback material, journaling, exact-build/profile checks and explicit owner confirmation are mandatory; exploit/bypass methods are forbidden; write operations are disabled; supported root builds remain zero.
 
 ### Global localization
 
-Host localization is data-driven with system-locale detection and English fallback. The current desktop/Calculator/Settings/Files/DeviceCare language set is English, Polish, Norwegian Bokmal, German, Spanish, French, Portuguese and Arabic. The mobile contract covers first setup, launcher, SystemUI, Settings, recovery, updater, SwirRoot and all bundled apps, including RTL, fonts/scripts, plural rules, accessibility and locale-specific formatting.
+Host localization is data-driven with system-locale detection and English fallback. The current desktop and six Android source apps use English, Polish, Norwegian Bokmal, German, Spanish, French, Portuguese and Arabic resources. The mobile contract covers first setup, launcher, SystemUI, Settings, recovery, updater, SwirRoot and all bundled apps, including RTL, fonts/scripts, plural rules, accessibility and locale-specific formatting.
 
 ## Developer commands
 

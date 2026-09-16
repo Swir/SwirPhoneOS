@@ -66,6 +66,18 @@ jobs:
           mkdir -p _care-java-test
           javac -d _care-java-test platform/aosp_product/apps/SwirDeviceCare/src/org/swir/phoneos/device_care/HealthModel.java platform/aosp_product/apps/SwirDeviceCare/hosttest/HealthModelHostTest.java
           java -cp _care-java-test org.swir.phoneos.device_care.HealthModelHostTest
+      - name: Host-test SwirUpdate verification policy
+        if: runner.os == 'Linux' && matrix.python == '3.14'
+        run: |
+          mkdir -p _update-java-test
+          javac -d _update-java-test platform/aosp_product/apps/SwirUpdate/src/org/swir/phoneos/update/UpdatePolicy.java platform/aosp_product/apps/SwirUpdate/hosttest/UpdatePolicyHostTest.java
+          java -cp _update-java-test org.swir.phoneos.update.UpdatePolicyHostTest
+      - name: Host-test SwirPrivacy route catalog
+        if: runner.os == 'Linux' && matrix.python == '3.14'
+        run: |
+          mkdir -p _privacy-java-test
+          javac -d _privacy-java-test platform/aosp_product/apps/SwirPrivacy/src/org/swir/phoneos/privacy/PrivacyCatalog.java platform/aosp_product/apps/SwirPrivacy/hosttest/PrivacyCatalogHostTest.java
+          java -cp _privacy-java-test org.swir.phoneos.privacy.PrivacyCatalogHostTest
       - name: Inspect AOSP host preflight contract
         run: python -m swirphoneos build-preflight --workspace .
       - name: Validate global localization catalogs

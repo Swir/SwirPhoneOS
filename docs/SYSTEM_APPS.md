@@ -11,33 +11,39 @@ An app is not considered implemented merely because a package, screen or static 
 - `ANDROID_RUNTIME` — the app has been built into the pinned SwirPhoneOS product and exercised in the target Android runtime.
 - `HARDWARE_VERIFIED` — hardware-dependent capability has also passed exact-device evidence.
 
-The current registry contains 20 apps: **16 `HOST_CONTRACT`, 4 `ANDROID_SOURCE`, 0 `ANDROID_RUNTIME`, 0 `HARDWARE_VERIFIED`.**
+The current registry contains 20 apps: **14 `HOST_CONTRACT`, 6 `ANDROID_SOURCE`, 0 `ANDROID_RUNTIME`, 0 `HARDWARE_VERIFIED`.**
 
 ## Source-ready apps
 
 ### SwirCalculator
 
-SwirCalculator contains real AOSP `android_app` source, a pure-Java BigDecimal state machine, basic arithmetic/decimal/sign/percent/backspace/error handling, an original vector icon and dark/cyan SwirPhoneOS UI. It requests no Android permissions. Source checks reject network/process/root primitives, package drift, localization-key drift and incomplete staging.
-
-Android string resources currently cover English, Polish, Norwegian Bokmal, German, Spanish, French, Portuguese and Arabic. Layout direction follows the locale and the UI exposes accessibility descriptions. Scientific-math functionality remains a target rather than an implemented capability. No APK/Cuttlefish claim is made until the pinned AOSP product actually builds and the app is launched/tested there.
+SwirCalculator contains real AOSP `android_app` source, a pure-Java BigDecimal state machine, basic arithmetic/decimal/sign/percent/backspace/error handling, an original vector icon and dark/cyan SwirPhoneOS UI. It requests no Android permissions. Scientific math remains a target rather than an implemented capability.
 
 ### SwirSettings
 
-SwirSettings is a beta-critical app at `ANDROID_SOURCE`. It is a permission-free settings hub with an original SwirPhoneOS icon and dark/cyan UI, localized search, real `Build.MODEL` / Android version / API status and reviewed hand-off routes to authoritative Android settings pages for Wi-Fi, Bluetooth, display, sound, security, privacy, accessibility, language/region, storage and apps.
-
-The app does not silently mutate platform settings and requests no permissions. Its route catalog is pure Java and host-tested; source validation requires the exact reviewed `android.settings.*` action allowlist and rejects unreviewed settings routes. It ships the same EN/PL/NB/DE/ES/FR/PT/AR resource set and follows locale layout direction. It remains source-only until a pinned AOSP build and Cuttlefish runtime test prove the integration.
+SwirSettings is a beta-critical permission-free settings hub with localized search, real build/device status and reviewed hand-off routes to authoritative Android settings surfaces. Its pure-Java route catalog is host-tested and source validation requires the exact reviewed action allowlist.
 
 ### SwirFiles
 
-SwirFiles is a beta-critical permission-free file manager source. It uses `ACTION_OPEN_DOCUMENT_TREE` and a persisted owner-selected Storage Access Framework grant instead of broad storage permissions. Inside that granted tree it browses/searches documents, creates folders and uses provider-advertised rename/copy/move/delete operations. File deletion is confirmation-gated; open/share operations pass only URI grants needed by the receiving app. A pure-Java `FilePolicy` validates names and search behavior in host CI.
-
-The app has an original folder icon/UI, follows locale layout direction and includes EN/PL/NB/DE/ES/FR/PT/AR resources. Source validation rejects broad storage-permission primitives, missing user-granted tree flow, localization drift and incomplete AOSP staging. Runtime behavior remains unverified until a real SwirPhoneOS Cuttlefish build is available.
+SwirFiles is a beta-critical permission-free file manager built around an owner-selected Storage Access Framework tree grant. It browses/searches that tree and uses provider-supported create/rename/copy/move/delete/open/share operations without broad storage permissions. Delete remains confirmation-gated and its pure-Java file policy is host-tested.
 
 ### SwirDeviceCare
 
-SwirDeviceCare is a beta-critical diagnostics source that intentionally avoids privileged permissions. It renders real Android framework state for manufacturer/model/security patch, battery level and charging state, data-partition storage, memory availability and current thermal condition. A pure-Java `HealthModel` maps usage and thermal state and is dependency-free host tested.
+SwirDeviceCare is a beta-critical permission-free diagnostics source backed by Android framework state for manufacturer/model/security patch, battery/charging, storage, memory and current thermal state. A pure-Java health model is host-tested. Hardware interpretation remains provisional until exact-device testing.
 
-The dashboard has an original SwirPhoneOS shield icon/UI and the same eight locale resource sets. Hardware-dependent interpretation remains provisional: source status proves only the code contract, not the accuracy of a vendor's sensors or charging stack. Physical-device verification is still required before any hardware support claim.
+### SwirUpdate
+
+SwirUpdate is now meaningful beta-critical Android source, but deliberately **not an installer yet**. It reports real local build identity, maps build type/tags to a visible development channel, and contains a dependency-free SHA-256/RSA detached-signature verification policy with host tests including tamper rejection. It exposes a safe hand-off to Android's existing system-update settings where available.
+
+No network permission, downloader, update-package staging, recovery install or silent write path is present. `staged_update_state` and `recovery_handoff` remain unimplemented target capabilities until the signed OTA/recovery architecture is built and runtime-tested.
+
+### SwirPrivacy
+
+SwirPrivacy is a beta-critical permission-free privacy center. It searches and opens only an exact reviewed allowlist of authoritative Android privacy, permission, location, app and special-access settings. The pure-Java route catalog is host-tested and unreviewed routes fail source validation.
+
+At this stage the implemented capability is `permission_review`. Platform-backed live privacy indicators and access history remain explicit future work rather than placeholder claims.
+
+All six source-ready apps use original SwirPhoneOS icons/UI and Android resources for English, Polish, Norwegian Bokmal, German, Spanish, French, Portuguese and Arabic. Layout direction follows the locale. Source validation checks package identity, permission boundaries, localization-key parity, product inclusion and complete bounded AOSP staging. None is `ANDROID_RUNTIME` until a real pinned-AOSP build and Cuttlefish exercise succeeds.
 
 ## Design principles
 
@@ -67,7 +73,7 @@ Phone/SMS/Camera/Recorder and other hardware-backed functions are declared only 
 
 ### Emulator-ready core
 
-Prioritize Swir Settings, Files, Update, Privacy, Device Care, Clock and Calculator. Calculator, Settings, Files and Device Care now have meaningful Android source, but runtime completion still requires a real SwirPhoneOS Cuttlefish build/boot. Continue moving Update and Privacy from host contracts into real source without overstating runtime status.
+Prioritize Swir Settings, Files, Update, Privacy, Device Care, Clock and Calculator. Calculator, Settings, Files, Device Care, Update and Privacy now have meaningful Android source, but runtime completion still requires a real SwirPhoneOS Cuttlefish build/boot. Clock remains the next daily-use core app candidate while Update/Privacy need platform integration after runtime surfaces exist.
 
 ### Reference hardware
 

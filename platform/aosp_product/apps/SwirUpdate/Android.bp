@@ -1,0 +1,12 @@
+android_app {
+    name: "SwirUpdate",
+    srcs: ["src/**/*.java"],
+    resource_dirs: ["res"],
+    manifest: "AndroidManifest.xml",
+    sdk_version: "current",
+    min_sdk_version: "35",
+    product_specific: true,
+    optimize: {
+        enabled: true,
+    },
+}
