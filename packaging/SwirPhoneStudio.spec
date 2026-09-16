@@ -1,7 +1,12 @@
 # -*- mode: python ; coding: utf-8 -*-
 from pathlib import Path
 
-ROOT = Path(SPECPATH).resolve().parent.parent
+# This spec is intentionally invoked from the repository root by CI and the
+# documented local reproduction command. Avoid SPECPATH here because PyInstaller
+# executes spec files with path semantics that can vary with the invocation path.
+ROOT = Path.cwd().resolve()
+if not (ROOT / "swirphoneos" / "studio.py").is_file():
+    raise SystemExit("Run PyInstaller from the SwirPhoneOS repository root.")
 
 a = Analysis(
     [str(ROOT / "packaging" / "studio_entry.py")],
