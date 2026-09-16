@@ -1,5 +1,21 @@
 # Changelog
 
+## Unreleased
+
+### Read-only Fastboot/FastbootD diagnostics
+
+Added a strictly read-only Fastboot/FastbootD diagnostic core. It requires an explicit trusted Android SDK `fastboot` executable, exactly one local USB device and a small `getvar` allowlist (`product`, `current-slot`, `slot-count`, `unlocked`, `is-userspace`, `secure`). It rejects every command outside that allowlist, never requests serial-number variables, rechecks device identity after inspection and always returns `flash_allowed: false`. Added portable mocked tests and the CLI command `python -m swirphoneos inspect-fastboot --fastboot <absolute-path>`.
+
+### Metadata-only multi-device registry
+
+Added strict schema-v1 validation for `device_packs/<vendor>/<codename>/profile.json` plus a `profiles` CLI command. Safe IDs, bounded model allowlists, HTTPS sources and duplicate profile detection are enforced. Schema v1 cannot authorize writes: `flash_enabled: true` and non-empty flash operations are rejected. The existing OnePlus Nord AC2003 (`avicii`) profile remains `PLANNED_NOT_SUPPORTED`.
+
+### Android 17 AOSP baseline discovery
+
+Added an offline Android 17 / API 37 baseline candidate record and validator. At the 2026-09-16 upstream check, `android-latest-release` resolved to `android17-release`; the candidate references `android-17.0.0_r1` / `CP2A.260605.016`. The state is deliberately `CANDIDATE_NOT_PINNED`, with `download_started: false` and `build_completed: false`. Added a reproducible-pinning policy, baseline CLI command, anti-overclaim tests and CI validation. No AOSP source sync or platform build is claimed.
+
+This work extends host diagnostics and platform planning only. It does not add supported phones, write-capable installation, bootloader unlocking, image booting, stock restore, a packaged Windows EXE or beta readiness. Project progress remains 2%; beta gates remain 0/9.
+
 ## 0.0.2.dev0 — 2026-09-16 — Developer foundation, no release
 
 ### Read-only Flash Studio desktop slice
