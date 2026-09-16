@@ -4,6 +4,10 @@
 
 Added a strictly read-only Fastboot/FastbootD diagnostic path to the Python host tooling. It requires an explicit trusted Android SDK `fastboot` executable, exactly one local USB device and a small `getvar` allowlist (`product`, `current-slot`, `slot-count`, `unlocked`, `is-userspace`, `secure`). Mutating commands are rejected, device identity is rechecked, private serial values are not included in reports, and the result always keeps `flash_allowed` false. Added cross-platform mocked unit coverage and a CLI `inspect-fastboot` command.
 
+Added a strict schema-v1 device profile registry and `profiles` CLI command. The validator enforces bounded safe IDs/model lists, HTTPS source metadata and duplicate-ID detection. Schema v1 is intentionally metadata-only: profiles with `flash_enabled: true` or executable flash operations are rejected. The existing OnePlus Nord AC2003 (`oneplus/avicii`) placeholder is now validated by the same registry without becoming a supported device.
+
+Renamed the planned desktop companion consistently to **SwirPhoneStudio** in user-facing project direction. It remains a planned Windows-first/Linux-capable installer and recovery companion; no GUI/EXE is claimed yet.
+
 This does not add phone support, flashing, bootloader unlocking, image booting, restore capability or beta readiness. Project progress remains 2% until the full desktop-diagnostics gate has the required Windows/USB evidence.
 
 ## 0.0.2.dev0 — 2026-09-16 — Developer foundation, no release
