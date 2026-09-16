@@ -1,0 +1,36 @@
+<resources>
+    <string name="app_name">Swir Files</string>
+    <string name="subtitle">Gestion privée des fichiers uniquement dans les dossiers que vous autorisez explicitement.</string>
+    <string name="no_folder">Aucun dossier sélectionné</string>
+    <string name="choose_folder">Choisir un dossier</string>
+    <string name="up">Remonter</string>
+    <string name="new_folder">Nouveau dossier</string>
+    <string name="clipboard_empty">Le presse-papiers est vide</string>
+    <string name="paste_here">Coller ici</string>
+    <string name="search_hint">Rechercher dans ce dossier</string>
+    <string name="choose_folder_prompt">Choisissez un dossier pour commencer</string>
+    <string name="no_results">Aucun élément correspondant</string>
+    <string name="file_with_size">%1$s  ·  %2$s</string>
+    <string name="folder_item_description">Dossier %1$s</string>
+    <string name="file_item_description">Fichier %1$s</string>
+    <string name="location_selected">Dossier autorisé sélectionné</string>
+    <string name="location_format">Dossier : %1$s</string>
+    <string name="open">Ouvrir</string>
+    <string name="share">Partager</string>
+    <string name="rename">Renommer</string>
+    <string name="copy">Copier</string>
+    <string name="move">Déplacer</string>
+    <string name="delete">Supprimer</string>
+    <string name="cancel">Annuler</string>
+    <string name="confirm">Confirmer</string>
+    <string name="clipboard_copy">Prêt à copier : %1$s</string>
+    <string name="clipboard_move">Prêt à déplacer : %1$s</string>
+    <string name="delete_confirm">Supprimer %1$s ? Le fournisseur de stockage effectue l’opération et Swir Files ne peut pas l’annuler.</string>
+    <string name="invalid_name">Utilisez un nom valide sans barre oblique ni caractère de contrôle.</string>
+    <string name="access_failed">Impossible de conserver l’accès au dossier.</string>
+    <string name="read_failed">Impossible de lire ce dossier.</string>
+    <string name="operation_complete">Opération terminée.</string>
+    <string name="operation_failed">Le fournisseur de stockage a refusé l’opération.</string>
+    <string name="open_failed">Aucune application ne peut ouvrir ce fichier.</string>
+    <string name="share_failed">Aucune application ne peut partager ce fichier.</string>
+</resources>

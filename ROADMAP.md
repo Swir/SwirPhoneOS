@@ -56,9 +56,9 @@ Android 17 / API 37 is pinned to `android-17.0.0_r1`. A read-only build-host pre
 
 ### Android application source
 
-SwirCalculator and SwirSettings are now **`ANDROID_SOURCE`** and included in the SwirPhoneOS Cuttlefish product definition. Calculator has a host-testable BigDecimal basic-math engine. Settings is the first beta-critical source-ready app: it has localized search, real build/device status and permission-free routing to an exact reviewed allowlist of authoritative Android settings pages. Both have original icons/UI, eight locale resource sets including Arabic/RTL metadata, source-level safety validation and bounded AOSP staging.
+SwirCalculator, SwirSettings, SwirFiles and SwirDeviceCare are now **`ANDROID_SOURCE`** and included in the SwirPhoneOS Cuttlefish product definition. Calculator has a host-testable BigDecimal basic-math engine. Settings exposes localized search, real build/device status and permission-free reviewed settings routes. Files uses a user-granted Storage Access Framework tree for browse/search/create/rename/copy/move/delete/open/share instead of broad storage permissions. Device Care reads real framework device/security patch, battery/charging, storage, memory and thermal state without privileged permissions. All four have original icons/UI, eight locale resource sets including Arabic/RTL metadata, source-level safety validation and bounded AOSP staging.
 
-**Neither app is `ANDROID_RUNTIME`: no pinned-AOSP APK build or emulator execution has happened yet.** Calculator scientific-math scope is also unfinished. Source-only progress therefore does not complete the emulator/core delivery checkboxes or change the weighted project percentage.
+**None is `ANDROID_RUNTIME`: no pinned-AOSP APK build or emulator execution has happened yet.** Calculator scientific-math scope is also unfinished. Source-only progress therefore does not complete the emulator/core delivery checkboxes or change the weighted project percentage.
 
 ### SwirRoot
 
@@ -75,7 +75,7 @@ SwirRoot is still a fail-closed policy only. No exact-build root service, mutati
 - [ ] Swir Privacy and Swir Device Care expose real emulator/platform state rather than placeholder cards.
 - [ ] Swir Clock and Swir Calculator provide functional daily-use baseline apps.
 
-> Source progress: SwirCalculator and SwirSettings now contain meaningful Android source and host-tested pure-Java logic/contracts, but their checkboxes stay open until they are built and exercised inside the SwirPhoneOS emulator image. Source-only work receives no weighted gate credit.
+> Source progress: SwirCalculator, SwirSettings, SwirFiles and SwirDeviceCare now contain meaningful Android source and host-tested pure-Java logic/contracts, but their checkboxes stay open until they are built and exercised inside the SwirPhoneOS emulator image. Source-only work receives no weighted gate credit.
 
 ### Reference-hardware phase
 
@@ -99,8 +99,8 @@ These sub-deliverables do not independently change the ten-gate weighted percent
 ## Next engineering work
 
 1. On a capable Linux x86-64 AOSP builder, run preflight, initialize/sync exact `android-17.0.0_r1`, preserve `repo manifest -r` + SHA-256/tool versions, stage the manifest-whitelisted `vendor/swir/` product/app bundle, and compile `swirphoneos_cf_x86_64-aosp_current-userdebug`.
-2. Boot the resulting image in Cuttlefish and preserve `sys.boot_completed=1`, SystemUI, SwirSettings and SwirCalculator runtime evidence. Only then can source status move toward `ANDROID_RUNTIME` and platform/emulator gates be reconsidered.
-3. In parallel, add real source for beta-critical Swir Files, Update, Privacy and Device Care without marking them runtime-complete until the same build/boot evidence exists.
+2. Boot the resulting image in Cuttlefish and preserve `sys.boot_completed=1`, SystemUI plus Calculator/Settings/Files/DeviceCare runtime evidence. Only then can source status move toward `ANDROID_RUNTIME` and platform/emulator gates be reconsidered.
+3. In parallel, move Swir Update and Swir Privacy into meaningful Android source while keeping runtime status blocked until build/boot evidence exists.
 4. Continue hardening SwirPhoneStudio; the next desktop gate evidence is an actual Windows USB read-only ADB + Fastboot/FastbootD smoke on an owner-controlled device.
 5. After emulator/GSI evidence, expand device packs into reviewed installation/recovery plans. Never enable generic writes from Treble/codename/unlocked state alone.
 

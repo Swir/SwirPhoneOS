@@ -11,7 +11,7 @@ An app is not considered implemented merely because a package, screen or static 
 - `ANDROID_RUNTIME` — the app has been built into the pinned SwirPhoneOS product and exercised in the target Android runtime.
 - `HARDWARE_VERIFIED` — hardware-dependent capability has also passed exact-device evidence.
 
-The current registry contains 20 apps: **18 `HOST_CONTRACT`, 2 `ANDROID_SOURCE`, 0 `ANDROID_RUNTIME`, 0 `HARDWARE_VERIFIED`.**
+The current registry contains 20 apps: **16 `HOST_CONTRACT`, 4 `ANDROID_SOURCE`, 0 `ANDROID_RUNTIME`, 0 `HARDWARE_VERIFIED`.**
 
 ## Source-ready apps
 
@@ -23,9 +23,21 @@ Android string resources currently cover English, Polish, Norwegian Bokmal, Germ
 
 ### SwirSettings
 
-SwirSettings is the first beta-critical app at `ANDROID_SOURCE`. It is a permission-free settings hub with an original SwirPhoneOS icon and dark/cyan UI, localized search, real `Build.MODEL` / Android version / API status and reviewed hand-off routes to authoritative Android settings pages for Wi-Fi, Bluetooth, display, sound, security, privacy, accessibility, language/region, storage and apps.
+SwirSettings is a beta-critical app at `ANDROID_SOURCE`. It is a permission-free settings hub with an original SwirPhoneOS icon and dark/cyan UI, localized search, real `Build.MODEL` / Android version / API status and reviewed hand-off routes to authoritative Android settings pages for Wi-Fi, Bluetooth, display, sound, security, privacy, accessibility, language/region, storage and apps.
 
 The app does not silently mutate platform settings and requests no permissions. Its route catalog is pure Java and host-tested; source validation requires the exact reviewed `android.settings.*` action allowlist and rejects unreviewed settings routes. It ships the same EN/PL/NB/DE/ES/FR/PT/AR resource set and follows locale layout direction. It remains source-only until a pinned AOSP build and Cuttlefish runtime test prove the integration.
+
+### SwirFiles
+
+SwirFiles is a beta-critical permission-free file manager source. It uses `ACTION_OPEN_DOCUMENT_TREE` and a persisted owner-selected Storage Access Framework grant instead of broad storage permissions. Inside that granted tree it browses/searches documents, creates folders and uses provider-advertised rename/copy/move/delete operations. File deletion is confirmation-gated; open/share operations pass only URI grants needed by the receiving app. A pure-Java `FilePolicy` validates names and search behavior in host CI.
+
+The app has an original folder icon/UI, follows locale layout direction and includes EN/PL/NB/DE/ES/FR/PT/AR resources. Source validation rejects broad storage-permission primitives, missing user-granted tree flow, localization drift and incomplete AOSP staging. Runtime behavior remains unverified until a real SwirPhoneOS Cuttlefish build is available.
+
+### SwirDeviceCare
+
+SwirDeviceCare is a beta-critical diagnostics source that intentionally avoids privileged permissions. It renders real Android framework state for manufacturer/model/security patch, battery level and charging state, data-partition storage, memory availability and current thermal condition. A pure-Java `HealthModel` maps usage and thermal state and is dependency-free host tested.
+
+The dashboard has an original SwirPhoneOS shield icon/UI and the same eight locale resource sets. Hardware-dependent interpretation remains provisional: source status proves only the code contract, not the accuracy of a vendor's sensors or charging stack. Physical-device verification is still required before any hardware support claim.
 
 ## Design principles
 
@@ -55,7 +67,7 @@ Phone/SMS/Camera/Recorder and other hardware-backed functions are declared only 
 
 ### Emulator-ready core
 
-Prioritize Swir Settings, Files, Update, Privacy, Device Care, Clock and Calculator. Calculator and Settings now have meaningful Android source, but runtime completion still requires a real SwirPhoneOS Cuttlefish build/boot. Continue moving Files, Update, Privacy and Device Care from host contracts into real source without overstating runtime status.
+Prioritize Swir Settings, Files, Update, Privacy, Device Care, Clock and Calculator. Calculator, Settings, Files and Device Care now have meaningful Android source, but runtime completion still requires a real SwirPhoneOS Cuttlefish build/boot. Continue moving Update and Privacy from host contracts into real source without overstating runtime status.
 
 ### Reference hardware
 

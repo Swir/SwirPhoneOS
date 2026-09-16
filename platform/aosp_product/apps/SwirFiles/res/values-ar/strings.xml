@@ -1,0 +1,36 @@
+<resources>
+    <string name="app_name">Swir Files</string>
+    <string name="subtitle">تحكم خاص بالملفات داخل المجلدات التي تمنح الوصول إليها صراحةً فقط.</string>
+    <string name="no_folder">لم يتم اختيار مجلد</string>
+    <string name="choose_folder">اختيار مجلد</string>
+    <string name="up">أعلى</string>
+    <string name="new_folder">مجلد جديد</string>
+    <string name="clipboard_empty">الحافظة فارغة</string>
+    <string name="paste_here">لصق هنا</string>
+    <string name="search_hint">البحث في هذا المجلد</string>
+    <string name="choose_folder_prompt">اختر مجلداً للبدء</string>
+    <string name="no_results">لا توجد عناصر مطابقة</string>
+    <string name="file_with_size">%1$s  ·  %2$s</string>
+    <string name="folder_item_description">المجلد %1$s</string>
+    <string name="file_item_description">الملف %1$s</string>
+    <string name="location_selected">تم اختيار المجلد المصرح به</string>
+    <string name="location_format">المجلد: %1$s</string>
+    <string name="open">فتح</string>
+    <string name="share">مشاركة</string>
+    <string name="rename">إعادة تسمية</string>
+    <string name="copy">نسخ</string>
+    <string name="move">نقل</string>
+    <string name="delete">حذف</string>
+    <string name="cancel">إلغاء</string>
+    <string name="confirm">تأكيد</string>
+    <string name="clipboard_copy">جاهز للنسخ: %1$s</string>
+    <string name="clipboard_move">جاهز للنقل: %1$s</string>
+    <string name="delete_confirm">حذف %1$s؟ ينفذ موفر التخزين العملية ولا يستطيع Swir Files التراجع عنها.</string>
+    <string name="invalid_name">استخدم اسماً صالحاً من دون شرطات مائلة أو محارف تحكم.</string>
+    <string name="access_failed">تعذر الاحتفاظ بالوصول إلى المجلد.</string>
+    <string name="read_failed">تعذر قراءة هذا المجلد.</string>
+    <string name="operation_complete">اكتملت العملية.</string>
+    <string name="operation_failed">رفض موفر التخزين العملية.</string>
+    <string name="open_failed">لا يوجد تطبيق يمكنه فتح هذا الملف.</string>
+    <string name="share_failed">لا يوجد تطبيق يمكنه مشاركة هذا الملف.</string>
+</resources>

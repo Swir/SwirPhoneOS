@@ -2,11 +2,17 @@
 
 ## Unreleased
 
+### SwirFiles and SwirDeviceCare Android sources
+
+Added two more beta-critical first-party Android source applications. `SwirFiles` uses Android's user-granted Storage Access Framework rather than broad storage permissions: it can persist an explicitly selected tree grant, browse and search that tree, create folders, rename/copy/move/delete where the storage provider advertises support, and open/share granted documents. Deletion requires explicit confirmation. A pure-Java `FilePolicy` validates names and search behavior in host CI.
+
+Added `SwirDeviceCare` as a permission-free diagnostics dashboard backed by real Android framework state for device/security-patch identity, battery and charging, storage, memory and thermal condition. A pure-Java `HealthModel` is host-tested. Both apps have original SwirPhoneOS icons/UI, EN/PL/NB/DE/ES/FR/PT/AR resources with RTL-aware layout, explicit AOSP staging and `PRODUCT_PACKAGES` integration. Source validation now rejects broad storage primitives, missing SAF controls, placeholder Device Care state, localization drift and incomplete staging. The registry is now **4 `ANDROID_SOURCE`, 16 `HOST_CONTRACT`, 0 `ANDROID_RUNTIME`, 0 hardware-verified**. No AOSP build/runtime claim is made; weighted progress remains **2%** and Beta remains **0/9**.
+
 ### SwirSettings source and multi-app Android validation
 
 Added `SwirSettings` as the second meaningful first-party Android application source and the first beta-critical app to reach `ANDROID_SOURCE`. It is a permission-free AOSP `android_app` under `org.swir.phoneos.settings` with an original SwirPhoneOS icon and dark/cyan interface, searchable categories, real build/device summary and direct hand-off to reviewed authoritative Android settings pages for Wi-Fi, Bluetooth, display, sound, security, privacy, accessibility, language/region, storage and apps. It never mutates settings itself and requests no Android permissions.
 
-Added Android resources for English, Polish, Norwegian Bokmal, German, Spanish, French, Portuguese and Arabic with RTL-aware layout. The route catalog is pure Java and dependency-free host tested. The source validator is now multi-app aware: every `ANDROID_SOURCE` entry requires a reviewed source contract, full product inclusion/staging, package identity, permission-free source slice, localization parity and explicit implementation evidence. It also rejects duplicate staging destinations and unreviewed Settings actions. The system-app registry is now **2 `ANDROID_SOURCE`, 18 `HOST_CONTRACT`, 0 `ANDROID_RUNTIME`, 0 hardware-verified**. No Android build/runtime claim is made; project progress remains **2%** and Beta remains **0/9**.
+Added Android resources for English, Polish, Norwegian Bokmal, German, Spanish, French, Portuguese and Arabic with RTL-aware layout. The route catalog is pure Java and dependency-free host tested. The source validator is now multi-app aware: every `ANDROID_SOURCE` entry requires a reviewed source contract, full product inclusion/staging, package identity, permission-free source slice, localization parity and explicit implementation evidence. It also rejects duplicate staging destinations and unreviewed Settings actions. The system-app registry was **2 `ANDROID_SOURCE`, 18 `HOST_CONTRACT`, 0 `ANDROID_RUNTIME`, 0 hardware-verified`** at this step. No Android build/runtime claim was made.
 
 ### First functional Android application source and bounded source staging
 

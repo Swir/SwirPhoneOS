@@ -1,0 +1,36 @@
+<resources>
+    <string name="app_name">Swir Files</string>
+    <string name="subtitle">Private Dateiverwaltung nur in Ordnern, die du ausdrücklich freigibst.</string>
+    <string name="no_folder">Kein Ordner ausgewählt</string>
+    <string name="choose_folder">Ordner wählen</string>
+    <string name="up">Nach oben</string>
+    <string name="new_folder">Neuer Ordner</string>
+    <string name="clipboard_empty">Zwischenablage ist leer</string>
+    <string name="paste_here">Hier einfügen</string>
+    <string name="search_hint">Diesen Ordner durchsuchen</string>
+    <string name="choose_folder_prompt">Wähle einen Ordner, um zu beginnen</string>
+    <string name="no_results">Keine passenden Elemente</string>
+    <string name="file_with_size">%1$s  ·  %2$s</string>
+    <string name="folder_item_description">Ordner %1$s</string>
+    <string name="file_item_description">Datei %1$s</string>
+    <string name="location_selected">Freigegebener Ordner ausgewählt</string>
+    <string name="location_format">Ordner: %1$s</string>
+    <string name="open">Öffnen</string>
+    <string name="share">Teilen</string>
+    <string name="rename">Umbenennen</string>
+    <string name="copy">Kopieren</string>
+    <string name="move">Verschieben</string>
+    <string name="delete">Löschen</string>
+    <string name="cancel">Abbrechen</string>
+    <string name="confirm">Bestätigen</string>
+    <string name="clipboard_copy">Zum Kopieren bereit: %1$s</string>
+    <string name="clipboard_move">Zum Verschieben bereit: %1$s</string>
+    <string name="delete_confirm">%1$s löschen? Der Speicheranbieter führt den Vorgang aus; Swir Files kann ihn nicht rückgängig machen.</string>
+    <string name="invalid_name">Verwende einen gültigen Namen ohne Schrägstriche oder Steuerzeichen.</string>
+    <string name="access_failed">Der Ordnerzugriff konnte nicht gespeichert werden.</string>
+    <string name="read_failed">Dieser Ordner konnte nicht gelesen werden.</string>
+    <string name="operation_complete">Vorgang abgeschlossen.</string>
+    <string name="operation_failed">Der Speicheranbieter hat den Vorgang abgelehnt.</string>
+    <string name="open_failed">Keine App kann diese Datei öffnen.</string>
+    <string name="share_failed">Keine App kann diese Datei teilen.</string>
+</resources>

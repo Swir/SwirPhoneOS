@@ -38,51 +38,45 @@ class _AppSpec:
 
 _LOCALES = ("en", "pl", "nb", "de", "es", "fr", "pt", "ar")
 _RESOURCE_DIR = {
-    "en": "values",
-    "pl": "values-pl",
-    "nb": "values-nb",
-    "de": "values-de",
-    "es": "values-es",
-    "fr": "values-fr",
-    "pt": "values-pt",
-    "ar": "values-ar",
+    "en": "values", "pl": "values-pl", "nb": "values-nb", "de": "values-de",
+    "es": "values-es", "fr": "values-fr", "pt": "values-pt", "ar": "values-ar",
 }
 _MAX_TEXT = 1_000_000
 _SPECS = {
     "calculator": _AppSpec(
-        "calculator",
-        "SwirCalculator",
-        "SwirCalculator",
-        "org.swir.phoneos.calculator",
+        "calculator", "SwirCalculator", "SwirCalculator", "org.swir.phoneos.calculator",
         "src/org/swir/phoneos/calculator/CalculatorEngine.java",
         "src/org/swir/phoneos/calculator/MainActivity.java",
-        "hosttest/CalculatorEngineHostTest.java",
-        "res/drawable/ic_calculator.xml",
-        ("basic_math",),
+        "hosttest/CalculatorEngineHostTest.java", "res/drawable/ic_calculator.xml", ("basic_math",),
     ),
     "settings": _AppSpec(
-        "settings",
-        "SwirSettings",
-        "SwirSettings",
-        "org.swir.phoneos.settings",
+        "settings", "SwirSettings", "SwirSettings", "org.swir.phoneos.settings",
         "src/org/swir/phoneos/settings/SettingsCatalog.java",
         "src/org/swir/phoneos/settings/MainActivity.java",
-        "hosttest/SettingsCatalogHostTest.java",
-        "res/drawable/ic_settings.xml",
+        "hosttest/SettingsCatalogHostTest.java", "res/drawable/ic_settings.xml",
         ("system_settings", "search", "device_status"),
+    ),
+    "files": _AppSpec(
+        "files", "SwirFiles", "SwirFiles", "org.swir.phoneos.files",
+        "src/org/swir/phoneos/files/FilePolicy.java",
+        "src/org/swir/phoneos/files/MainActivity.java",
+        "hosttest/FilePolicyHostTest.java", "res/drawable/ic_files.xml",
+        ("browse", "search", "copy_move_rename", "share", "safe_delete"),
+    ),
+    "device_care": _AppSpec(
+        "device_care", "SwirDeviceCare", "SwirDeviceCare", "org.swir.phoneos.device_care",
+        "src/org/swir/phoneos/device_care/HealthModel.java",
+        "src/org/swir/phoneos/device_care/MainActivity.java",
+        "hosttest/HealthModelHostTest.java", "res/drawable/ic_device_care.xml",
+        ("storage_status", "battery_status", "thermal_status", "hardware_diagnostics"),
     ),
 }
 _SETTINGS_ACTIONS = frozenset({
-    "android.settings.WIFI_SETTINGS",
-    "android.settings.BLUETOOTH_SETTINGS",
-    "android.settings.DISPLAY_SETTINGS",
-    "android.settings.SOUND_SETTINGS",
-    "android.settings.SECURITY_SETTINGS",
-    "android.settings.PRIVACY_SETTINGS",
-    "android.settings.ACCESSIBILITY_SETTINGS",
-    "android.settings.LOCALE_SETTINGS",
-    "android.settings.INTERNAL_STORAGE_SETTINGS",
-    "android.settings.APPLICATION_SETTINGS",
+    "android.settings.WIFI_SETTINGS", "android.settings.BLUETOOTH_SETTINGS",
+    "android.settings.DISPLAY_SETTINGS", "android.settings.SOUND_SETTINGS",
+    "android.settings.SECURITY_SETTINGS", "android.settings.PRIVACY_SETTINGS",
+    "android.settings.ACCESSIBILITY_SETTINGS", "android.settings.LOCALE_SETTINGS",
+    "android.settings.INTERNAL_STORAGE_SETTINGS", "android.settings.APPLICATION_SETTINGS",
 })
 
 
@@ -149,13 +143,7 @@ def _load_stage_sources(product_root: Path) -> set[str]:
     return sources
 
 
-def _validate_common(
-    product_root: Path,
-    product_mk: str,
-    app,
-    spec: _AppSpec,
-    staged: set[str],
-) -> tuple[int, int, str, str]:
+def _validate_common(product_root: Path, product_mk: str, app, spec: _AppSpec, staged: set[str]) -> tuple[int, int, str, str]:
     app_root = product_root / "apps" / spec.folder
     bp = _read(app_root / "Android.bp")
     manifest_text = _read(app_root / "AndroidManifest.xml")
@@ -163,20 +151,14 @@ def _validate_common(
     activity = _read(app_root / spec.activity_file)
     _read(app_root / spec.icon_file)
     _read(app_root / spec.host_test)
-
     required_bp = (
-        "android_app {",
-        f'name: "{spec.module}"',
-        'srcs: ["src/**/*.java"]',
-        'resource_dirs: ["res"]',
-        'sdk_version: "current"',
-        'product_specific: true',
+        "android_app {", f'name: "{spec.module}"', 'srcs: ["src/**/*.java"]',
+        'resource_dirs: ["res"]', 'sdk_version: "current"', 'product_specific: true',
     )
     if any(token not in bp for token in required_bp):
         raise AndroidAppSourceError(f"{spec.module} Android.bp does not match the source contract.")
     if "PRODUCT_PACKAGES" not in product_mk or spec.module not in product_mk:
         raise AndroidAppSourceError(f"{spec.module} is not included in the Cuttlefish product.")
-
     try:
         manifest = ET.fromstring(manifest_text)
     except ET.ParseError as exc:
@@ -191,23 +173,18 @@ def _validate_common(
     application = manifest.find("application")
     if application is None or application.get(android_ns + "supportsRtl") != "true" or application.get(android_ns + "allowBackup") != "false":
         raise AndroidAppSourceError(f"{spec.module} manifest must be RTL-aware and backup-disabled.")
-
     package_line = f"package {spec.java_package};"
     if package_line not in logic or package_line not in activity:
         raise AndroidAppSourceError(f"{spec.module} Java package identity drifted.")
     if re.search(r"^\s*import\s+android\.", logic, flags=re.MULTILINE):
         raise AndroidAppSourceError(f"{spec.module} host-testable logic must remain pure Java.")
     forbidden = (
-        "Runtime.getRuntime",
-        "ProcessBuilder",
-        "android.permission.INTERNET",
-        '"su"',
-        "DexClassLoader",
-        "System.loadLibrary",
+        "Runtime.getRuntime", "ProcessBuilder", "android.permission.INTERNET", '"su"',
+        "DexClassLoader", "System.loadLibrary", "MANAGE_EXTERNAL_STORAGE",
+        "READ_EXTERNAL_STORAGE", "WRITE_EXTERNAL_STORAGE",
     )
     if any(token in logic or token in activity or token in manifest_text for token in forbidden):
-        raise AndroidAppSourceError(f"{spec.module} source contains a forbidden execution/network primitive.")
-
+        raise AndroidAppSourceError(f"{spec.module} source contains a forbidden execution/network/storage primitive.")
     english_keys = _string_keys(app_root / "res/values/strings.xml")
     localized = 0
     for locale in _LOCALES:
@@ -215,7 +192,6 @@ def _validate_common(
         if keys != english_keys:
             raise AndroidAppSourceError(f"{spec.module} localization keys drifted for {locale}.")
         localized += 1
-
     required_stage = set()
     for path in app_root.rglob("*"):
         if path.is_file() and "hosttest" not in path.parts:
@@ -243,10 +219,32 @@ def _validate_settings(logic: str, activity: str) -> None:
         raise AndroidAppSourceError("SwirSettings must route through authoritative Android settings intents.")
 
 
-def validate_android_app_sources(
-    product_root: Path = Path("platform/aosp_product"),
-    registry_path: Path = Path("system_apps/manifest.json"),
-) -> AndroidAppSourceSummary:
+def _validate_files(logic: str, activity: str) -> None:
+    required = (
+        "Intent.ACTION_OPEN_DOCUMENT_TREE", "takePersistableUriPermission",
+        "DocumentsContract.buildChildDocumentsUriUsingTree", "DocumentsContract.createDocument",
+        "DocumentsContract.renameDocument", "DocumentsContract.copyDocument",
+        "DocumentsContract.moveDocument", "DocumentsContract.deleteDocument",
+        "Intent.FLAG_GRANT_READ_URI_PERMISSION", "Intent.FLAG_GRANT_WRITE_URI_PERMISSION",
+    )
+    if any(token not in activity for token in required):
+        raise AndroidAppSourceError("SwirFiles must use the reviewed user-granted Storage Access Framework workflow.")
+    if "validName" not in logic or "Character.isISOControl" not in logic:
+        raise AndroidAppSourceError("SwirFiles must retain its host-tested file-name safety policy.")
+
+
+def _validate_device_care(logic: str, activity: str) -> None:
+    required = (
+        "Build.VERSION.SECURITY_PATCH", "BatteryManager", "StatFs",
+        "ActivityManager.MemoryInfo", "getCurrentThermalStatus", "Formatter.formatFileSize",
+    )
+    if any(token not in activity for token in required):
+        raise AndroidAppSourceError("SwirDeviceCare must expose real permission-free framework health state.")
+    if "percentUsed" not in logic or "thermalBand" not in logic or "batteryLevelValid" not in logic:
+        raise AndroidAppSourceError("SwirDeviceCare must retain its host-tested health calculations.")
+
+
+def validate_android_app_sources(product_root: Path = Path("platform/aosp_product"), registry_path: Path = Path("system_apps/manifest.json")) -> AndroidAppSourceSummary:
     """Validate all checked-in source-ready apps without claiming Android build/runtime evidence."""
     registry: SystemAppRegistry = load_registry(registry_path)
     overclaimed = [app.app_id for app in registry.apps if app.status in {"ANDROID_RUNTIME", "HARDWARE_VERIFIED"}]
@@ -258,7 +256,6 @@ def validate_android_app_sources(
     unknown = sorted(app.app_id for app in source_apps if app.app_id not in _SPECS)
     if unknown:
         raise AndroidAppSourceError(f"ANDROID_SOURCE apps have no reviewed source contract: {unknown}")
-
     product_mk = _read(product_root / "swirphoneos_cf_x86_64.mk")
     staged = _load_stage_sources(product_root)
     localized = 0
@@ -266,24 +263,20 @@ def validate_android_app_sources(
     target: list[str] = []
     implemented: list[str] = []
     ids: list[str] = []
-
     for app in source_apps:
         spec = _SPECS[app.app_id]
         count, staged_count, logic, activity = _validate_common(product_root, product_mk, app, spec, staged)
-        if app.app_id == "calculator":
-            _validate_calculator(logic, activity)
-        elif app.app_id == "settings":
-            _validate_settings(logic, activity)
+        if app.app_id == "calculator": _validate_calculator(logic, activity)
+        elif app.app_id == "settings": _validate_settings(logic, activity)
+        elif app.app_id == "files": _validate_files(logic, activity)
+        elif app.app_id == "device_care": _validate_device_care(logic, activity)
         localized += count
         source_files += staged_count
         ids.append(app.app_id)
         target.extend(app.capabilities)
         implemented.extend(spec.implemented_capabilities)
-
     return AndroidAppSourceSummary(
-        source_ready_apps=tuple(ids),
-        localized_catalogs=localized,
-        source_files=source_files,
+        source_ready_apps=tuple(ids), localized_catalogs=localized, source_files=source_files,
         target_capabilities=tuple(dict.fromkeys(target)),
         implemented_capabilities=tuple(dict.fromkeys(implemented)),
     )
@@ -292,16 +285,10 @@ def validate_android_app_sources(
 def public_android_app_source_summary(summary: AndroidAppSourceSummary) -> dict[str, object]:
     missing = sorted(set(summary.target_capabilities) - set(summary.implemented_capabilities))
     return {
-        "schema_version": 1,
-        "status": "SOURCE_READY_NOT_BUILT",
-        "source_ready_apps": list(summary.source_ready_apps),
-        "source_ready_count": len(summary.source_ready_apps),
-        "localized_catalogs": summary.localized_catalogs,
-        "staged_source_files": summary.source_files,
+        "schema_version": 1, "status": "SOURCE_READY_NOT_BUILT",
+        "source_ready_apps": list(summary.source_ready_apps), "source_ready_count": len(summary.source_ready_apps),
+        "localized_catalogs": summary.localized_catalogs, "staged_source_files": summary.source_files,
         "implemented_capabilities": list(summary.implemented_capabilities),
-        "target_capabilities": list(summary.target_capabilities),
-        "remaining_target_capabilities": missing,
-        "android_build_verified": False,
-        "runtime_verified": False,
-        "device_write_allowed": False,
+        "target_capabilities": list(summary.target_capabilities), "remaining_target_capabilities": missing,
+        "android_build_verified": False, "runtime_verified": False, "device_write_allowed": False,
     }

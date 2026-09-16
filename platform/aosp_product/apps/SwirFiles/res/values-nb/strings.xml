@@ -1,0 +1,36 @@
+<resources>
+    <string name="app_name">Swir Files</string>
+    <string name="subtitle">Privat filkontroll gjennom mapper du uttrykkelig gir tilgang til.</string>
+    <string name="no_folder">Ingen mappe valgt</string>
+    <string name="choose_folder">Velg mappe</string>
+    <string name="up">Opp</string>
+    <string name="new_folder">Ny mappe</string>
+    <string name="clipboard_empty">Utklippstavlen er tom</string>
+    <string name="paste_here">Lim inn her</string>
+    <string name="search_hint">Søk i denne mappen</string>
+    <string name="choose_folder_prompt">Velg en mappe for å starte</string>
+    <string name="no_results">Ingen treff</string>
+    <string name="file_with_size">%1$s  ·  %2$s</string>
+    <string name="folder_item_description">Mappe %1$s</string>
+    <string name="file_item_description">Fil %1$s</string>
+    <string name="location_selected">Delt mappe valgt</string>
+    <string name="location_format">Mappe: %1$s</string>
+    <string name="open">Åpne</string>
+    <string name="share">Del</string>
+    <string name="rename">Gi nytt navn</string>
+    <string name="copy">Kopier</string>
+    <string name="move">Flytt</string>
+    <string name="delete">Slett</string>
+    <string name="cancel">Avbryt</string>
+    <string name="confirm">Bekreft</string>
+    <string name="clipboard_copy">Klar til kopiering: %1$s</string>
+    <string name="clipboard_move">Klar til flytting: %1$s</string>
+    <string name="delete_confirm">Slette %1$s? Lagringsleverandøren utfører handlingen, og Swir Files kan ikke angre den.</string>
+    <string name="invalid_name">Bruk et gyldig navn uten skråstreker eller kontrolltegn.</string>
+    <string name="access_failed">Kunne ikke beholde tilgang til mappen.</string>
+    <string name="read_failed">Kunne ikke lese denne mappen.</string>
+    <string name="operation_complete">Operasjonen er fullført.</string>
+    <string name="operation_failed">Lagringsleverandøren avviste operasjonen.</string>
+    <string name="open_failed">Ingen app kan åpne denne filen.</string>
+    <string name="share_failed">Ingen app kan dele denne filen.</string>
+</resources>

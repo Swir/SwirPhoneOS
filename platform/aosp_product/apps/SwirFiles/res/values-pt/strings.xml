@@ -1,0 +1,36 @@
+<resources>
+    <string name="app_name">Swir Files</string>
+    <string name="subtitle">Controle privado de ficheiros apenas nas pastas que autorizar explicitamente.</string>
+    <string name="no_folder">Nenhuma pasta selecionada</string>
+    <string name="choose_folder">Escolher pasta</string>
+    <string name="up">Subir</string>
+    <string name="new_folder">Nova pasta</string>
+    <string name="clipboard_empty">A área de transferência está vazia</string>
+    <string name="paste_here">Colar aqui</string>
+    <string name="search_hint">Pesquisar nesta pasta</string>
+    <string name="choose_folder_prompt">Escolha uma pasta para começar</string>
+    <string name="no_results">Nenhum item correspondente</string>
+    <string name="file_with_size">%1$s  ·  %2$s</string>
+    <string name="folder_item_description">Pasta %1$s</string>
+    <string name="file_item_description">Ficheiro %1$s</string>
+    <string name="location_selected">Pasta autorizada selecionada</string>
+    <string name="location_format">Pasta: %1$s</string>
+    <string name="open">Abrir</string>
+    <string name="share">Partilhar</string>
+    <string name="rename">Mudar nome</string>
+    <string name="copy">Copiar</string>
+    <string name="move">Mover</string>
+    <string name="delete">Eliminar</string>
+    <string name="cancel">Cancelar</string>
+    <string name="confirm">Confirmar</string>
+    <string name="clipboard_copy">Pronto para copiar: %1$s</string>
+    <string name="clipboard_move">Pronto para mover: %1$s</string>
+    <string name="delete_confirm">Eliminar %1$s? O fornecedor de armazenamento executa a operação e o Swir Files não a pode desfazer.</string>
+    <string name="invalid_name">Use um nome válido sem barras nem caracteres de controlo.</string>
+    <string name="access_failed">Não foi possível manter o acesso à pasta.</string>
+    <string name="read_failed">Não foi possível ler esta pasta.</string>
+    <string name="operation_complete">Operação concluída.</string>
+    <string name="operation_failed">O fornecedor de armazenamento recusou a operação.</string>
+    <string name="open_failed">Nenhuma aplicação pode abrir este ficheiro.</string>
+    <string name="share_failed">Nenhuma aplicação pode partilhar este ficheiro.</string>
+</resources>

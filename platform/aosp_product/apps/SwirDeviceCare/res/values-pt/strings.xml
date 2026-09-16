@@ -1,0 +1,24 @@
+<resources>
+    <string name="app_name">Swir Device Care</string>
+    <string name="subtitle">Estado do dispositivo em tempo real sem acesso privilegiado.</string>
+    <string name="refresh">Atualizar</string>
+    <string name="device">Dispositivo</string>
+    <string name="device_value">%1$s %2$s
+Android %3$s · Correção de segurança %4$s</string>
+    <string name="battery">Bateria</string>
+    <string name="battery_value">%1$s · %2$s</string>
+    <string name="charging">A carregar</string>
+    <string name="full">Cheia</string>
+    <string name="not_charging">Não está a carregar</string>
+    <string name="storage">Armazenamento</string>
+    <string name="storage_value">%1$s usados de %2$s · %3$s</string>
+    <string name="memory">Memória</string>
+    <string name="memory_value">%1$s disponíveis de %2$s · %3$s usados</string>
+    <string name="thermal">Estado térmico</string>
+    <string name="thermal_nominal">Normal</string>
+    <string name="thermal_warm">Morno</string>
+    <string name="thermal_hot">Quente</string>
+    <string name="thermal_critical">Crítico</string>
+    <string name="unknown">Desconhecido</string>
+    <string name="percent_value">%1$d%%</string>
+</resources>

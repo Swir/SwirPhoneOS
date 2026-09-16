@@ -12,4 +12,6 @@ PRODUCT_MODEL := SwirPhoneOS Cuttlefish Developer
 # Source-ready first-party apps. Runtime status remains unverified until an AOSP build/boot succeeds.
 PRODUCT_PACKAGES += \
     SwirCalculator \
-    SwirSettings
+    SwirSettings \
+    SwirFiles \
+    SwirDeviceCare

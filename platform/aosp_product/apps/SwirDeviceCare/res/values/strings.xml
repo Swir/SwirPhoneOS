@@ -1,0 +1,24 @@
+<resources>
+    <string name="app_name">Swir Device Care</string>
+    <string name="subtitle">Live device health without privileged access.</string>
+    <string name="refresh">Refresh</string>
+    <string name="device">Device</string>
+    <string name="device_value">%1$s %2$s
+Android %3$s · Security patch %4$s</string>
+    <string name="battery">Battery</string>
+    <string name="battery_value">%1$s · %2$s</string>
+    <string name="charging">Charging</string>
+    <string name="full">Full</string>
+    <string name="not_charging">Not charging</string>
+    <string name="storage">Storage</string>
+    <string name="storage_value">%1$s used of %2$s · %3$s</string>
+    <string name="memory">Memory</string>
+    <string name="memory_value">%1$s available of %2$s · %3$s used</string>
+    <string name="thermal">Thermal</string>
+    <string name="thermal_nominal">Nominal</string>
+    <string name="thermal_warm">Warm</string>
+    <string name="thermal_hot">Hot</string>
+    <string name="thermal_critical">Critical</string>
+    <string name="unknown">Unknown</string>
+    <string name="percent_value">%1$d%%</string>
+</resources>

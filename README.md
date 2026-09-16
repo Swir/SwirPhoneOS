@@ -40,23 +40,27 @@ The repository contains a SwirPhoneOS x86_64 Cuttlefish product definition and a
 
 ### Functional Android application sources
 
-Two first-party applications are now wired into `PRODUCT_PACKAGES` as meaningful **`ANDROID_SOURCE`**. They are deliberately not `ANDROID_RUNTIME` until the pinned AOSP product builds and the apps are exercised in Cuttlefish.
+Four first-party applications are now wired into `PRODUCT_PACKAGES` as meaningful **`ANDROID_SOURCE`**. They are deliberately not `ANDROID_RUNTIME` until the pinned AOSP product builds and the apps are exercised in Cuttlefish.
 
 **SwirCalculator** (`org.swir.phoneos.calculator`) provides a pure-Java BigDecimal engine for basic arithmetic, decimals, sign, percent, backspace and divide-by-zero handling, an original vector icon and dark/cyan UI, locale-aware decimal display, RTL-aware layout and accessibility descriptions. It requests no Android permissions and has a dependency-free host Java engine test. Scientific mode remains unfinished.
 
-**SwirSettings** (`org.swir.phoneos.settings`) is the first beta-critical source-ready app. It provides an original dark/cyan settings hub, localized search, real device/build status and permission-free hand-off to reviewed authoritative Android settings pages for Wi-Fi, Bluetooth, display, sound, security, privacy, accessibility, language/region, storage and apps. Its pure-Java route catalog is host-tested, and source validation rejects unreviewed settings actions rather than silently broadening control.
+**SwirSettings** (`org.swir.phoneos.settings`) provides an original dark/cyan settings hub, localized search, real device/build status and permission-free hand-off to a reviewed allowlist of authoritative Android settings pages. Its pure-Java route catalog is host-tested and unreviewed settings actions fail validation.
 
-Both apps ship Android resources for English, Polish, Norwegian Bokmal, German, Spanish, French, Portuguese and Arabic. Their source, manifests, package identities, localization parity and AOSP staging are checked in host CI. No APK/Cuttlefish/runtime claim is made yet, so these source milestones do not increase global progress.
+**SwirFiles** (`org.swir.phoneos.files`) is a beta-critical permission-free file manager source built around Android's user-granted Storage Access Framework. It keeps persistent access only to a directory the owner chooses, browses/searches that tree, creates folders and uses provider-supported rename/copy/move/delete operations with an explicit delete confirmation. It also opens and shares granted documents without requesting broad storage permissions. File-name/search policy is host-tested.
+
+**SwirDeviceCare** (`org.swir.phoneos.device_care`) is a beta-critical diagnostics source that reads real framework state without privileged permissions: device/security-patch identity, battery/charging state, data-partition storage usage, memory availability and Android thermal status. Its health calculations are kept in host-tested pure Java.
+
+All four apps ship Android resources for English, Polish, Norwegian Bokmal, German, Spanish, French, Portuguese and Arabic and follow locale layout direction. Their source, manifests, package identities, localization parity and AOSP staging are checked in host CI. No APK/Cuttlefish/runtime claim is made yet, so these source milestones do not increase global progress.
 
 ### Complete system-app plan and SwirRoot
 
-The machine-readable first-party suite contains 20 applications: Phone, Contacts, Messages, Camera, Gallery, Files, Settings, Browser, Clock, Calculator, Notes, Recorder, Calendar, Weather, Update, Backup, Privacy, Device Care, Apps/Software Center and SwirRoot. Eighteen remain `HOST_CONTRACT`; Calculator and Settings are `ANDROID_SOURCE`; zero are `ANDROID_RUNTIME` or `HARDWARE_VERIFIED`.
+The machine-readable first-party suite contains 20 applications: Phone, Contacts, Messages, Camera, Gallery, Files, Settings, Browser, Clock, Calculator, Notes, Recorder, Calendar, Weather, Update, Backup, Privacy, Device Care, Apps/Software Center and SwirRoot. Sixteen remain `HOST_CONTRACT`; Calculator, Settings, Files and Device Care are `ANDROID_SOURCE`; zero are `ANDROID_RUNTIME` or `HARDWARE_VERIFIED`.
 
 SwirRoot remains a fail-closed engineering contract. Unverified builds expose `UNAVAILABLE`; authorization is deny-by-default; rollback material, journaling, exact-build/profile checks and explicit owner confirmation are mandatory; exploit/bypass methods are forbidden; write operations are disabled; supported root builds remain zero.
 
 ### Global localization
 
-Host localization is data-driven with system-locale detection and English fallback. The current desktop/Calculator/Settings language set is English, Polish, Norwegian Bokmal, German, Spanish, French, Portuguese and Arabic. The mobile contract covers first setup, launcher, SystemUI, Settings, recovery, updater, SwirRoot and all bundled apps, including RTL, fonts/scripts, plural rules, accessibility and locale-specific formatting.
+Host localization is data-driven with system-locale detection and English fallback. The current desktop/Calculator/Settings/Files/DeviceCare language set is English, Polish, Norwegian Bokmal, German, Spanish, French, Portuguese and Arabic. The mobile contract covers first setup, launcher, SystemUI, Settings, recovery, updater, SwirRoot and all bundled apps, including RTL, fonts/scripts, plural rules, accessibility and locale-specific formatting.
 
 ## Developer commands
 

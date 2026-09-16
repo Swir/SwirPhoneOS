@@ -1,0 +1,24 @@
+<resources>
+    <string name="app_name">Swir Device Care</string>
+    <string name="subtitle">حالة الجهاز مباشرةً من دون وصول مميز.</string>
+    <string name="refresh">تحديث</string>
+    <string name="device">الجهاز</string>
+    <string name="device_value">%1$s %2$s
+Android %3$s · تصحيح الأمان %4$s</string>
+    <string name="battery">البطارية</string>
+    <string name="battery_value">%1$s · %2$s</string>
+    <string name="charging">قيد الشحن</string>
+    <string name="full">ممتلئة</string>
+    <string name="not_charging">غير قيد الشحن</string>
+    <string name="storage">التخزين</string>
+    <string name="storage_value">المستخدم %1$s من %2$s · %3$s</string>
+    <string name="memory">الذاكرة</string>
+    <string name="memory_value">المتاح %1$s من %2$s · المستخدم %3$s</string>
+    <string name="thermal">الحالة الحرارية</string>
+    <string name="thermal_nominal">طبيعية</string>
+    <string name="thermal_warm">دافئة</string>
+    <string name="thermal_hot">مرتفعة</string>
+    <string name="thermal_critical">حرجة</string>
+    <string name="unknown">غير معروف</string>
+    <string name="percent_value">%1$d%%</string>
+</resources>
