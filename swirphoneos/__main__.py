@@ -7,6 +7,7 @@ from pathlib import Path
 import sys
 
 from . import __version__
+from .build_preflight import BuildPreflightError, capture_host, evaluate_preflight
 from .diagnostics import DiagnosticError, ReadOnlyAdb
 from .fastboot import FastbootDiagnosticError, ReadOnlyFastboot
 from .i18n import LocalizationError, catalog_summary
@@ -43,8 +44,19 @@ def main(argv: list[str] | None = None) -> int:
     profiles = sub.add_parser("profiles", help="Validate and list metadata-only device profiles")
     profiles.add_argument("--root", type=Path, default=Path("device_packs"))
 
-    baseline = sub.add_parser("baseline", help="Validate and show the offline AOSP baseline candidate")
+    baseline = sub.add_parser("baseline", help="Validate and show the offline pinned AOSP baseline")
     baseline.add_argument("--file", type=Path, default=Path("platform/aosp_baseline.json"))
+
+    build_preflight = sub.add_parser(
+        "build-preflight",
+        help="Inspect the local build host without installing, downloading or changing anything",
+    )
+    build_preflight.add_argument(
+        "--workspace",
+        type=Path,
+        default=Path.cwd(),
+        help="Existing workspace whose free disk capacity should be inspected",
+    )
 
     sub.add_parser("i18n", help="Validate shared localization catalogs and show translation coverage")
 
@@ -73,6 +85,8 @@ def main(argv: list[str] | None = None) -> int:
             }
         elif args.command == "baseline":
             result = public_baseline_summary(load_baseline(args.file))
+        elif args.command == "build-preflight":
+            result = evaluate_preflight(capture_host(args.workspace.resolve()))
         elif args.command == "i18n":
             result = catalog_summary()
         elif args.command == "apps":
@@ -84,6 +98,7 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps(result, indent=2, ensure_ascii=True))
         return 2 if args.command == "gate" and not result["beta_release_allowed"] else 0
     except (
+        BuildPreflightError,
         DiagnosticError,
         FastbootDiagnosticError,
         LocalizationError,
@@ -96,7 +111,7 @@ def main(argv: list[str] | None = None) -> int:
     ):
         print(
             "Operation failed: check project metadata or the trusted Android SDK tool path, "
-            "USB mode and single-device connection. Raw errors are withheld for privacy.",
+            "USB mode, host workspace and single-device connection. Raw errors are withheld for privacy.",
             file=sys.stderr,
         )
         return 1
