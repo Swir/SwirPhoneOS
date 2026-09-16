@@ -38,6 +38,8 @@ jobs:
         run: python -m swirphoneos baseline
       - name: Validate SwirPhoneOS Cuttlefish product contract
         run: python -m swirphoneos product-contract
+      - name: Validate reproducible AOSP workspace plan
+        run: python -m swirphoneos aosp-plan --workspace ./_aosp-contract --jobs 8
       - name: Inspect AOSP host preflight contract
         run: python -m swirphoneos build-preflight --workspace .
       - name: Validate global localization catalogs

@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Reproducible AOSP workspace and resolved-manifest evidence
+
+Added a fail-closed AOSP workspace contract around the pinned Android 17 baseline. `python -m swirphoneos aosp-plan` now emits an argv-oriented exact-tag Repo init/sync, resolved-manifest capture, product staging and Cuttlefish build plan without executing it or claiming build success. `python -m swirphoneos aosp-manifest` validates a captured `repo manifest -r` snapshot, requires every project revision to be a full 40-character Git SHA and reports a SHA-256 digest for reproducibility evidence.
+
+Added explicit product staging with a dry-run default. `stage-product --execute` copies only the two checked-in product makefiles into `vendor/swir/products/` and refuses to mutate a directory that does not look like an initialized AOSP checkout (`.repo/` plus `build/envsetup.sh`). The operation never talks to a phone or enables Fastboot writes. Added host tests, CI validation and `docs/AOSP_BUILD_WORKSPACE.md`. No Android source sync, Kati/Soong build or Cuttlefish boot is claimed, so weighted progress remains **2%** and Beta remains **0/9**.
+
 ### Unified SwirPhoneStudio diagnostics and first Cuttlefish product slice
 
 Integrated the existing strict read-only ADB and Fastboot/FastbootD cores into a single SwirPhoneStudio workflow. The GUI can now select either transport, runs the same bounded asynchronous inspection contract, clears stale results on transport changes and exports a unified schema-v2 report. Device-reported values can be compared with the local metadata-only profile registry, but matches remain hints only: `identity_verified: false`, `swirphoneos_support: NOT_VALIDATED` and `flash_allowed: false` are enforced. Ambiguous matches expose no candidate. Added the equivalent `inspect-device` CLI path and negative tests for safety/provenance tampering.
