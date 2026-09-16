@@ -21,6 +21,7 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.io.FileNotFoundException;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.List;
@@ -301,7 +302,7 @@ public final class MainActivity extends Activity {
             clipboard = null;
             Toast.makeText(this, R.string.operation_complete, Toast.LENGTH_SHORT).show();
             renderCurrent();
-        } catch (RuntimeException exception) {
+        } catch (FileNotFoundException | RuntimeException exception) {
             Toast.makeText(this, R.string.operation_failed, Toast.LENGTH_LONG).show();
         }
     }
@@ -317,7 +318,7 @@ public final class MainActivity extends Activity {
                         getContentResolver(), currentDirUri, DocumentsContract.Document.MIME_TYPE_DIR, name);
                 if (created == null) throw new IllegalStateException("Provider returned no created folder");
                 renderCurrent();
-            } catch (RuntimeException exception) {
+            } catch (FileNotFoundException | RuntimeException exception) {
                 Toast.makeText(this, R.string.operation_failed, Toast.LENGTH_LONG).show();
             }
         });
@@ -329,7 +330,7 @@ public final class MainActivity extends Activity {
                 Uri renamed = DocumentsContract.renameDocument(getContentResolver(), entry.uri, name);
                 if (renamed == null) throw new IllegalStateException("Provider returned no renamed document");
                 renderCurrent();
-            } catch (RuntimeException exception) {
+            } catch (FileNotFoundException | RuntimeException exception) {
                 Toast.makeText(this, R.string.operation_failed, Toast.LENGTH_LONG).show();
             }
         });
@@ -365,7 +366,7 @@ public final class MainActivity extends Activity {
                             throw new IllegalStateException("Provider rejected delete");
                         }
                         renderCurrent();
-                    } catch (RuntimeException exception) {
+                    } catch (FileNotFoundException | RuntimeException exception) {
                         Toast.makeText(this, R.string.operation_failed, Toast.LENGTH_LONG).show();
                     }
                 })
