@@ -2,13 +2,21 @@
 
 ## Unreleased
 
+### SwirRoot Android source-stage control surface
+
+Added `SwirRoot` as the tenth meaningful first-party Android source application. It now has an original localized owner UI, current-build fingerprint diagnostics, explicit owner-confirmed enable/unroot review dialogs, a non-exported bound status service, a bounded app-private workflow-review audit, an original SwirPhoneOS icon and EN/PL/NB/DE/ES/FR/PT/AR resources with RTL support.
+
+Added a dependency-free pure-Java `RootPolicy` and host test for the exact-build/profile/owner/rollback/journal/update-state/expected-non-root gates. The Android service remains deliberately fail-closed: `WRITE_BACKEND_ENABLED=false`, `SUPPORTED_BUILD=false`, current state is `UNAVAILABLE`, and no process execution, `su`, boot-image mutation, partition write, unlock, flash or exploit/bypass path exists. `root_state` and `authorization_audit` are source-implemented; `guided_enable` and `guided_unroot` remain future capabilities requiring a legitimate exact-build backend plus physical rollback/unroot/recovery evidence.
+
+Strengthened Android source validation so forbidden process/network/storage primitives are checked across **all production Java files**, not only the primary activity and policy files. SwirRoot receives additional checks for hard-disabled mutation support and the mandatory safety gate model. Host CI now compiles and executes the pure-Java SwirRoot transition-policy test. The registry is **10 `ANDROID_SOURCE`, 10 `HOST_CONTRACT`, 0 `ANDROID_RUNTIME`, 0 hardware-verified**. No AOSP build/boot or physical root claim is made, so weighted progress remains **2%** and Beta remains **0/9**.
+
 ### Exact-build Cuttlefish launch and emulator-only app smoke
 
 Extended the manual self-hosted AOSP evidence workflow so runtime collection no longer depends on a separately pre-launched guest. After the exact pinned product builds, the workflow can source that product environment, launch it with `launch_cvd --daemon --report_anonymous_usage_stats=n`, poll the strict schema-v3 runtime collector until verified boot is complete, collect build/runtime fingerprint continuity, and always attempt `stop_cvd` cleanup under an isolated workflow HOME.
 
 Added `swirphoneos.cuttlefish_smoke`, an emulator-only launch-smoke runner for every source-ready application. It first requires complete exact-identity SwirPhoneOS Cuttlefish evidence, then launches only the resolved package-local launcher component through a narrow `am start -W -n` allowlist and confirms the expected package as the resumed foreground activity. Physical/network transports, arbitrary shell, install/uninstall, root, reboot, flash, erase and settings mutation remain rejected. The report explicitly records the transient foreground-state mutation and never auto-promotes registry status.
 
-Added unit coverage for successful/failed `am start -W` parsing, foreground confirmation, physical/persistent-mutation rejection and the complete nine-app source-ready exercise path. Documentation now treats `app-smoke-evidence.json` as an additional runtime review artifact. No real AOSP build/boot has completed yet, so weighted progress remains **2%** and Beta remains **0/9**.
+Added unit coverage for successful/failed `am start -W` parsing, foreground confirmation, physical/persistent-mutation rejection and the complete source-ready app exercise path. Documentation treats `app-smoke-evidence.json` as an additional runtime review artifact. No real AOSP build/boot has completed yet, so weighted progress remains **2%** and Beta remains **0/9**.
 
 ### AOSP build provenance and exact runtime identity binding
 
@@ -24,11 +32,11 @@ Added `SwirNotes` and `SwirCalendar` as meaningful permission-free Android sourc
 
 AOSP staging now supports strict `stage_manifest.d/*.json` fragments in addition to the primary manifest. Global duplicate source/destination detection, POSIX-relative path validation, the `vendor/swir/` destination boundary, file-count/size bounds and symlink rejection remain fail-closed. This makes independent app additions reviewable without weakening staging safety.
 
-Cuttlefish evidence was strengthened beyond package presence. For each source-ready package the read-only collector now asks Android's package manager to resolve a launcher activity and requires that resolution to stay inside the expected package. It still refuses activity launch, install, package mutation, root, reboot and flash commands and never promotes registry status automatically. The registry is now **9 `ANDROID_SOURCE`, 11 `HOST_CONTRACT`, 0 `ANDROID_RUNTIME`, 0 hardware-verified**. No real AOSP build or boot exists yet, so weighted progress remains **2%** and Beta remains **0/9**.
+Cuttlefish evidence was strengthened beyond package presence. For each source-ready package the read-only collector asks Android's package manager to resolve a launcher activity and requires that resolution to stay inside the expected package. It still refuses install, package mutation, root, reboot and flash commands and never promotes registry status automatically.
 
 ### SwirClock and Cuttlefish runtime evidence
 
-Added `SwirClock` as the seventh meaningful first-party Android source application. It provides locale-formatted local/UTC time, a foreground stopwatch, a bounded foreground timer and an explicit user-visible hand-off to Android's alarm creation surface. It requests no Android permissions and does not silently create alarms.
+Added `SwirClock` as a meaningful first-party Android source application. It provides locale-formatted local/UTC time, a foreground stopwatch, a bounded foreground timer and an explicit user-visible hand-off to Android's alarm creation surface. It requests no Android permissions and does not silently create alarms.
 
 Added a strict read-only local Cuttlefish runtime-evidence collector for boot/product/fingerprint/package evidence. No status promotion or device write is performed.
 
