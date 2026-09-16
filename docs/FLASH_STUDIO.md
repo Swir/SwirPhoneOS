@@ -6,21 +6,38 @@ The GUI is a read-only desktop companion, not an OS installer or a beta release.
 python -m swirphoneos.studio
 ```
 
-Use Python 3.11 or newer with Tk and a graphical desktop. No third-party Python package is required at runtime. Some Linux Python installations package Tk separately. The existing CLI continues to work without opening a window.
+Use Python 3.11 or newer with Tk and a graphical desktop. No third-party Python package is required at runtime. Some Linux Python installations package Tk separately. The CLI continues to work without opening a window.
 
 ## Workflow
 
-Select the absolute path to your own trusted Android SDK ADB executable. Connect exactly one local USB phone with debugging explicitly authorized on the phone. Click **Inspect USB phone**. The GUI performs the same limited property reads as the CLI, with no arbitrary command interface. It does not download tools, install drivers, enable debugging, reboot, unlock or write the phone.
+Choose **ADB** or **Fastboot** in the transport selector, then select the absolute path to your own trusted Android SDK executable matching that mode. Connect exactly one local USB phone in the appropriate state. The GUI invokes only the same strict read-only command allowlists as the CLI. It does not download tools, install drivers, enable debugging, reboot, unlock, erase, change slots, boot an image, flash, format, root, relock or restore the phone.
 
-A worker thread performs the bounded ADB requests; only the main thread touches Tk. An elapsed-time indicator is shown instead of a fictional completion percentage. Duplicate scans are blocked. Starting another attempt clears the previous report, and failures never leave an old export enabled. Closing the window does not initiate any phone action; a daemon worker may finish its already-running read-only request without accessing Tk.
+ADB mode reads the bounded property set used by `python -m swirphoneos inspect`. Fastboot mode queries only the bounded Fastboot/FastbootD `getvar` set used by `python -m swirphoneos inspect-fastboot`. Switching transport clears the selected tool and stale report/export state.
 
-The report is device-reported information, not trusted hardware identification, a complete compatibility assessment or flashing authorization. Unknown values stay unknown. No phone has certified support yet.
+A worker thread performs the bounded transport requests; only the main thread touches Tk. An elapsed-time indicator is shown instead of a fictional completion percentage. Duplicate scans are blocked. Starting another attempt clears the previous report, and failures never leave an old export enabled. Closing the window does not initiate any phone action; a daemon worker may finish its already-running read-only request without accessing Tk.
+
+## Device profile hints
+
+Successful scans are combined with the local metadata registry under `device_packs/`. Matching device-reported codename/model/product values can produce a profile **hint**, but a hint is never trusted hardware identity and never authorizes installation. Unified reports enforce:
+
+- `identity_verified: false`
+- `swirphoneos_support: NOT_VALIDATED`
+- `flash_allowed: false`
+
+Ambiguous matches expose no candidate. The current OnePlus Nord AC2003 (`avicii`) profile remains `PLANNED_NOT_SUPPORTED`. Firmware baseline, partition map, recovery and physical-device evidence are required before support can be claimed.
+
+The equivalent CLI surface is:
+
+```powershell
+python -m swirphoneos inspect-device --transport adb --tool "C:\Android\platform-tools\adb.exe"
+python -m swirphoneos inspect-device --transport fastboot --tool "C:\Android\platform-tools\fastboot.exe"
+```
 
 ## Local report export
 
-Save a successful report to a **new** absolute `.json` path. The exporter refuses existing files and target symlinks rather than overwriting them. A save dialog confirmation cannot override that protection; choose a different name. Files request owner-only permissions on POSIX; Windows access follows the local filesystem security model. There is no automatic upload or persistent path history.
+Save a successful report to a **new** absolute `.json` path. The exporter refuses existing files and target symlinks rather than overwriting them. Files request owner-only permissions on POSIX; Windows access follows the local filesystem security model. There is no automatic upload or persistent path history.
 
-Only the known diagnostic schema is exportable. Extra fields such as serials or ADB paths are rejected, and safety/provenance fields cannot be altered. No serial or IMEI property is requested. Nevertheless, model/manufacturer and other values originate from the phone and can be spoofed or contain unexpected information. Review reports before public sharing. Raw exceptions, process output and local tool paths are not shown in GUI errors.
+Both the legacy ADB schema and the unified transport/profile schema are revalidated before export. Safety/provenance fields cannot be promoted to supported/flashable state. No serial or IMEI property is intentionally requested. Nevertheless, model/manufacturer/product values originate from the phone and can be spoofed or contain unexpected information. Review reports before public sharing. Raw exceptions, process output and local tool paths are not shown in GUI errors.
 
 ## Language and branding
 
@@ -47,13 +64,13 @@ SWIR_GUI_TESTS=1 xvfb-run -a python -m unittest discover -s tests -p test_studio
 xvfb-run -a python -m swirphoneos.studio --smoke-test
 ```
 
-GUI tests use real Tk windows with synthetic inspection. They test launch/icon, success, stale-result removal, error privacy, language switching, minimum layout, unavailable export and closing while reading. They do not connect a physical phone. The `--smoke-test` entry point opens and closes the UI without invoking ADB.
+GUI tests use real Tk windows with synthetic inspection and never contact a phone unless the owner explicitly launches a diagnostic with a trusted Android SDK tool. Portable tests also cover unified ADB/Fastboot state and fail-closed profile assessment.
 
 ## Windows developer packaging
 
-`.github/workflows/package-studio.yml` defines the reproducible developer artifact path. It uses Windows x64, Python 3.14 and pinned PyInstaller 6.22.3, builds `packaging/SwirPhoneStudio.spec`, smoke-tests the frozen GUI, writes `SHA256SUMS.txt` and uploads the executable as a short-lived GitHub Actions artifact.
+`.github/workflows/package-studio.yml` defines the developer artifact path. It uses Windows x64, Python 3.14 and pinned PyInstaller 6.22.3, builds `packaging/SwirPhoneStudio.spec`, smoke-tests the frozen GUI, writes `SHA256SUMS.txt` and uploads the executable as a short-lived GitHub Actions artifact.
 
-The spec explicitly bundles `swirphoneos/locales/catalogs.json`, because the localization runtime loads that file through Python package resources. The application window still uses the embedded SwirPhoneOS icon. This pipeline is not a Release channel, installer, driver bundle or evidence that USB diagnostics work on a real Windows machine with a phone attached.
+The spec bundles both `swirphoneos/locales/catalogs.json` and the `device_packs` metadata registry. The latter is required so the frozen GUI can produce the same local profile hints as source execution without downloading anything. The application window still uses the embedded SwirPhoneOS icon. This pipeline is not a Release channel, installer, driver bundle or evidence that USB diagnostics work on a real Windows machine with a phone attached.
 
 To reproduce the developer build manually from the repository root on Windows:
 
@@ -67,4 +84,4 @@ Get-FileHash -Algorithm SHA256 .\dist\SwirPhoneStudio.exe
 
 ## Outstanding
 
-Real Windows/USB evidence, Fastboot/FastbootD/profile integration in the GUI, signed installer/release packaging, driver guidance and all image/install/restore functionality are unfinished. The packaged developer executable remains read-only and does not complete the desktop milestone or authorize beta publication. Consult `ROADMAP.md` and `BETA_RELEASE_GATE.md`.
+Real Windows/USB evidence, signed installer/release packaging, driver guidance, backup/restore and every write-capable installation path remain unfinished. Fastboot/profile integration is now present only as **read-only diagnostics plus metadata hints**; it is not a supported-device or flashing implementation. The packaged developer executable does not complete the desktop milestone or authorize beta publication. Consult `ROADMAP.md` and `BETA_RELEASE_GATE.md`.
