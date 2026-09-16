@@ -1,0 +1,9 @@
+android_app {
+    name: "SwirPrivacy",
+    srcs: ["src/**/*.java"],
+    resource_dirs: ["res"],
+    manifest: "AndroidManifest.xml",
+    sdk_version: "current",
+    product_specific: true,
+    certificate: "platform",
+}
