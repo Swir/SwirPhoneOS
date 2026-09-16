@@ -1,6 +1,6 @@
 # Flash Studio Developer GUI
 
-The GUI is a read-only desktop companion, not an OS installer or a Windows EXE release. Run from the repository root:
+The GUI is a read-only desktop companion, not an OS installer or a beta release. Run from the repository root:
 
 ```sh
 python -m swirphoneos.studio
@@ -24,7 +24,9 @@ Only the known diagnostic schema is exportable. Extra fields such as serials or 
 
 ## Language and branding
 
-The GUI checks the Windows user UI language on Windows, or locale environment/native locale on other hosts. Supported catalogs are English (`en`), Polish (`pl`) and Norwegian Bokmal (`nb`, also accepting locale `no`). Unsupported languages fall back to English. The selector changes the current window language; the selection is not persisted yet. Runtime reports retain stable English machine-readable keys. Translation dictionaries are the deliberate exception to English repository-facing documentation.
+Localization data lives in `swirphoneos/locales/catalogs.json` rather than Python UI logic. The GUI detects the Windows user UI language on Windows, or locale environment/native locale on other hosts. Current catalogs are English (`en`), Polish (`pl`), Norwegian Bokmal (`nb`, with `no` alias), German (`de`), Spanish (`es`), French (`fr`), Portuguese (`pt`) and Arabic (`ar`). Unsupported languages fall back to English. Catalog validation enforces source-key/placeholder compatibility and records text direction; Arabic is the first RTL metadata path. The current Tk layout is not yet a complete mobile RTL implementation.
+
+The selector changes the current window language; the selection is not persisted yet. Runtime reports retain stable English machine-readable keys. Translation data is the deliberate exception to English repository-facing documentation.
 
 The embedded PNG is a raster of the existing `branding/swirphoneos.svg`, so runtime does not require SVG libraries or network resources. The footer opens the project GitHub page only on a user click.
 
@@ -47,6 +49,22 @@ xvfb-run -a python -m swirphoneos.studio --smoke-test
 
 GUI tests use real Tk windows with synthetic inspection. They test launch/icon, success, stale-result removal, error privacy, language switching, minimum layout, unavailable export and closing while reading. They do not connect a physical phone. The `--smoke-test` entry point opens and closes the UI without invoking ADB.
 
+## Windows developer packaging
+
+`.github/workflows/package-studio.yml` defines the reproducible developer artifact path. It uses Windows x64, Python 3.14 and pinned PyInstaller 6.22.3, builds `packaging/SwirPhoneStudio.spec`, smoke-tests the frozen GUI, writes `SHA256SUMS.txt` and uploads the executable as a short-lived GitHub Actions artifact.
+
+The spec explicitly bundles `swirphoneos/locales/catalogs.json`, because the localization runtime loads that file through Python package resources. The application window still uses the embedded SwirPhoneOS icon. This pipeline is not a Release channel, installer, driver bundle or evidence that USB diagnostics work on a real Windows machine with a phone attached.
+
+To reproduce the developer build manually from the repository root on Windows:
+
+```powershell
+python -m pip install --disable-pip-version-check pyinstaller==6.22.3
+pyinstaller --noconfirm --clean packaging/SwirPhoneStudio.spec
+$env:SWIR_GUI_TESTS = '1'
+.\dist\SwirPhoneStudio.exe --smoke-test
+Get-FileHash -Algorithm SHA256 .\dist\SwirPhoneStudio.exe
+```
+
 ## Outstanding
 
-Windows EXE packaging, live USB evidence, Fastboot/FastbootD, device-pack validation, source/build environment preflight and all image/install/restore functionality are unfinished. This GUI does not complete the desktop milestone or authorize beta publication. Consult `ROADMAP.md` and `BETA_RELEASE_GATE.md`.
+Real Windows/USB evidence, Fastboot/FastbootD/profile integration in the GUI, signed installer/release packaging, driver guidance and all image/install/restore functionality are unfinished. The packaged developer executable remains read-only and does not complete the desktop milestone or authorize beta publication. Consult `ROADMAP.md` and `BETA_RELEASE_GATE.md`.
