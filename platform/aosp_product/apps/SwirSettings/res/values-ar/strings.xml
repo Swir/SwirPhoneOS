@@ -1,0 +1,20 @@
+<resources>
+    <string name="app_name">إعدادات Swir</string>
+    <string name="subtitle">تحكّم في هاتفك من مكان واحد واضح.</string>
+    <string name="search_hint">البحث في الإعدادات</string>
+    <string name="device_section">هذا الجهاز</string>
+    <string name="device_summary">%1$s • Android %2$s • API %3$d</string>
+    <string name="security_note">يتم فتح صفحات إعدادات Android المعتمدة مباشرةً. لا يطلب هذا التطبيق أي أذونات.</string>
+    <string name="no_results">لا توجد إعدادات مطابقة</string>
+    <string name="open_failed">صفحة الإعدادات هذه غير متاحة في هذا الإصدار.</string>
+    <string name="wifi">Wi‑Fi</string>
+    <string name="bluetooth">Bluetooth</string>
+    <string name="display">الشاشة</string>
+    <string name="sound">الصوت والاهتزاز</string>
+    <string name="security">الأمان</string>
+    <string name="privacy">الخصوصية</string>
+    <string name="accessibility">إمكانية الوصول</string>
+    <string name="language_region">اللغة والمنطقة</string>
+    <string name="storage">مساحة التخزين</string>
+    <string name="apps">التطبيقات</string>
+</resources>
