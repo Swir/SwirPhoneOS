@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Swir Clock</string>
+    <string name="subtitle">Tid, tidtakere og alarmer med en tydelig brukerstyrt arbeidsflyt.</string>
+    <string name="now">Nå</string>
+    <string name="stopwatch">Stoppeklokke</string>
+    <string name="timer">Tidtaker</string>
+    <string name="alarm">Alarm</string>
+    <string name="start">Start</string>
+    <string name="pause">Pause</string>
+    <string name="reset">Nullstill</string>
+    <string name="start_timer">Start tidtaker</string>
+    <string name="cancel">Avbryt</string>
+    <string name="timer_minutes_hint">Minutter (1-1440)</string>
+    <string name="invalid_timer">Angi en tidtaker fra 1 til 1440 minutter.</string>
+    <string name="timer_finished">Tidtaker ferdig.</string>
+    <string name="hour_hint">Time 0-23</string>
+    <string name="minute_hint">Minutt 0-59</string>
+    <string name="set_alarm">Still alarm</string>
+    <string name="invalid_alarm">Angi et gyldig alarmtidspunkt i 24-timersformat.</string>
+    <string name="alarm_body">Når du oppretter en alarm, åpnes systemets alarmskjerm slik at du kan kontrollere den før lagring.</string>
+    <string name="alarm_message">Swir Clock-alarm</string>
+    <string name="alarm_unavailable">Ingen kompatibel alarmapp er tilgjengelig.</string>
+    <string name="utc_format">UTC: %1$s</string>
+</resources>
