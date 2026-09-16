@@ -2,13 +2,19 @@
 
 ## Unreleased
 
+### SwirSettings source and multi-app Android validation
+
+Added `SwirSettings` as the second meaningful first-party Android application source and the first beta-critical app to reach `ANDROID_SOURCE`. It is a permission-free AOSP `android_app` under `org.swir.phoneos.settings` with an original SwirPhoneOS icon and dark/cyan interface, searchable categories, real build/device summary and direct hand-off to reviewed authoritative Android settings pages for Wi-Fi, Bluetooth, display, sound, security, privacy, accessibility, language/region, storage and apps. It never mutates settings itself and requests no Android permissions.
+
+Added Android resources for English, Polish, Norwegian Bokmal, German, Spanish, French, Portuguese and Arabic with RTL-aware layout. The route catalog is pure Java and dependency-free host tested. The source validator is now multi-app aware: every `ANDROID_SOURCE` entry requires a reviewed source contract, full product inclusion/staging, package identity, permission-free source slice, localization parity and explicit implementation evidence. It also rejects duplicate staging destinations and unreviewed Settings actions. The system-app registry is now **2 `ANDROID_SOURCE`, 18 `HOST_CONTRACT`, 0 `ANDROID_RUNTIME`, 0 hardware-verified**. No Android build/runtime claim is made; project progress remains **2%** and Beta remains **0/9**.
+
 ### First functional Android application source and bounded source staging
 
 Added the first meaningful first-party Android application source to the SwirPhoneOS AOSP product: `SwirCalculator`. It is a permission-free AOSP `android_app` under `org.swir.phoneos.calculator`, includes an original SwirPhoneOS vector icon and dark/cyan UI, and uses a pure-Java BigDecimal engine for basic arithmetic, decimals, sign, percent, backspace and error handling. The engine has a dependency-free host Java test. Android resources cover English, Polish, Norwegian Bokmal, German, Spanish, French, Portuguese and Arabic; the activity follows locale layout direction and exposes accessibility descriptions.
 
-Added an explicit `ANDROID_SOURCE` app-registry state so checked-in Android source cannot be mistaken for `ANDROID_RUNTIME`. SwirCalculator is the first source-ready app; the other 19 essential apps remain `HOST_CONTRACT`, and all runtime/hardware-verified counts remain zero. Scientific math remains a declared target, not an implemented capability.
+Added an explicit `ANDROID_SOURCE` app-registry state so checked-in Android source cannot be mistaken for `ANDROID_RUNTIME`. SwirCalculator was the first source-ready app; runtime/hardware states still require actual Android evidence. Scientific math remains a declared target, not an implemented capability.
 
-Replaced fixed two-file product staging with `platform/aosp_product/stage_manifest.json`, an explicit bounded allowlist for product/app source copied only under `vendor/swir/`. Traversal, absolute paths, duplicate source/destination identities, symlink/missing files and oversized source bundles are rejected. Added `python -m swirphoneos android-apps`, source/manifest/localization/staging tests and a CI Java engine smoke. No AOSP build, APK runtime, Cuttlefish boot, GSI or physical-device claim is made; project progress remains **2%** and Beta remains **0/9**.
+Replaced fixed two-file product staging with `platform/aosp_product/stage_manifest.json`, an explicit bounded allowlist for product/app source copied only under `vendor/swir/`. Traversal, absolute paths, duplicate source/destination identities, symlink/missing files and oversized source bundles are rejected. Added `python -m swirphoneos android-apps`, source/manifest/localization/staging tests and CI Java engine smoke. No AOSP build, APK runtime, Cuttlefish boot, GSI or physical-device claim is made.
 
 ### Reproducible AOSP workspace and resolved-manifest evidence
 
