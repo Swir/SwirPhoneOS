@@ -10,9 +10,9 @@ lunch swirphoneos_cf_x86_64-aosp_current-userdebug
 m
 ```
 
-The product inherits the standard AOSP x86_64-only Cuttlefish phone definition and keeps platform security/signing defaults intact. `swirphoneos_cf_x86_64.mk` now includes the first first-party Android module, **SwirCalculator**.
+The product inherits the standard AOSP x86_64-only Cuttlefish phone definition and keeps platform security/signing defaults intact. `swirphoneos_cf_x86_64.mk` currently includes four first-party Android source modules: **SwirCalculator, SwirSettings, SwirFiles and SwirDeviceCare**.
 
-`apps/SwirCalculator/` contains a permission-free AOSP `android_app`, a pure-Java calculator engine, an original SwirPhoneOS icon/UI and localized Android resources. Its checked-in state is `ANDROID_SOURCE`, not `ANDROID_RUNTIME`.
+Each app is a permission-bounded AOSP `android_app` with its own SwirPhoneOS icon/UI, eight locale resource catalogs (EN/PL/NB/DE/ES/FR/PT/AR), host-testable pure-Java logic/contracts and explicit source validation. Their checked-in state is `ANDROID_SOURCE`, not `ANDROID_RUNTIME`.
 
 `stage_manifest.json` is the explicit source allowlist used by `python -m swirphoneos stage-product`. It may stage files only under `vendor/swir/` and is validated for bounded size, safe relative paths and unique destinations.
 
