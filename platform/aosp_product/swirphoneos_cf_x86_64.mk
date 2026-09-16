@@ -19,4 +19,5 @@ PRODUCT_PACKAGES += \
     SwirPrivacy \
     SwirClock \
     SwirNotes \
-    SwirCalendar
+    SwirCalendar \
+    SwirRoot

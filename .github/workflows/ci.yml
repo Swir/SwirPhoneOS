@@ -96,6 +96,12 @@ jobs:
           mkdir -p _calendar-java-test
           javac -d _calendar-java-test platform/aosp_product/apps/SwirCalendar/src/org/swir/phoneos/calendar/EventPolicy.java platform/aosp_product/apps/SwirCalendar/hosttest/EventPolicyHostTest.java
           java -cp _calendar-java-test org.swir.phoneos.calendar.EventPolicyHostTest
+      - name: Host-test SwirRoot fail-closed transition policy
+        if: runner.os == 'Linux' && matrix.python == '3.14'
+        run: |
+          mkdir -p _swirroot-java-test
+          javac -d _swirroot-java-test platform/aosp_product/apps/SwirRoot/src/org/swir/phoneos/swirroot/RootPolicy.java platform/aosp_product/apps/SwirRoot/hosttest/RootPolicyHostTest.java
+          java -cp _swirroot-java-test org.swir.phoneos.swirroot.RootPolicyHostTest
       - name: Inspect AOSP host preflight contract
         run: python -m swirphoneos build-preflight --workspace .
       - name: Validate global localization catalogs
