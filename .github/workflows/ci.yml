@@ -36,6 +36,12 @@ jobs:
         run: python -m swirphoneos profiles
       - name: Validate offline AOSP baseline metadata
         run: python -m swirphoneos baseline
+      - name: Validate global localization catalogs
+        run: python -m swirphoneos i18n
+      - name: Validate essential system-app registry
+        run: python -m swirphoneos apps
+      - name: Validate fail-closed SwirRoot policy
+        run: python -m swirphoneos root-policy
       - name: Linux native Tk runtime (synthetic data, virtual display)
         if: runner.os == 'Linux'
         env:
