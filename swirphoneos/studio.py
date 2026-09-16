@@ -11,15 +11,22 @@ from tkinter import filedialog, messagebox, ttk
 
 from .i18n import CATALOGS, detect_language, translate
 from .studio_icon import ICON_PNG
-from .studio_state import DiagnosticSession, save_report
+from .studio_state import DiagnosticSession, UnifiedDiagnosticSession, save_report
 
 
 class Studio:
-    def __init__(self, root: tk.Tk, session: DiagnosticSession | None = None):
+    def __init__(
+        self,
+        root: tk.Tk,
+        session: DiagnosticSession | UnifiedDiagnosticSession | None = None,
+    ):
         self.root = root
-        self.session = session or DiagnosticSession()
+        self.session = session or UnifiedDiagnosticSession()
         self.language = tk.StringVar(root, value=detect_language())
-        self.adb_path = tk.StringVar(root)
+        self.transport = tk.StringVar(root, value="ADB")
+        self.tool_path = tk.StringVar(root)
+        # Compatibility alias for existing embeddings/tests from the ADB-only slice.
+        self.adb_path = self.tool_path
         self.status_key = "ready"
         self.started = 0.0
         self.closed = False
@@ -55,18 +62,29 @@ class Studio:
         ttk.Label(header, image=self.icon).grid(row=0, column=0, rowspan=2, padx=(0, 12))
         ttk.Label(header, text="SwirPhoneOS", style="Title.TLabel").grid(row=0, column=1, rowspan=2, sticky="w")
         self.label(header, "language").grid(row=0, column=2)
-        selector = ttk.Combobox(header, textvariable=self.language, values=tuple(CATALOGS), width=5, state="readonly")
-        selector.grid(row=1, column=2, sticky="e")
-        selector.bind("<<ComboboxSelected>>", lambda _: self.refresh_language())
+        language_selector = ttk.Combobox(
+            header, textvariable=self.language, values=tuple(CATALOGS), width=5, state="readonly"
+        )
+        language_selector.grid(row=1, column=2, sticky="e")
+        language_selector.bind("<<ComboboxSelected>>", lambda _: self.refresh_language())
         self.label(outer, "notice", wrap=True, style="Notice.TLabel").grid(row=1, column=0, sticky="ew", pady=(0, 8))
+
         fields = ttk.Frame(outer)
         fields.grid(row=2, column=0, sticky="ew")
         fields.columnconfigure(0, weight=1)
-        self.label(fields, "adb").grid(row=0, column=0, sticky="w", pady=(0, 6))
-        self.entry = ttk.Entry(fields, textvariable=self.adb_path)
+        field_header = ttk.Frame(fields)
+        field_header.grid(row=0, column=0, columnspan=2, sticky="ew", pady=(0, 6))
+        self.transport_selector = ttk.Combobox(
+            field_header, textvariable=self.transport, values=("ADB", "Fastboot"), width=10, state="readonly"
+        )
+        self.transport_selector.pack(side="left", padx=(0, 12))
+        self.transport_selector.bind("<<ComboboxSelected>>", lambda _: self.refresh_transport())
+
+        self.entry = ttk.Entry(fields, textvariable=self.tool_path)
         self.entry.grid(row=1, column=0, sticky="ew", padx=(0, 8))
-        self.browse = self.button(fields, "browse", self.choose_adb)
+        self.browse = self.button(fields, "browse", self.choose_tool)
         self.browse.grid(row=1, column=1)
+
         actions = ttk.Frame(outer)
         actions.grid(row=3, column=0, sticky="ew", pady=8)
         self.scan = self.button(actions, "scan", self.start_scan)
@@ -98,12 +116,15 @@ class Studio:
         self.button(footer, "close", self.close).pack(side="right")
         self.show_report(self.tr("empty"))
         root.bind("<Configure>", self.resize)
-        root.bind("<Control-o>", lambda _: self.choose_adb())
+        root.bind("<Control-o>", lambda _: self.choose_tool())
         root.bind("<Control-s>", lambda _: self.export_report())
         self.after_id = root.after(80, self.poll)
 
     def tr(self, key: str, **values: object) -> str:
         return translate(self.language.get(), key, **values)
+
+    def transport_code(self) -> str:
+        return "fastboot" if self.transport.get() == "Fastboot" else "adb"
 
     def label(self, parent: tk.Widget, key: str, wrap: bool = False, **kwargs: object) -> ttk.Label:
         widget = ttk.Label(parent, text=self.tr(key), **kwargs)
@@ -130,6 +151,16 @@ class Studio:
         if self.session.report is None:
             self.show_report(self.tr("empty"))
 
+    def refresh_transport(self) -> None:
+        if self.session.busy:
+            return
+        self.tool_path.set("")
+        self.status_key = "ready"
+        self.save.state(["disabled"])
+        self.session.report = None
+        self.show_report(self.tr("empty"))
+        self.update_status()
+
     def update_status(self) -> None:
         self.status.configure(text=self.tr(self.status_key, seconds=int(time.monotonic() - self.started)))
 
@@ -139,19 +170,28 @@ class Studio:
         self.report.insert("1.0", text)
         self.report.configure(state="disabled")
 
-    def choose_adb(self) -> None:
+    def choose_tool(self) -> None:
         if self.session.busy:
             return
-        path = filedialog.askopenfilename(parent=self.root, title=self.tr("pick_adb"))
+        path = filedialog.askopenfilename(parent=self.root, title=self.tr("browse"))
         if path:
-            self.adb_path.set(path)
+            self.tool_path.set(path)
+
+    def choose_adb(self) -> None:
+        """Compatibility alias for the previous ADB-only GUI API."""
+        self.choose_tool()
 
     def start_scan(self) -> None:
-        if not self.session.start(Path(self.adb_path.get())):
+        executable = Path(self.tool_path.get())
+        if isinstance(self.session, UnifiedDiagnosticSession):
+            started = self.session.start(executable, self.transport_code())
+        else:
+            started = self.session.start(executable)
+        if not started:
             return
         self.started = time.monotonic()
         self.status_key = "running"
-        for widget in (self.entry, self.browse, self.scan, self.save):
+        for widget in (self.entry, self.browse, self.scan, self.save, self.transport_selector):
             widget.state(["disabled"])
         self.show_report(self.tr("empty"))
         self.progress.start(15)
@@ -163,7 +203,7 @@ class Studio:
         result = self.session.poll()
         if result is not None:
             self.progress.stop()
-            for widget in (self.entry, self.browse, self.scan):
+            for widget in (self.entry, self.browse, self.scan, self.transport_selector):
                 widget.state(["!disabled"])
             if result.report_json is not None:
                 self.status_key = "done"
@@ -200,7 +240,7 @@ class Studio:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Read-only SwirPhoneOS Flash Studio developer UI.")
-    parser.add_argument("--smoke-test", action="store_true", help="Open and close the UI without using ADB.")
+    parser.add_argument("--smoke-test", action="store_true", help="Open and close the UI without using Android SDK tools.")
     args = parser.parse_args()
     try:
         root = tk.Tk()

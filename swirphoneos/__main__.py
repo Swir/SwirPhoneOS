@@ -11,7 +11,9 @@ from .build_preflight import BuildPreflightError, capture_host, evaluate_preflig
 from .diagnostics import DiagnosticError, ReadOnlyAdb
 from .fastboot import FastbootDiagnosticError, ReadOnlyFastboot
 from .i18n import LocalizationError, catalog_summary
+from .identity import IdentityAssessmentError, build_unified_report
 from .platform import PlatformBaselineError, load_baseline, public_baseline_summary
+from .product_contract import ProductContractError, public_product_summary, validate_product_contract
 from .profiles import ProfileError, discover_profiles, public_profile_summary
 from .readiness import evaluate, load_ledger
 from .swirroot import SwirRootPolicyError, load_policy, public_policy_summary
@@ -41,11 +43,28 @@ def main(argv: list[str] | None = None) -> int:
         help="Absolute path to a trusted Android SDK fastboot executable",
     )
 
+    inspect_device = sub.add_parser(
+        "inspect-device",
+        help="Combine one read-only ADB/Fastboot report with non-authoritative local profile hints",
+    )
+    inspect_device.add_argument("--transport", required=True, choices=("adb", "fastboot"))
+    inspect_device.add_argument(
+        "--tool", required=True, type=Path,
+        help="Absolute path to the trusted adb/fastboot executable matching --transport",
+    )
+    inspect_device.add_argument("--profiles", type=Path, default=Path("device_packs"))
+
     profiles = sub.add_parser("profiles", help="Validate and list metadata-only device profiles")
     profiles.add_argument("--root", type=Path, default=Path("device_packs"))
 
     baseline = sub.add_parser("baseline", help="Validate and show the offline pinned AOSP baseline")
     baseline.add_argument("--file", type=Path, default=Path("platform/aosp_baseline.json"))
+
+    product_contract = sub.add_parser(
+        "product-contract",
+        help="Validate the checked-in SwirPhoneOS Cuttlefish product integration contract",
+    )
+    product_contract.add_argument("--root", type=Path, default=Path("platform/aosp_product"))
 
     build_preflight = sub.add_parser(
         "build-preflight",
@@ -75,6 +94,13 @@ def main(argv: list[str] | None = None) -> int:
             result = ReadOnlyAdb(args.adb).inspect()
         elif args.command == "inspect-fastboot":
             result = ReadOnlyFastboot(args.fastboot).inspect()
+        elif args.command == "inspect-device":
+            transport_report = (
+                ReadOnlyAdb(args.tool).inspect()
+                if args.transport == "adb"
+                else ReadOnlyFastboot(args.tool).inspect()
+            )
+            result = build_unified_report(args.transport, transport_report, discover_profiles(args.profiles))
         elif args.command == "profiles":
             registry = discover_profiles(args.root)
             result = {
@@ -85,6 +111,8 @@ def main(argv: list[str] | None = None) -> int:
             }
         elif args.command == "baseline":
             result = public_baseline_summary(load_baseline(args.file))
+        elif args.command == "product-contract":
+            result = public_product_summary(validate_product_contract(args.root))
         elif args.command == "build-preflight":
             result = evaluate_preflight(capture_host(args.workspace.resolve()))
         elif args.command == "i18n":
@@ -101,8 +129,10 @@ def main(argv: list[str] | None = None) -> int:
         BuildPreflightError,
         DiagnosticError,
         FastbootDiagnosticError,
+        IdentityAssessmentError,
         LocalizationError,
         PlatformBaselineError,
+        ProductContractError,
         ProfileError,
         SwirRootPolicyError,
         SystemAppRegistryError,
