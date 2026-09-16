@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+### Pinned Android 17 baseline, build-host preflight and Windows package pipeline
+
+Advanced the Android 17 baseline from moving discovery metadata to exact official release-tag pinning. `platform/aosp_baseline.json` is now schema v2 / `PINNED_NOT_BUILT` and records `android-17.0.0_r1`, annotated tag object `7a9e46ba6ed424f922a3457f4964e67e0b966201`, manifest commit `5bc9a7ce1cd78dd53613bbfd0ebf506e1e4adb0f` and tree `1541b7154f1532032baf7c73f222256cc29e8cfb`. The validator rejects partial pin metadata and cannot mark the baseline `BUILT_VERIFIED` without complete pin data plus actual source acquisition/build completion. No AOSP source sync or Android build is claimed.
+
+Added a bounded read-only AOSP host preflight. It checks Linux/x86-64, glibc 2.17+, at least 400 GiB workspace capacity, 64 GiB RAM for the full-build gate, Git/Repo presence and KVM visibility without installing packages, downloading source, changing host configuration or starting a build. Added deterministic synthetic tests and a `python -m swirphoneos build-preflight --workspace <path>` CLI surface. Passing this preflight is not build evidence.
+
+Added a Windows x64/Python 3.14 SwirPhoneStudio packaging workflow using pinned PyInstaller 6.22.3. It produces a one-file developer executable from the existing read-only GUI, includes the data-driven localization catalog, smoke-tests the frozen GUI, records SHA-256 and uploads a short-lived CI artifact. This is a developer artifact pipeline, not a beta/release or physical-device validation. Project progress remains 2%; beta remains 0/9.
+
 ### Global localization, app registry and SwirRoot safety contracts
 
 Moved Flash Studio localization from Python literals into a validated data catalog and expanded the current desktop strings to eight locales: English, Polish, Norwegian Bokmal, German, Spanish, French, Portuguese and Arabic. Added BCP-47-style normalization, English fallback, placeholder-parity validation, duplicate-key rejection, explicit LTR/RTL metadata and machine-readable coverage via `python -m swirphoneos i18n`. Arabic establishes the first RTL catalog metadata path; this does not yet claim complete mobile RTL layout support.
@@ -26,9 +34,9 @@ Added strict schema-v1 validation for `device_packs/<vendor>/<codename>/profile.
 
 ### Android 17 AOSP baseline discovery
 
-Added an offline Android 17 / API 37 baseline candidate record and validator. At the 2026-09-16 upstream check, `android-latest-release` resolved to `android17-release`; the candidate references `android-17.0.0_r1` / `CP2A.260605.016`. The state is deliberately `CANDIDATE_NOT_PINNED`, with `download_started: false` and `build_completed: false`. Added a reproducible-pinning policy, baseline CLI command, anti-overclaim tests and CI validation. No AOSP source sync or platform build is claimed.
+Added an offline Android 17 / API 37 baseline candidate record and validator. At the 2026-09-16 upstream check, `android-latest-release` resolved to `android17-release`; the candidate references `android-17.0.0_r1` / `CP2A.260605.016`. This discovery state was subsequently superseded by the exact pin described above. No AOSP source sync or platform build is claimed.
 
-This work extends host diagnostics and platform planning only. It does not add supported phones, write-capable installation, bootloader unlocking, image booting, stock restore, a packaged Windows EXE or beta readiness. Project progress remains 2%; beta gates remain 0/9.
+This work extends host diagnostics and platform planning only. It does not add supported phones, write-capable installation, bootloader unlocking, image booting, stock restore or beta readiness. Project progress remains 2%; beta gates remain 0/9.
 
 ## 0.0.2.dev0 — 2026-09-16 — Developer foundation, no release
 
