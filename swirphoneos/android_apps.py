@@ -70,6 +70,20 @@ _SPECS = {
         "hosttest/HealthModelHostTest.java", "res/drawable/ic_device_care.xml",
         ("storage_status", "battery_status", "thermal_status", "hardware_diagnostics"),
     ),
+    "update": _AppSpec(
+        "update", "SwirUpdate", "SwirUpdate", "org.swir.phoneos.update",
+        "src/org/swir/phoneos/update/UpdatePolicy.java",
+        "src/org/swir/phoneos/update/MainActivity.java",
+        "hosttest/UpdatePolicyHostTest.java", "res/drawable/ic_update.xml",
+        ("channel_status", "signed_metadata"),
+    ),
+    "privacy": _AppSpec(
+        "privacy", "SwirPrivacy", "SwirPrivacy", "org.swir.phoneos.privacy",
+        "src/org/swir/phoneos/privacy/PrivacyCatalog.java",
+        "src/org/swir/phoneos/privacy/MainActivity.java",
+        "hosttest/PrivacyCatalogHostTest.java", "res/drawable/ic_privacy.xml",
+        ("permission_review",),
+    ),
 }
 _SETTINGS_ACTIONS = frozenset({
     "android.settings.WIFI_SETTINGS", "android.settings.BLUETOOTH_SETTINGS",
@@ -77,6 +91,11 @@ _SETTINGS_ACTIONS = frozenset({
     "android.settings.SECURITY_SETTINGS", "android.settings.PRIVACY_SETTINGS",
     "android.settings.ACCESSIBILITY_SETTINGS", "android.settings.LOCALE_SETTINGS",
     "android.settings.INTERNAL_STORAGE_SETTINGS", "android.settings.APPLICATION_SETTINGS",
+})
+_PRIVACY_ACTIONS = frozenset({
+    "android.settings.PRIVACY_SETTINGS", "android.settings.MANAGE_PERMISSIONS",
+    "android.settings.LOCATION_SOURCE_SETTINGS", "android.settings.APPLICATION_SETTINGS",
+    "android.settings.MANAGE_SPECIAL_APP_ACCESSES",
 })
 
 
@@ -244,6 +263,24 @@ def _validate_device_care(logic: str, activity: str) -> None:
         raise AndroidAppSourceError("SwirDeviceCare must retain its host-tested health calculations.")
 
 
+def _validate_update(logic: str, activity: str) -> None:
+    required_logic = ("SHA256withRSA", 'MessageDigest.getInstance("SHA-256")', "channelForBuild", "fingerprintMatches")
+    required_activity = ("Build.FINGERPRINT", "Build.TYPE", "Build.TAGS", "Settings.ACTION_SYSTEM_UPDATE_SETTINGS")
+    if any(token not in logic for token in required_logic) or any(token not in activity for token in required_activity):
+        raise AndroidAppSourceError("SwirUpdate must retain verified-metadata primitives and real build/channel state.")
+    if "DownloadManager" in activity or "RecoverySystem.installPackage" in activity:
+        raise AndroidAppSourceError("SwirUpdate source stage must not download or install update packages.")
+
+
+def _validate_privacy(logic: str, activity: str) -> None:
+    actions = frozenset(re.findall(r'"(android\.settings\.[A-Z_]+)"', logic))
+    if actions != _PRIVACY_ACTIONS:
+        raise AndroidAppSourceError("SwirPrivacy routes must match the reviewed privacy-settings allowlist exactly.")
+    required = ("PrivacyCatalog.search", "resolveActivity(getPackageManager())", "startActivity(intent)")
+    if any(token not in activity for token in required):
+        raise AndroidAppSourceError("SwirPrivacy must route only through reviewed authoritative Android settings surfaces.")
+
+
 def validate_android_app_sources(product_root: Path = Path("platform/aosp_product"), registry_path: Path = Path("system_apps/manifest.json")) -> AndroidAppSourceSummary:
     """Validate all checked-in source-ready apps without claiming Android build/runtime evidence."""
     registry: SystemAppRegistry = load_registry(registry_path)
@@ -270,6 +307,8 @@ def validate_android_app_sources(product_root: Path = Path("platform/aosp_produc
         elif app.app_id == "settings": _validate_settings(logic, activity)
         elif app.app_id == "files": _validate_files(logic, activity)
         elif app.app_id == "device_care": _validate_device_care(logic, activity)
+        elif app.app_id == "update": _validate_update(logic, activity)
+        elif app.app_id == "privacy": _validate_privacy(logic, activity)
         localized += count
         source_files += staged_count
         ids.append(app.app_id)

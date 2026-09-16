@@ -3,6 +3,7 @@ package org.swir.phoneos.update;
 import java.security.MessageDigest;
 import java.security.PublicKey;
 import java.security.Signature;
+import java.util.Locale;
 
 /** Pure-Java verification and channel policy used by Swir Update. */
 public final class UpdatePolicy {
@@ -11,8 +12,8 @@ public final class UpdatePolicy {
     private UpdatePolicy() {}
 
     public static Channel channelForBuild(String type, String tags) {
-        String safeType = type == null ? "" : type.trim().toLowerCase();
-        String safeTags = tags == null ? "" : tags.trim().toLowerCase();
+        String safeType = type == null ? "" : type.trim().toLowerCase(Locale.ROOT);
+        String safeTags = tags == null ? "" : tags.trim().toLowerCase(Locale.ROOT);
         if ("user".equals(safeType) && safeTags.contains("release-keys")) return Channel.STABLE;
         if ("userdebug".equals(safeType)) return Channel.BETA;
         if ("eng".equals(safeType)) return Channel.DEVELOPER;
@@ -41,7 +42,7 @@ public final class UpdatePolicy {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
             byte[] out = digest.digest(bytes);
             StringBuilder builder = new StringBuilder(out.length * 2);
-            for (byte value : out) builder.append(String.format("%02x", value & 0xff));
+            for (byte value : out) builder.append(String.format(Locale.ROOT, "%02x", value & 0xff));
             return builder.toString();
         } catch (Exception ignored) {
             return "";

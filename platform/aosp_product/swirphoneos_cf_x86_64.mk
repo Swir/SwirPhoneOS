@@ -14,4 +14,6 @@ PRODUCT_PACKAGES += \
     SwirCalculator \
     SwirSettings \
     SwirFiles \
-    SwirDeviceCare
+    SwirDeviceCare \
+    SwirUpdate \
+    SwirPrivacy

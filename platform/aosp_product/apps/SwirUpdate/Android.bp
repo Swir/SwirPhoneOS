@@ -4,6 +4,9 @@ android_app {
     resource_dirs: ["res"],
     manifest: "AndroidManifest.xml",
     sdk_version: "current",
+    min_sdk_version: "35",
     product_specific: true,
-    certificate: "platform",
+    optimize: {
+        enabled: true,
+    },
 }

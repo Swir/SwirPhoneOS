@@ -17,16 +17,20 @@ class AndroidAppSourceTests(unittest.TestCase):
     def test_repository_source_apps_are_complete_but_not_runtime_claimed(self):
         summary = public_android_app_source_summary(validate_android_app_sources())
         self.assertEqual(summary["status"], "SOURCE_READY_NOT_BUILT")
-        self.assertEqual(set(summary["source_ready_apps"]), {"calculator", "settings", "files", "device_care"})
-        self.assertEqual(summary["source_ready_count"], 4)
-        self.assertEqual(summary["localized_catalogs"], 32)
+        self.assertEqual(set(summary["source_ready_apps"]), {"calculator", "settings", "files", "device_care", "update", "privacy"})
+        self.assertEqual(summary["source_ready_count"], 6)
+        self.assertEqual(summary["localized_catalogs"], 48)
         for capability in (
             "basic_math", "system_settings", "search", "device_status", "browse",
             "copy_move_rename", "share", "safe_delete", "storage_status",
-            "battery_status", "thermal_status", "hardware_diagnostics",
+            "battery_status", "thermal_status", "hardware_diagnostics", "channel_status",
+            "signed_metadata", "permission_review",
         ):
             self.assertIn(capability, summary["implemented_capabilities"])
-        self.assertEqual(summary["remaining_target_capabilities"], ["scientific_math"])
+        self.assertEqual(
+            summary["remaining_target_capabilities"],
+            ["access_history", "privacy_indicators", "recovery_handoff", "scientific_math", "staged_update_state"],
+        )
         self.assertFalse(summary["android_build_verified"])
         self.assertFalse(summary["runtime_verified"])
         self.assertFalse(summary["device_write_allowed"])
@@ -105,6 +109,34 @@ class AndroidAppSourceTests(unittest.TestCase):
             activity = product / "apps/SwirDeviceCare/src/org/swir/phoneos/device_care/MainActivity.java"
             text = activity.read_text(encoding="utf-8").replace("getCurrentThermalStatus()", "hashCode()", 1)
             activity.write_text(text, encoding="utf-8")
+            with self.assertRaises(AndroidAppSourceError):
+                validate_android_app_sources(product, registry)
+
+    def test_update_must_keep_signature_verification(self):
+        temp, product, registry = self._copy_fixture()
+        with temp:
+            policy = product / "apps/SwirUpdate/src/org/swir/phoneos/update/UpdatePolicy.java"
+            text = policy.read_text(encoding="utf-8").replace("SHA256withRSA", "NONEwithRSA", 1)
+            policy.write_text(text, encoding="utf-8")
+            with self.assertRaises(AndroidAppSourceError):
+                validate_android_app_sources(product, registry)
+
+    def test_update_must_not_gain_install_path_in_source_stage(self):
+        temp, product, registry = self._copy_fixture()
+        with temp:
+            activity = product / "apps/SwirUpdate/src/org/swir/phoneos/update/MainActivity.java"
+            activity.write_text(activity.read_text(encoding="utf-8") + "\n// RecoverySystem.installPackage\n", encoding="utf-8")
+            with self.assertRaises(AndroidAppSourceError):
+                validate_android_app_sources(product, registry)
+
+    def test_unreviewed_privacy_action_is_rejected(self):
+        temp, product, registry = self._copy_fixture()
+        with temp:
+            catalog = product / "apps/SwirPrivacy/src/org/swir/phoneos/privacy/PrivacyCatalog.java"
+            text = catalog.read_text(encoding="utf-8").replace(
+                "android.settings.PRIVACY_SETTINGS", "android.settings.MANAGE_UNKNOWN_APP_SOURCES", 1
+            )
+            catalog.write_text(text, encoding="utf-8")
             with self.assertRaises(AndroidAppSourceError):
                 validate_android_app_sources(product, registry)
 
