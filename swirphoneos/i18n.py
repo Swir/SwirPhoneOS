@@ -1,74 +1,166 @@
-"""Extensible UI catalogs; native user language first, English fallback."""
+"""Shared localization runtime for SwirPhoneOS host tools.
+
+The canonical English catalog and all translated catalogs live in
+``swirphoneos/locales/catalogs.json`` so languages can be added without
+changing Python logic. Missing translated strings fall back to English.
+"""
 from __future__ import annotations
 
+from dataclasses import dataclass
+from importlib import resources
+import json
 import locale
 import os
+import re
+from string import Formatter
 import sys
+from typing import Mapping
 
-CATALOGS = {
-    "en": {
-        "subtitle": "Flash Studio · Developer diagnostics",
-        "notice": "READ ONLY · No phone is certified yet. Installation, backup and restore are unavailable.",
-        "adb": "Trusted Android SDK ADB executable",
-        "browse": "Browse…", "scan": "Inspect USB phone", "save": "Save report…",
-        "ready": "Connect one authorized USB phone, select ADB, then inspect.",
-        "running": "Reading device-reported properties… {seconds}s",
-        "done": "Report ready — this is NOT proof of compatibility.",
-        "scan_failed": "Inspection failed. Check the trusted ADB path, USB authorization and that exactly one USB phone is connected. No raw error output is shown.",
-        "unexpected": "Inspection could not complete. No private error details are displayed. Retry after checking your local setup.",
-        "save_failed": "Report could not be saved. Choose a NEW .json filename in a writable folder; existing files are never overwritten.",
-        "saved": "Report saved locally. Review device-reported values before sharing.",
-        "empty": "No diagnostic report yet. Nothing is downloaded, unlocked or flashed.",
-        "privacy": "Reports stay local. Review device-reported values before sharing.",
-        "language": "Language", "report": "Diagnostic report (JSON)",
-        "close": "Close", "github": "by Swir · GitHub", "pick_adb": "Select your trusted ADB executable",
-    },
-    "pl": {
-        "subtitle": "Flash Studio · Diagnostyka deweloperska",
-        "notice": "TYLKO ODCZYT · Żaden telefon nie jest jeszcze zatwierdzony. Instalacja, kopia zapasowa i przywracanie są niedostępne.",
-        "adb": "Zaufany plik ADB z Android SDK",
-        "browse": "Wybierz…", "scan": "Sprawdź telefon USB", "save": "Zapisz raport…",
-        "ready": "Podłącz jeden autoryzowany telefon USB, wybierz ADB i rozpocznij odczyt.",
-        "running": "Odczytywanie danych zgłaszanych przez telefon… {seconds}s",
-        "done": "Raport gotowy — NIE potwierdza zgodności z systemem.",
-        "scan_failed": "Odczyt nie powiódł się. Sprawdź zaufaną ścieżkę ADB, autoryzację USB i czy podłączony jest dokładnie jeden telefon USB. Surowe błędy są ukryte.",
-        "unexpected": "Nie udało się ukończyć odczytu. Prywatne szczegóły błędu są ukryte. Sprawdź konfigurację i spróbuj ponownie.",
-        "save_failed": "Nie można zapisać raportu. Wybierz NOWĄ nazwę .json w folderze z prawem zapisu; istniejące pliki nie są nadpisywane.",
-        "saved": "Raport zapisano lokalnie. Sprawdź zgłaszane dane przed udostępnieniem.",
-        "empty": "Brak raportu. Program niczego nie pobiera, nie odblokowuje ani nie wgrywa.",
-        "privacy": "Raport pozostaje lokalnie. Sprawdź dane z telefonu przed udostępnieniem.",
-        "language": "Język", "report": "Raport diagnostyczny (JSON)",
-        "close": "Zamknij", "github": "by Swir · GitHub", "pick_adb": "Wybierz zaufany plik ADB",
-    },
-    "nb": {
-        "subtitle": "Flash Studio · Utviklerdiagnostikk",
-        "notice": "KUN LESING · Ingen telefon er godkjent ennå. Installasjon, sikkerhetskopiering og gjenoppretting er utilgjengelig.",
-        "adb": "Betrodd ADB-program fra Android SDK",
-        "browse": "Velg…", "scan": "Undersøk USB-telefon", "save": "Lagre rapport…",
-        "ready": "Koble til én autorisert USB-telefon, velg ADB og start kontrollen.",
-        "running": "Leser opplysninger fra telefonen… {seconds}s",
-        "done": "Rapport klar — dette bekrefter IKKE kompatibilitet.",
-        "scan_failed": "Kontrollen mislyktes. Kontroller ADB-filen, USB-autorisasjonen og at nøyaktig én USB-telefon er tilkoblet. Rå feilutdata skjules.",
-        "unexpected": "Kontrollen kunne ikke fullføres. Private feildetaljer vises ikke. Kontroller oppsettet og prøv igjen.",
-        "save_failed": "Rapporten kunne ikke lagres. Velg et NYTT .json-filnavn i en skrivbar mappe; eksisterende filer overskrives aldri.",
-        "saved": "Rapport lagret lokalt. Se gjennom opplysningene før deling.",
-        "empty": "Ingen rapport ennå. Ingenting lastes ned, låses opp eller installeres.",
-        "privacy": "Rapporten lagres lokalt. Kontroller opplysningene fra telefonen før deling.",
-        "language": "Språk", "report": "Diagnoserapport (JSON)",
-        "close": "Lukk", "github": "by Swir · GitHub", "pick_adb": "Velg den betrodde ADB-filen",
-    },
-}
+_LOCALE_RE = re.compile(r"[A-Za-z]{2,3}(?:-[A-Za-z]{4})?(?:-[A-Za-z]{2}|\-[0-9]{3})?\Z")
+_ALLOWED_DIRECTIONS = {"ltr", "rtl"}
+_ALIAS = {"no": "nb", "iw": "he", "in": "id", "ji": "yi"}
+
+
+class LocalizationError(ValueError):
+    """Raised when localization data violates the shared contract."""
+
+
+@dataclass(frozen=True)
+class LocaleInfo:
+    code: str
+    name: str
+    direction: str
+    strings: Mapping[str, str]
+
+
+def _pairs_unique(pairs: list[tuple[str, object]]) -> dict[str, object]:
+    result: dict[str, object] = {}
+    for key, value in pairs:
+        if key in result:
+            raise LocalizationError(f"Duplicate JSON key: {key}")
+        result[key] = value
+    return result
+
+
+def _placeholders(text: str) -> frozenset[str]:
+    names: set[str] = set()
+    try:
+        for _, field_name, _, _ in Formatter().parse(text):
+            if field_name:
+                names.add(field_name.split(".", 1)[0].split("[", 1)[0])
+    except ValueError as exc:
+        raise LocalizationError("Invalid format placeholder syntax.") from exc
+    return frozenset(names)
+
+
+def _read_catalog_document() -> dict[str, object]:
+    path = resources.files("swirphoneos").joinpath("locales", "catalogs.json")
+    try:
+        text = path.read_text(encoding="utf-8")
+    except (OSError, UnicodeError) as exc:
+        raise LocalizationError("Localization catalog cannot be read.") from exc
+    if len(text) > 1_000_000:
+        raise LocalizationError("Localization catalog is oversized.")
+    try:
+        return json.loads(text, object_pairs_hook=_pairs_unique)
+    except json.JSONDecodeError as exc:
+        raise LocalizationError("Localization catalog is invalid JSON.") from exc
+
+
+def _validate_catalog_document(document: object) -> tuple[str, dict[str, LocaleInfo]]:
+    if not isinstance(document, dict) or set(document) != {"schema_version", "source_locale", "locales"}:
+        raise LocalizationError("Localization document must match schema v1 exactly.")
+    if document["schema_version"] != 1:
+        raise LocalizationError("Unsupported localization schema.")
+    source_locale = document["source_locale"]
+    locales = document["locales"]
+    if not isinstance(source_locale, str) or not isinstance(locales, dict) or not locales:
+        raise LocalizationError("Localization source/locales are invalid.")
+    if source_locale not in locales:
+        raise LocalizationError("Source locale is missing.")
+
+    parsed: dict[str, LocaleInfo] = {}
+    for code, entry in locales.items():
+        if not isinstance(code, str) or not _LOCALE_RE.fullmatch(code):
+            raise LocalizationError("Locale code is not canonical BCP-47 subset.")
+        if not isinstance(entry, dict) or set(entry) != {"name", "direction", "strings"}:
+            raise LocalizationError(f"Locale {code} metadata is invalid.")
+        name, direction, strings = entry["name"], entry["direction"], entry["strings"]
+        if not isinstance(name, str) or not name.strip() or len(name) > 80:
+            raise LocalizationError(f"Locale {code} display name is invalid.")
+        if direction not in _ALLOWED_DIRECTIONS:
+            raise LocalizationError(f"Locale {code} direction is invalid.")
+        if not isinstance(strings, dict):
+            raise LocalizationError(f"Locale {code} strings must be an object.")
+        clean: dict[str, str] = {}
+        for key, value in strings.items():
+            if not isinstance(key, str) or not key or len(key) > 96 or not key.isascii():
+                raise LocalizationError(f"Locale {code} contains an invalid string key.")
+            if not isinstance(value, str) or not value.strip() or len(value) > 4096:
+                raise LocalizationError(f"Locale {code} contains an invalid translation.")
+            if any(ord(ch) < 9 or 13 < ord(ch) < 32 or ord(ch) == 127 for ch in value):
+                raise LocalizationError(f"Locale {code} contains control characters.")
+            clean[key] = value
+        parsed[code] = LocaleInfo(code=code, name=name.strip(), direction=direction, strings=clean)
+
+    source_keys = set(parsed[source_locale].strings)
+    if not source_keys:
+        raise LocalizationError("Source locale must contain strings.")
+    for code, info in parsed.items():
+        unknown = set(info.strings) - source_keys
+        if unknown:
+            raise LocalizationError(f"Locale {code} contains keys absent from the source catalog.")
+        for key, text in info.strings.items():
+            if _placeholders(text) != _placeholders(parsed[source_locale].strings[key]):
+                raise LocalizationError(f"Locale {code} placeholder mismatch for {key}.")
+    return source_locale, parsed
+
+
+SOURCE_LOCALE, LOCALES = _validate_catalog_document(_read_catalog_document())
+CATALOGS: dict[str, Mapping[str, str]] = {code: info.strings for code, info in LOCALES.items()}
+
+
+def _canonicalize(value: str | None) -> str:
+    raw = (value or "").strip()
+    if not raw:
+        return ""
+    raw = raw.split(".", 1)[0].split("@", 1)[0].replace("_", "-")
+    if raw in {"C", "POSIX"}:
+        return ""
+    pieces = [piece for piece in raw.split("-") if piece]
+    if not pieces:
+        return ""
+    pieces[0] = _ALIAS.get(pieces[0].lower(), pieces[0].lower())
+    for index in range(1, len(pieces)):
+        if len(pieces[index]) == 4 and pieces[index].isalpha():
+            pieces[index] = pieces[index].title()
+        elif (len(pieces[index]) == 2 and pieces[index].isalpha()) or (
+            len(pieces[index]) == 3 and pieces[index].isdigit()
+        ):
+            pieces[index] = pieces[index].upper()
+        else:
+            pieces[index] = pieces[index].lower()
+    return "-".join(pieces)
 
 
 def language_code(value: str | None) -> str:
-    code = (value or "").split(".", 1)[0].replace("-", "_").split("_", 1)[0].lower()
-    return {"no": "nb"}.get(code, code) if code in (*CATALOGS, "no") else "en"
+    """Resolve a platform locale to a supported catalog, else English."""
+    canonical = _canonicalize(value)
+    if canonical in LOCALES:
+        return canonical
+    if canonical:
+        base = canonical.split("-", 1)[0]
+        if base in LOCALES:
+            return base
+    return SOURCE_LOCALE
 
 
 def detect_language() -> str:
+    """Detect the current UI locale without changing process-global locale state."""
     if sys.platform == "win32":
         try:
             import ctypes
+
             native = locale.windows_locale.get(ctypes.windll.kernel32.GetUserDefaultUILanguage())
             if native:
                 return language_code(native)
@@ -80,9 +172,48 @@ def detect_language() -> str:
     try:
         return language_code(locale.getlocale()[0])
     except (ValueError, TypeError):
-        return "en"
+        return SOURCE_LOCALE
 
 
 def translate(language: str, key: str, **values: object) -> str:
-    catalog = CATALOGS.get(language, CATALOGS["en"])
-    return catalog.get(key, CATALOGS["en"][key]).format(**values)
+    """Translate one key with English fallback and safe named formatting."""
+    source = CATALOGS[SOURCE_LOCALE]
+    if key not in source:
+        raise LocalizationError(f"Unknown localization key: {key}")
+    # Keep CATALOGS patchable for tests/embedding while locale detection remains strict.
+    code = language if language in CATALOGS else language_code(language)
+    text = CATALOGS.get(code, source).get(key, source[key])
+    try:
+        return text.format(**values)
+    except (KeyError, IndexError, ValueError) as exc:
+        raise LocalizationError(f"Invalid formatting values for key: {key}") from exc
+
+
+def text_direction(language: str) -> str:
+    return LOCALES[language_code(language)].direction
+
+
+def catalog_summary() -> dict[str, object]:
+    """Return non-sensitive translation coverage for CI/status surfaces."""
+    total = len(LOCALES[SOURCE_LOCALE].strings)
+    rows = []
+    for code in sorted(LOCALES):
+        info = LOCALES[code]
+        translated = len(info.strings)
+        rows.append(
+            {
+                "code": code,
+                "name": info.name,
+                "direction": info.direction,
+                "translated": translated,
+                "total": total,
+                "coverage_percent": round(translated * 100 / total, 1),
+            }
+        )
+    return {
+        "schema_version": 1,
+        "source_locale": SOURCE_LOCALE,
+        "locale_count": len(rows),
+        "string_count": total,
+        "locales": rows,
+    }
