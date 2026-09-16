@@ -15,6 +15,19 @@
     {"source":"apps/SwirCalculator/res/values-es/strings.xml","destination":"vendor/swir/apps/SwirCalculator/res/values-es/strings.xml"},
     {"source":"apps/SwirCalculator/res/values-fr/strings.xml","destination":"vendor/swir/apps/SwirCalculator/res/values-fr/strings.xml"},
     {"source":"apps/SwirCalculator/res/values-pt/strings.xml","destination":"vendor/swir/apps/SwirCalculator/res/values-pt/strings.xml"},
-    {"source":"apps/SwirCalculator/res/values-ar/strings.xml","destination":"vendor/swir/apps/SwirCalculator/res/values-ar/strings.xml"}
+    {"source":"apps/SwirCalculator/res/values-ar/strings.xml","destination":"vendor/swir/apps/SwirCalculator/res/values-ar/strings.xml"},
+    {"source":"apps/SwirSettings/Android.bp","destination":"vendor/swir/apps/SwirSettings/Android.bp"},
+    {"source":"apps/SwirSettings/AndroidManifest.xml","destination":"vendor/swir/apps/SwirSettings/AndroidManifest.xml"},
+    {"source":"apps/SwirSettings/src/org/swir/phoneos/settings/SettingsCatalog.java","destination":"vendor/swir/apps/SwirSettings/src/org/swir/phoneos/settings/SettingsCatalog.java"},
+    {"source":"apps/SwirSettings/src/org/swir/phoneos/settings/MainActivity.java","destination":"vendor/swir/apps/SwirSettings/src/org/swir/phoneos/settings/MainActivity.java"},
+    {"source":"apps/SwirSettings/res/drawable/ic_settings.xml","destination":"vendor/swir/apps/SwirSettings/res/drawable/ic_settings.xml"},
+    {"source":"apps/SwirSettings/res/values/strings.xml","destination":"vendor/swir/apps/SwirSettings/res/values/strings.xml"},
+    {"source":"apps/SwirSettings/res/values-pl/strings.xml","destination":"vendor/swir/apps/SwirSettings/res/values-pl/strings.xml"},
+    {"source":"apps/SwirSettings/res/values-nb/strings.xml","destination":"vendor/swir/apps/SwirSettings/res/values-nb/strings.xml"},
+    {"source":"apps/SwirSettings/res/values-de/strings.xml","destination":"vendor/swir/apps/SwirSettings/res/values-de/strings.xml"},
+    {"source":"apps/SwirSettings/res/values-es/strings.xml","destination":"vendor/swir/apps/SwirSettings/res/values-es/strings.xml"},
+    {"source":"apps/SwirSettings/res/values-fr/strings.xml","destination":"vendor/swir/apps/SwirSettings/res/values-fr/strings.xml"},
+    {"source":"apps/SwirSettings/res/values-pt/strings.xml","destination":"vendor/swir/apps/SwirSettings/res/values-pt/strings.xml"},
+    {"source":"apps/SwirSettings/res/values-ar/strings.xml","destination":"vendor/swir/apps/SwirSettings/res/values-ar/strings.xml"}
   ]
 }
