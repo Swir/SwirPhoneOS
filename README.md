@@ -30,9 +30,11 @@ A strict **device profile registry** validates metadata in `device_packs/<vendor
 
 The first **SwirPhoneStudio** GUI source is now present. It wraps the same read-only diagnostics, automatically chooses Polish, Norwegian or English from the OS locale with English fallback, shows JSON results, provides a `by Swir` GitHub footer and exports privacy-checked JSON reports. The export layer rejects sensitive identifier fields such as serial/IMEI/MEID. This is an early developer GUI, not a Windows EXE or installer, and it has not yet passed a physical Windows/USB smoke test.
 
+The platform layer now records an **Android 17 / API 37 AOSP baseline candidate**. At the 2026-09-16 check, AOSP's recommended `android-latest-release` manifest resolved to `android17-release`; the candidate record references `android-17.0.0_r1` / `CP2A.260605.016`. Its status is deliberately `CANDIDATE_NOT_PINNED`: no source sync or Android build is claimed. See [docs/UPSTREAM_BASELINE.md](docs/UPSTREAM_BASELINE.md).
+
 The status command validates the weighted roadmap and mandatory beta gate ledger. Publication remains disabled even if someone manually checks every ledger box: an independent candidate/artifact/evidence verifier is still required.
 
-The last verified main baseline recorded 41 local Linux/Python 3.13.5 unit tests plus compile and CLI smoke checks. New Fastboot/profile/i18n/report-export code adds host-side tests in its feature PR. No physical phone has been validated. Windows/Linux Python 3.11–3.14 are CI targets; a green host matrix still does not establish phone compatibility. See [BUILD_STATUS.md](BUILD_STATUS.md).
+The last verified main baseline recorded 41 local Linux/Python 3.13.5 unit tests plus compile and CLI smoke checks. New Fastboot/profile/i18n/report/platform code adds host-side tests in its feature PR. No physical phone has been validated. Windows/Linux Python 3.11–3.14 are CI targets; a green host matrix still does not establish phone compatibility. See [BUILD_STATUS.md](BUILD_STATUS.md).
 
 ## Try the developer tools
 
@@ -43,10 +45,11 @@ python -m unittest discover -s tests -v
 python -m swirphoneos status
 python -m swirphoneos gate
 python -m swirphoneos profiles
+python -m swirphoneos baseline
 python -m swirphoneos studio
 ```
 
-`profiles` validates and lists the current metadata-only device registry. It never authorizes flashing. `studio` opens the read-only SwirPhoneStudio developer UI when Tk is available. `gate` deliberately exits with code **2** while publication is blocked; this is expected, not a failed host test. Errors exit with code 1.
+`profiles` validates and lists the current metadata-only device registry. `baseline` validates and prints the offline AOSP candidate metadata without downloading source. Neither command authorizes flashing. `studio` opens the read-only SwirPhoneStudio developer UI when Tk is available. `gate` deliberately exits with code **2** while publication is blocked; this is expected, not a failed host test. Errors exit with code 1.
 
 ### Read-only ADB inspection
 
@@ -78,7 +81,7 @@ The paths above are examples. Manufacturer/model/bootloader/Treble/Fastboot valu
 
 ## Product direction
 
-**SwirPhoneOS Core:** maintainable AOSP/Linux integration, ARM64 GSI where compatible, device-specific ports where necessary, custom launcher/SystemUI/settings, polished dark/neon visual design, privacy controls and signed OTA updates. Android app compatibility is a goal; Google services and individual apps are not guaranteed.
+**SwirPhoneOS Core:** maintainable AOSP/Linux integration, beginning from a reproducibly pinned Android 17 candidate after build-host preflight; ARM64 GSI where compatible; device-specific ports where necessary; custom launcher/SystemUI/settings; polished dark/neon visual design; privacy controls; and signed OTA updates. Android app compatibility is a goal; Google services and individual apps are not guaranteed.
 
 **SwirPhoneStudio:** a Windows-first, Linux-capable desktop companion for diagnostics, installation and recovery. Its first developer GUI is read-only. Planned later stages add signed/verified downloads, pre-flight checks, explicit device packs, user-confirmed installation plans, a transaction journal and tested per-device recovery before any write controls are enabled. The application uses the system language where a translation exists, falls back to English, keeps the project icon for packaging and includes the `by Swir` GitHub footer.
 
@@ -100,7 +103,7 @@ A beta Release must contain a usable tested system image and verified Windows co
 
 This repository is the sole source of truth for the mobile project previously called SwirOS foundation v0.0.1. It is separate from SWIR OS Desktop, Konofix and KaliPhoneStudio. Repository-facing documentation is English; application translations may be multilingual; progress reports to the owner are Polish. Scheduled development must follow [AGENTS.md](AGENTS.md), not inflate completion or claim unattended continuous computation.
 
-[Architecture](ARCHITECTURE.md) · [Roadmap](ROADMAP.md) · [Changelog](CHANGELOG.md) · [Licensing policy](LICENSES.md)
+[Architecture](ARCHITECTURE.md) · [Roadmap](ROADMAP.md) · [Changelog](CHANGELOG.md) · [AOSP baseline](docs/UPSTREAM_BASELINE.md) · [Licensing policy](LICENSES.md)
 
 ---
 **by Swir** · [GitHub](https://github.com/Swir)
