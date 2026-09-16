@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+### AOSP build provenance and exact runtime identity binding
+
+Added fail-closed `build-evidence` tooling that binds a completed local AOSP output to the fully pinned `repo manifest -r`, hashes reviewed core product artifacts, and extracts the exact build fingerprint/build ID/release/API/build type from the produced system properties. Added `evidence-bundle` so a complete Cuttlefish report is accepted only when its runtime fingerprint exactly matches the fingerprint from the hashed build output. The canonical bundle receives its own SHA-256 and never auto-promotes registry state.
+
+Cuttlefish evidence schema v3 now requires the exact SwirPhoneOS product, `vsoc_x86_64_only` device identity, `Swir` manufacturer, Android 17 / API 37, `userdebug`, build ID/fingerprint, all source-ready packages and package-local launcher resolution. Added negative tests for API drift, missing artifacts, fingerprint mismatch and duplicate-key evidence JSON.
+
+Added a manual-only `aosp-build-evidence.yml` workflow for a dedicated self-hosted `swir-aosp-builder`. It performs exact-tag init/sync, resolved-manifest capture, reviewed source staging, the real Cuttlefish product build and build-evidence capture; runtime collection is optional and read-only. No successful AOSP build/boot is claimed yet, so weighted progress remains **2%** and Beta remains **0/9**.
+
 ### SwirNotes, SwirCalendar, composable staging and stronger runtime evidence
 
 Added `SwirNotes` and `SwirCalendar` as meaningful permission-free Android source applications. Notes stores owner-created notes in an app-private SQLite database, supports create/edit/delete/search, explicit text sharing and user-selected Markdown export. Calendar stores a local agenda in app-private SQLite, supports date/time editing and search, and provides explicit sharing plus user-selected iCalendar export. Both include original SwirPhoneOS vector icons, EN/PL/NB/DE/ES/FR/PT/AR resources with RTL support and dependency-free host tests for pure-Java policy cores. CalendarProvider integration remains unimplemented and is explicitly rejected by the current source validator rather than being overclaimed.

@@ -32,7 +32,9 @@ The `swirphoneos` Python package provides strictly read-only ADB and Fastboot/Fa
 
 The development baseline is pinned to **Android 17 / API 37** at `android-17.0.0_r1`. The exact identity is recorded in [`platform/aosp_baseline.json`](platform/aosp_baseline.json), but status remains `PINNED_NOT_BUILT`: no completed AOSP sync, Kati/Soong build or Cuttlefish boot is claimed.
 
-The repository contains an x86_64 Cuttlefish product, exact-tag workspace planning, resolved `repo manifest -r` verification, bounded `vendor/swir/` source staging and a strict read-only Cuttlefish evidence collector. Staging now supports independently reviewed `stage_manifest.d/*.json` fragments while enforcing global source/destination uniqueness and the same `vendor/swir/` boundary. Runtime evidence requires the exact product, `sys.boot_completed=1`, a build fingerprint, every source-ready package and a launcher activity resolving inside each expected package. It never launches apps, changes package state or promotes registry status automatically.
+The repository contains an x86_64 Cuttlefish product, exact-tag workspace planning, resolved `repo manifest -r` verification, bounded `vendor/swir/` source staging and strict build/runtime evidence tooling. `build-evidence` hashes reviewed core image artifacts and extracts the exact built fingerprint from `system/build.prop`; schema-v3 Cuttlefish evidence requires the exact product/device/manufacturer, Android 17 / API 37, `userdebug`, all source-ready packages and package-local launcher resolution. `evidence-bundle` is accepted only when the runtime fingerprint exactly matches the hashed build output and then adds a canonical SHA-256 over the complete evidence payload. None of these tools promotes registry state or writes to physical hardware.
+
+A manual-only self-hosted workflow, `aosp-build-evidence.yml`, now encodes the exact-tag sync → reviewed staging → build → provenance path for a dedicated `swir-aosp-builder`. It has not completed a real AOSP build yet, so the weighted platform/runtime gates remain open.
 
 ### Functional Android application sources
 
@@ -70,16 +72,19 @@ python -m swirphoneos profiles
 python -m swirphoneos baseline
 python -m swirphoneos product-contract
 python -m swirphoneos aosp-plan --workspace /path/to/aosp --jobs 16
+python -m swirphoneos aosp-manifest --file /path/to/aosp/swirphoneos-pinned-manifest.xml
 python -m swirphoneos android-apps
 python -m swirphoneos build-preflight --workspace /path/to/aosp
-python -m swirphoneos cuttlefish-evidence --adb /absolute/path/to/adb
+python -m swirphoneos build-evidence --workspace /path/to/aosp --manifest /path/to/aosp/swirphoneos-pinned-manifest.xml
+python -m swirphoneos cuttlefish-evidence --adb /absolute/path/to/adb > runtime-evidence.json
+python -m swirphoneos evidence-bundle --build build-evidence.json --runtime runtime-evidence.json
 python -m swirphoneos i18n
 python -m swirphoneos apps
 python -m swirphoneos root-policy
 python -m swirphoneos.studio
 ```
 
-`gate` intentionally exits blocked while mandatory beta evidence is missing. `android-apps` validates checked-in source only. `cuttlefish-evidence` is read-only emulator evidence and does not by itself prove feature completeness or physical-device compatibility.
+`gate` intentionally exits blocked while mandatory beta evidence is missing. `android-apps` validates checked-in source only. Build/runtime evidence is fail-closed and remains emulator/build evidence, not physical-device compatibility proof.
 
 ## Product direction
 

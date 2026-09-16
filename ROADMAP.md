@@ -16,7 +16,7 @@
 | --- | --- | --- | --- |
 | 1 | 9 | 10 | 2% |
 
-The canonical ledger is `project.json`. Weights total 100 and only evidence-complete gates contribute. Source scaffolding, host tests and desktop packaging do not substitute for an Android build, boot or physical-device validation. Beta readiness remains **0/9 gates passed**.
+The canonical ledger is `project.json`. Weights total 100 and only evidence-complete gates contribute. Source scaffolding, host tests, provenance tooling and desktop packaging do not substitute for an Android build, boot or physical-device validation. Beta readiness remains **0/9 gates passed**.
 
 | Gate | Weight | Completion evidence required |
 | --- | ---: | --- |
@@ -46,11 +46,13 @@ The canonical ledger is `project.json`. Weights total 100 and only evidence-comp
 
 ## Current engineering slices
 
-### Platform and runtime evidence
+### Platform, build provenance and runtime evidence
 
-Android 17 / API 37 is pinned to `android-17.0.0_r1`. Exact-tag planning, build-host preflight, resolved-manifest SHA validation and bounded AOSP staging exist. The staging contract now accepts independently reviewed JSON fragments while enforcing global uniqueness and the `vendor/swir/` destination boundary.
+Android 17 / API 37 is pinned to `android-17.0.0_r1`. Exact-tag planning, build-host preflight, resolved-manifest SHA validation and bounded AOSP staging exist. The staging contract accepts independently reviewed JSON fragments while enforcing global uniqueness and the `vendor/swir/` destination boundary.
 
-The local Cuttlefish evidence collector is strictly read-only. A future report is complete only when the Swir product reports `sys.boot_completed=1`, the exact product identity and fingerprint exist, every source-ready package is installed and every one resolves its launcher activity inside its own package. The collector does not start activities, install packages, mutate state or promote registry status. No completed source sync, Kati/Soong build or Cuttlefish boot exists yet, so `aosp_baseline` and `emulator_boot` remain incomplete.
+A new fail-closed build-provenance layer now requires a real synchronized AOSP checkout, a fully pinned `repo manifest -r`, the exact `swirphoneos_cf_x86_64` product output, non-empty `boot.img` and `system.img`, and build identity from the produced `system/build.prop`. It hashes reviewed image artifacts and can bind that build evidence to a Cuttlefish report only when the runtime fingerprint exactly matches the built fingerprint. The resulting evidence bundle receives a canonical SHA-256 and never changes registry state automatically.
+
+Cuttlefish runtime evidence now requires `sys.boot_completed=1`, exact product/device/manufacturer identity, Android 17 / API 37, `userdebug`, build ID/fingerprint, every source-ready package and a launcher activity resolving inside each expected package. A manual-only self-hosted `aosp-build-evidence.yml` workflow now provides an executable exact-tag sync → stage → build → provenance path for a dedicated `swir-aosp-builder`. No completed source sync, Kati/Soong build or Cuttlefish boot exists yet, so `aosp_baseline` and `emulator_boot` remain incomplete.
 
 ### Android application source
 
@@ -94,10 +96,10 @@ Read-only ADB/Fastboot/FastbootD diagnostics, multilingual SwirPhoneStudio and W
 
 ## Next engineering work
 
-1. On a capable Linux x86-64 AOSP builder, run preflight, initialize/sync exact `android-17.0.0_r1`, preserve `repo manifest -r` plus SHA-256/tool versions, stage the bounded `vendor/swir/` bundle and compile `swirphoneos_cf_x86_64-aosp_current-userdebug`.
-2. Boot that image in Cuttlefish and preserve `sys.boot_completed=1`, exact product/fingerprint, package and launcher-resolution evidence for all nine source-ready apps. Pair the read-only report with the exact manifest/build checksums and interactive smoke evidence before any `ANDROID_RUNTIME` promotion.
-3. Fix any real Kati/Soong/Android runtime regressions before expanding more app source. Runtime evidence now has higher priority than increasing the app count.
-4. After runtime exists, connect SwirUpdate to a signed metadata/channel service and rollback-aware staged update/recovery contract; add platform-backed privacy history/indicators only through reviewed Android APIs.
+1. Provision or attach a capable dedicated Linux x86-64 runner labeled `swir-aosp-builder`, set `SWIR_AOSP_WORKSPACE`, and run the manual `AOSP build evidence` workflow. It must initialize/sync exact `android-17.0.0_r1`, preserve `repo manifest -r`, stage the bounded `vendor/swir/` bundle and compile `swirphoneos_cf_x86_64-aosp_current-userdebug`.
+2. Preserve `build-evidence.json` with artifact hashes and build fingerprint. Boot that exact product in Cuttlefish, capture schema-v3 runtime evidence and create `evidence-bundle.json`; fingerprint continuity must pass before any runtime claim.
+3. Record interactive smoke results for all nine source-ready apps, accessibility, locale/RTL switching and core Settings/Files/Update/Privacy/DeviceCare flows. Only then review any `ANDROID_RUNTIME` promotion.
+4. Fix any real Kati/Soong/Android runtime regressions before expanding more app source. Runtime evidence has higher priority than increasing the app count.
 5. Continue SwirPhoneStudio hardening; the next desktop gate evidence is actual Windows USB read-only ADB + Fastboot/FastbootD smoke on an owner-controlled device.
 6. After emulator/GSI evidence, expand device packs into reviewed installation/recovery plans. Never enable generic writes from Treble/codename/unlocked state alone.
 

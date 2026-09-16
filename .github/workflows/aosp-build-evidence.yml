@@ -1,0 +1,98 @@
+name: AOSP build evidence
+
+on:
+  workflow_dispatch:
+    inputs:
+      jobs:
+        description: Parallel AOSP build jobs
+        required: true
+        default: '16'
+        type: string
+      collect_runtime:
+        description: Collect evidence from an already-running local Cuttlefish instance after build
+        required: true
+        default: false
+        type: boolean
+      adb_path:
+        description: Absolute trusted adb path on the self-hosted builder when collect_runtime is enabled
+        required: false
+        default: /opt/android-sdk/platform-tools/adb
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: swir-aosp-builder
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Pinned Android 17 build evidence
+    runs-on: [self-hosted, linux, x64, swir-aosp-builder]
+    timeout-minutes: 720
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: tools
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.14'
+      - name: Validate builder configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+          : "${SWIR_AOSP_WORKSPACE:?Set SWIR_AOSP_WORKSPACE on the dedicated self-hosted runner}"
+          test "${{ inputs.jobs }}" -ge 1
+          test "${{ inputs.jobs }}" -le 256
+          cd tools
+          python -m swirphoneos build-preflight --workspace "$SWIR_AOSP_WORKSPACE"
+          python -m swirphoneos aosp-plan --workspace "$SWIR_AOSP_WORKSPACE" --jobs "${{ inputs.jobs }}" > "$GITHUB_WORKSPACE/aosp-plan.json"
+      - name: Initialize and synchronize exact Android 17 tag
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$SWIR_AOSP_WORKSPACE"
+          repo init -u https://android.googlesource.com/platform/manifest -b android-17.0.0_r1
+          repo sync -c --no-tags --optimized-fetch --prune -j"${{ inputs.jobs }}"
+          repo manifest -r -o swirphoneos-pinned-manifest.xml
+          PYTHONPATH="$GITHUB_WORKSPACE/tools" python -m swirphoneos aosp-manifest --file swirphoneos-pinned-manifest.xml > "$GITHUB_WORKSPACE/resolved-manifest.json"
+      - name: Stage reviewed SwirPhoneOS source
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH="$GITHUB_WORKSPACE/tools" python -m swirphoneos stage-product --workspace "$SWIR_AOSP_WORKSPACE" --product-root "$GITHUB_WORKSPACE/tools/platform/aosp_product" --execute > "$GITHUB_WORKSPACE/stage-report.json"
+      - name: Build SwirPhoneOS Cuttlefish product
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$SWIR_AOSP_WORKSPACE"
+          source build/envsetup.sh
+          lunch swirphoneos_cf_x86_64-aosp_current-userdebug
+          m -j"${{ inputs.jobs }}"
+      - name: Capture build provenance
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH="$GITHUB_WORKSPACE/tools" python -m swirphoneos build-evidence --workspace "$SWIR_AOSP_WORKSPACE" --manifest "$SWIR_AOSP_WORKSPACE/swirphoneos-pinned-manifest.xml" --baseline "$GITHUB_WORKSPACE/tools/platform/aosp_baseline.json" > "$GITHUB_WORKSPACE/build-evidence.json"
+      - name: Collect read-only Cuttlefish runtime evidence
+        if: ${{ inputs.collect_runtime }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH="$GITHUB_WORKSPACE/tools" python -m swirphoneos cuttlefish-evidence --adb "${{ inputs.adb_path }}" --manifest "$GITHUB_WORKSPACE/tools/system_apps/manifest.json" > "$GITHUB_WORKSPACE/runtime-evidence.json"
+          PYTHONPATH="$GITHUB_WORKSPACE/tools" python -m swirphoneos evidence-bundle --build "$GITHUB_WORKSPACE/build-evidence.json" --runtime "$GITHUB_WORKSPACE/runtime-evidence.json" > "$GITHUB_WORKSPACE/evidence-bundle.json"
+      - name: Upload immutable evidence files
+        uses: actions/upload-artifact@v4
+        with:
+          name: swirphoneos-aosp-evidence-${{ github.sha }}
+          if-no-files-found: error
+          retention-days: 30
+          path: |
+            aosp-plan.json
+            resolved-manifest.json
+            stage-report.json
+            build-evidence.json
+            runtime-evidence.json
+            evidence-bundle.json

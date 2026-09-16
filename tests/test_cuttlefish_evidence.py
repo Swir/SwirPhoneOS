@@ -10,13 +10,34 @@ from swirphoneos.system_apps import load_registry
 
 class CuttlefishEvidenceTests(unittest.TestCase):
     def _properties(self):
-        return {"sys.boot_completed":"1\n","ro.product.name":"swirphoneos_cf_x86_64\n","ro.build.fingerprint":"swir/test/build:17/ABC/1:userdebug/test-keys\n","ro.build.version.release":"17\n","ro.build.version.security_patch":"2026-09-05\n","persist.sys.locale":"pl-PL\n"}
+        return {
+            "sys.boot_completed":"1\n",
+            "ro.product.name":"swirphoneos_cf_x86_64\n",
+            "ro.product.device":"vsoc_x86_64_only\n",
+            "ro.product.manufacturer":"Swir\n",
+            "ro.product.model":"SwirPhoneOS Cuttlefish Developer\n",
+            "ro.build.fingerprint":"Swir/swirphoneos_cf_x86_64/vsoc_x86_64_only:17/CP2A.260605.016/1:userdebug/test-keys\n",
+            "ro.build.id":"CP2A.260605.016\n",
+            "ro.build.type":"userdebug\n",
+            "ro.build.tags":"test-keys\n",
+            "ro.build.version.release":"17\n",
+            "ro.build.version.sdk":"37\n",
+            "ro.build.version.security_patch":"2026-06-05\n",
+            "persist.sys.locale":"pl-PL\n",
+        }
 
-    def test_complete_snapshot_requires_boot_product_fingerprint_packages_and_launchers(self):
+    def test_complete_snapshot_requires_exact_identity_packages_and_launchers(self):
         registry=load_registry(Path("system_apps/manifest.json")); required=frozenset(app.package for app in registry.apps if app.source_ready)
         report=evaluate_runtime_snapshot(self._properties(),required,registry,required)
-        self.assertTrue(report["runtime_evidence_complete"]); self.assertEqual(report["missing_required_packages"],[]); self.assertEqual(report["missing_launchable_packages"],[])
+        self.assertTrue(report["runtime_evidence_complete"]); self.assertTrue(report["identity_matches"]); self.assertEqual(report["api_level"],"37")
+        self.assertEqual(report["missing_required_packages"],[]); self.assertEqual(report["missing_launchable_packages"],[])
         self.assertFalse(report["status_promotion_performed"]); self.assertFalse(report["device_write_allowed"]); self.assertEqual(len(report["build_fingerprint_sha256"]),64)
+
+    def test_identity_drift_blocks_runtime_evidence(self):
+        registry=load_registry(Path("system_apps/manifest.json")); required=frozenset(app.package for app in registry.apps if app.source_ready)
+        props=self._properties(); props["ro.build.version.sdk"]="36\n"
+        report=evaluate_runtime_snapshot(props,required,registry,required)
+        self.assertFalse(report["runtime_evidence_complete"]); self.assertFalse(report["identity_checks"]["api_level"])
 
     def test_missing_or_nonlaunchable_package_blocks_runtime_evidence(self):
         registry=load_registry(Path("system_apps/manifest.json")); required={app.package for app in registry.apps if app.source_ready}; missing=next(iter(required))

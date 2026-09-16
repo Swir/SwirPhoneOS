@@ -9,8 +9,9 @@ Version: **0.0.2.dev0 + unreleased Android-source/platform hardening**. Updated:
 | Device profile registry | Metadata-only schema; OnePlus Nord AC2003/avicii remains `PLANNED_NOT_SUPPORTED` |
 | SwirPhoneStudio | Multilingual ADB/Fastboot inspection GUI and Windows developer packaging; no write controls |
 | Android 17 AOSP baseline | Exact `android-17.0.0_r1` identity preserved; `PINNED_NOT_BUILT` |
-| AOSP workspace | Exact-tag plan, resolved-manifest SHA validation and bounded manifest + fragment staging implemented |
-| Cuttlefish runtime evidence | Read-only boot/product/fingerprint/package + launcher-resolution collector implemented; not yet run against a built SwirPhoneOS image |
+| AOSP workspace | Exact-tag plan, resolved-manifest SHA validation, bounded manifest/fragment staging and fail-closed build-artifact provenance tooling implemented |
+| Dedicated AOSP builder workflow | Manual-only self-hosted workflow added for exact-tag sync, staging, build and evidence capture; no successful AOSP run recorded yet |
+| Cuttlefish runtime evidence | Read-only exact product/device/manufacturer/API/build-type/fingerprint/package/launcher collector plus build/runtime fingerprint binding implemented; not yet run against a built SwirPhoneOS image |
 | Cuttlefish product | `PRODUCT_PACKAGES` includes Calculator, Settings, Files, DeviceCare, Update, Privacy, Clock, Notes and Calendar; **not built or booted** |
 | SwirCalculator | `ANDROID_SOURCE`; basic math host-tested; Android runtime not verified |
 | SwirSettings | `ANDROID_SOURCE`; reviewed settings routes/search/device state; Android runtime not verified |
@@ -32,4 +33,4 @@ Version: **0.0.2.dev0 + unreleased Android-source/platform hardening**. Updated:
 | Project ledger | **2%**, 1/10 weighted milestones; **Beta 0/9** |
 | Beta Release | Blocked; no release published |
 
-Host CI can verify Python contracts, desktop startup/packaging, staging safety and pure-Java logic/policies for the nine source-ready apps. It cannot establish Android runtime compatibility or hardware support. AOSP/platform credit remains blocked until the pinned source synchronizes and builds; emulator credit remains blocked until the resulting image boots and reviewed runtime evidence is recorded.
+Host CI can verify Python contracts, provenance/bundle rejection logic, desktop startup/packaging, staging safety and pure-Java logic/policies for the nine source-ready apps. It cannot establish Android runtime compatibility or hardware support. AOSP/platform credit remains blocked until the pinned source synchronizes and builds; emulator credit remains blocked until the resulting image boots and reviewed runtime evidence is recorded.
