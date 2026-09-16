@@ -44,11 +44,11 @@ The canonical ledger is `project.json`. Weights sum to 100; completion is the su
 - [ ] security_ota
 - [ ] beta_release
 
-The read-only ADB CLI, Fastboot/FastbootD inspection and strict schema-v1 profile registry are slices of `desktop_diagnostics`, not completion of its 8-point gate. Foundation evidence: `ARCHITECTURE.md`, `BETA_RELEASE_GATE.md`, `swirphoneos/readiness.py`, `tests/test_readiness.py` and the local test results recorded in `BUILD_STATUS.md`.
+The read-only ADB CLI, Fastboot/FastbootD inspection, strict schema-v1 profile registry and first SwirPhoneStudio GUI are slices of `desktop_diagnostics`, not completion of its 8-point gate. Foundation evidence: `ARCHITECTURE.md`, `BETA_RELEASE_GATE.md`, `swirphoneos/readiness.py`, `tests/test_readiness.py` and the results recorded in `BUILD_STATUS.md`.
 
 ## Next engineering work
 
-Build the first useful **SwirPhoneStudio** desktop UI around the existing read-only diagnostics and profile registry, with OS-language detection, English fallback, project icon and `by Swir` footer. Add a sanitized exportable diagnostic report and perform real Windows/USB ADB + Fastboot/FastbootD smoke tests when reference hardware is available.
+Harden **SwirPhoneStudio** into a reproducible Windows package: add packaging metadata/build workflow, connect the existing project icon to the packaged executable, add startup/error-path smoke tests and keep OS-language detection with English fallback. Perform real Windows/USB ADB + Fastboot/FastbootD smoke tests when reference hardware is available; only then can `desktop_diagnostics` be considered for completion.
 
 In parallel, select and pin the upstream AOSP baseline after checking actual build-resource requirements and vendor constraints. Add bounded source/environment preflight and reproducible build metadata without starting an unbounded source download. Then target an emulator boot before claiming any GSI or physical-phone support.
 
