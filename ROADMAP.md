@@ -44,11 +44,17 @@ The canonical ledger is `project.json`. Weights sum to 100; completion is the su
 - [ ] security_ota
 - [ ] beta_release
 
-The read-only CLI and Flash Studio GUI are slices of desktop_diagnostics, not completion of its 8-point gate. The GUI has native-window tests, asynchronous inspection, EN/PL/NB catalogs and local report export. Fastboot/FastbootD, profile validation, packaged Windows delivery and real USB evidence remain outstanding. Foundation evidence: `ARCHITECTURE.md`, `BETA_RELEASE_GATE.md`, `swirphoneos/readiness.py`, `tests/test_readiness.py` and the test results recorded in `BUILD_STATUS.md`.
+The read-only ADB CLI and Flash Studio GUI, strict Fastboot/FastbootD inspection, and schema-v1 device registry are slices of `desktop_diagnostics`, not completion of its 8-point gate. The GUI has native-window tests, asynchronous ADB inspection, EN/PL/NB catalogs and local report export. Fastboot/profile GUI integration, packaged Windows delivery and real USB evidence remain outstanding.
+
+Android 17 / API 37 discovery metadata is a slice of `aosp_baseline`, not completion of its 10-point gate. The candidate is still `CANDIDATE_NOT_PINNED`; no source sync or AOSP build is claimed. Foundation evidence remains `ARCHITECTURE.md`, `BETA_RELEASE_GATE.md`, `swirphoneos/readiness.py`, `tests/test_readiness.py` and the test results recorded in `BUILD_STATUS.md`.
 
 ## Next engineering work
 
-Select and pin an upstream AOSP baseline after checking actual build resources and vendor constraints. Implement a source/environment preflight without starting an unbounded download. Expand profile/schema and read-only Fastboot diagnostics with strict mode/identity handling, and integrate them into the existing GUI without enabling writes. Add Windows packaging and real local USB validation. No hardware milestone may be completed without physical test evidence.
+Harden **SwirPhoneStudio / Flash Studio** into a reproducible Windows package: integrate the existing read-only Fastboot/FastbootD and profile registry into the tested GUI, connect packaged application assets, add packaging/build checks and perform real local Windows/USB ADB + Fastboot/FastbootD smoke tests. No write controls are enabled at this stage.
+
+For the platform, move the Android 17 candidate from `CANDIDATE_NOT_PINNED` to a preserved revision-locked manifest snapshot with checksums and documented build-host versions. Add a bounded offline source/environment preflight before any large AOSP sync. Then complete a reproducible AOSP platform build and target an emulator boot before claiming GSI or physical-phone support.
+
+After emulator/GSI evidence exists, expand device packs from metadata-only profiles into independently reviewed installation/recovery plans. No generic write operation may be enabled merely because a device reports Treble, a codename or an unlocked bootloader. Each supported hardware profile requires an explicit stock-recovery path and physical evidence.
 
 ## Release stages
 
