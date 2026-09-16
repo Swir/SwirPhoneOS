@@ -61,10 +61,15 @@ class GuiTests(unittest.TestCase):
 
     def test_minimum_window_keeps_report_and_footer(self):
         self.root.geometry("640x500")
-        self.root.update()
-        self.assertGreater(self.app.report.winfo_height(), 30)
-        for widget, _ in self.app._labels:
-            self.assertLess(widget.winfo_rooty() - self.root.winfo_rooty(), 500)
+        for language in ("en", "pl", "nb"):
+            with self.subTest(language=language):
+                self.app.language.set(language)
+                self.app.refresh_language()
+                self.root.update()
+                self.assertGreater(self.app.report.winfo_height(), 50)
+                for widget, _ in self.app._labels:
+                    bottom = widget.winfo_rooty() - self.root.winfo_rooty() + widget.winfo_height()
+                    self.assertLessEqual(bottom, self.root.winfo_height())
 
     def test_no_save_dialog_without_report(self):
         with patch("swirphoneos.studio.filedialog.asksaveasfilename") as dialog:
