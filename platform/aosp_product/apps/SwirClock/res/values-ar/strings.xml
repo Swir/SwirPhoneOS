@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Swir Clock</string>
+    <string name="subtitle">الوقت والمؤقتات والمنبهات ضمن مسار واضح يتحكم فيه المستخدم.</string>
+    <string name="now">الآن</string>
+    <string name="stopwatch">ساعة إيقاف</string>
+    <string name="timer">مؤقت</string>
+    <string name="alarm">منبه</string>
+    <string name="start">بدء</string>
+    <string name="pause">إيقاف مؤقت</string>
+    <string name="reset">إعادة ضبط</string>
+    <string name="start_timer">بدء المؤقت</string>
+    <string name="cancel">إلغاء</string>
+    <string name="timer_minutes_hint">الدقائق (1-1440)</string>
+    <string name="invalid_timer">أدخل مدة من 1 إلى 1440 دقيقة.</string>
+    <string name="timer_finished">انتهى المؤقت.</string>
+    <string name="hour_hint">الساعة 0-23</string>
+    <string name="minute_hint">الدقيقة 0-59</string>
+    <string name="set_alarm">ضبط المنبه</string>
+    <string name="invalid_alarm">أدخل وقت منبه صالحًا بنظام 24 ساعة.</string>
+    <string name="alarm_body">يفتح إنشاء المنبه واجهة منبه النظام لكي تراجعه قبل الحفظ.</string>
+    <string name="alarm_message">منبه Swir Clock</string>
+    <string name="alarm_unavailable">لا يتوفر تطبيق منبه متوافق.</string>
+    <string name="utc_format">UTC: %1$s</string>
+</resources>
