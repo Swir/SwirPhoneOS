@@ -87,14 +87,7 @@ def make_workspace_plan(
         f"m -j{jobs}"
     )
     commands = (
-        (
-            "repo",
-            "init",
-            "-u",
-            baseline.manifest_url,
-            "-b",
-            baseline.repo_init_revision,
-        ),
+        ("repo", "init", "-u", baseline.manifest_url, "-b", baseline.repo_init_revision),
         ("repo", "sync", "-c", "--no-tags", "--optimized-fetch", "--prune", f"-j{jobs}"),
         ("repo", "manifest", "-r", "-o", "swirphoneos-pinned-manifest.xml"),
         ("python", "-m", "swirphoneos", "stage-product", "--workspace", str(root), "--execute"),
@@ -152,7 +145,6 @@ def validate_resolved_manifest(path: Path) -> ResolvedManifestEvidence:
         raise AospWorkspaceError("Resolved manifest snapshot is not valid XML.") from exc
     if root.tag != "manifest":
         raise AospWorkspaceError("Resolved manifest root element must be <manifest>.")
-
     projects = root.findall("project")
     if not projects:
         raise AospWorkspaceError("Resolved manifest contains no projects.")
@@ -171,16 +163,10 @@ def validate_resolved_manifest(path: Path) -> ResolvedManifestEvidence:
         paths.add(project_path)
         if not _SHA1.fullmatch(revision):
             all_pinned = False
-
     if not all_pinned:
         raise AospWorkspaceError("Resolved manifest contains a floating/non-SHA project revision.")
     digest = hashlib.sha256(text.encode("utf-8")).hexdigest()
-    return ResolvedManifestEvidence(
-        project_count=len(projects),
-        unique_path_count=len(paths),
-        sha256=digest,
-        all_projects_pinned=True,
-    )
+    return ResolvedManifestEvidence(len(projects), len(paths), digest, True)
 
 
 def public_manifest_evidence(evidence: ResolvedManifestEvidence) -> dict[str, object]:
@@ -207,10 +193,7 @@ def _safe_relative(value: object, field: str) -> PurePosixPath:
 def _load_stage_entries(product_root: Path) -> tuple[StageEntry, ...]:
     manifest = product_root / "stage_manifest.json"
     if not manifest.exists():
-        return tuple(
-            StageEntry(PurePosixPath(name), PurePosixPath("vendor/swir/products") / name)
-            for name in _LEGACY_STAGE_FILES
-        )
+        return tuple(StageEntry(PurePosixPath(name), PurePosixPath("vendor/swir/products") / name) for name in _LEGACY_STAGE_FILES)
     if not manifest.is_file() or manifest.is_symlink():
         raise AospWorkspaceError("AOSP stage manifest must be a regular file.")
     try:
@@ -225,7 +208,6 @@ def _load_stage_entries(product_root: Path) -> tuple[StageEntry, ...]:
     files = data["files"]
     if not isinstance(files, list) or not 2 <= len(files) <= _MAX_STAGE_FILES:
         raise AospWorkspaceError("AOSP stage manifest file count is invalid.")
-
     entries: list[StageEntry] = []
     sources: set[PurePosixPath] = set()
     destinations: set[PurePosixPath] = set()
@@ -254,21 +236,13 @@ def _load_stage_entries(product_root: Path) -> tuple[StageEntry, ...]:
     return tuple(entries)
 
 
-def stage_product_tree(
-    product_root: Path,
-    workspace: Path,
-    *,
-    execute: bool = False,
-) -> dict[str, object]:
+def stage_product_tree(product_root: Path, workspace: Path, *, execute: bool = False) -> dict[str, object]:
     """Plan or explicitly copy the bounded Swir product/app source bundle into AOSP."""
     source = product_root.expanduser().resolve()
     target_root = _safe_workspace(workspace)
     entries = _load_stage_entries(source)
     planned = [
-        {
-            "source": str(source / Path(*entry.source.parts)),
-            "destination": str(target_root / Path(*entry.destination.parts)),
-        }
+        {"source": str(source / Path(*entry.source.parts)), "destination": str(target_root / Path(*entry.destination.parts))}
         for entry in entries
     ]
     if execute:
@@ -279,7 +253,6 @@ def stage_product_tree(
             dst = target_root / Path(*entry.destination.parts)
             dst.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(src, dst)
-
     return {
         "schema_version": 2,
         "workspace": str(target_root),
