@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">SwirRoot</string>
+    <string name="subtitle">حالة روت يتحكم بها المالك وسلامة الاستعادة لإصدارات SwirPhoneOS المدعومة.</string>
+    <string name="state_title">حالة الروت الحالية</string>
+    <string name="state_unavailable">غير متاح</string>
+    <string name="state_off">الروت متوقف</string>
+    <string name="state_on">الروت مفعّل</string>
+    <string name="state_transition">جارٍ الانتقال</string>
+    <string name="build_title">بصمة الإصدار الحالي</string>
+    <string name="safety_title">بوابات الأمان</string>
+    <string name="safety_body">تتطلب تغييرات الروت إصدارًا مطابقًا ومدعومًا وملف جهاز موثقًا ومواد تراجع وسجلًا وحالة تحديث آمنة وتأكيدًا صريحًا من المالك. لا تتضمن مرحلة المصدر هذه أي محرك تعديل.</string>
+    <string name="workflow_title">مسار المالك</string>
+    <string name="workflow_body">مراجعة المسار لا تغيّر الجهاز مطلقًا. يبقى تفعيل الروت وإزالته محظورين حتى يتوفر محرك خاص بالإصدار تم التحقق منه فعليًا ومسار تراجع موثق.</string>
+    <string name="enable_review">مراجعة تفعيل الروت</string>
+    <string name="unroot_review">مراجعة إزالة الروت</string>
+    <string name="diagnostics">تحديث التشخيص</string>
+    <string name="audit_title">سجل التدقيق</string>
+    <string name="audit_empty">لم يتم تسجيل مراجعة مسار في هذه الجلسة.</string>
+    <string name="confirm_enable_title">مراجعة تفعيل الروت</string>
+    <string name="confirm_enable_body">تابع فقط لمراجعة بوابات الأمان. لن يتم تنفيذ أي تغيير للروت.</string>
+    <string name="confirm_unroot_title">مراجعة إزالة الروت</string>
+    <string name="confirm_unroot_body">تابع فقط لمراجعة بوابات الاستعادة. لن يتم تغيير النظام أو صورة الإقلاع.</string>
+    <string name="cancel">إلغاء</string>
+    <string name="continue_label">متابعة</string>
+    <string name="decision_denied_unsupported">محظور: لا يملك هذا الإصدار محرك تعديل SwirRoot موثقًا.</string>
+    <string name="decision_denied_build">محظور: لم يتم التحقق من الإصدار المطابق.</string>
+    <string name="decision_denied_profile">محظور: لم يتم التحقق من ملف الجهاز.</string>
+    <string name="decision_denied_owner">محظور: يلزم تأكيد المالك.</string>
+    <string name="decision_denied_rollback">محظور: مواد التراجع الموثقة مفقودة.</string>
+    <string name="decision_denied_journal">محظور: سجل الاستعادة غير متاح.</string>
+    <string name="decision_denied_update">محظور: حالة التحديث غير آمنة لانتقال الروت.</string>
+    <string name="decision_denied_expected_state">محظور: حالة الاستعادة المتوقعة دون روت غير معروفة.</string>
+    <string name="decision_ready_enable">نجحت مراجعة أمان خطة التفعيل. ما زال التنفيذ يتطلب المحرك الموثق.</string>
+    <string name="decision_ready_unroot">نجحت مراجعة أمان خطة إزالة الروت. ما زال التنفيذ يتطلب المحرك الموثق.</string>
+    <string name="last_result">آخر نتيجة للمراجعة</string>
+    <string name="audit_attempt_enable">مراجعة التفعيل</string>
+    <string name="audit_attempt_unroot">مراجعة إزالة الروت</string>
+    <string name="audit_refresh">تم تحديث التشخيص</string>
+    <string name="diagnostics_refreshed">تم تحديث التشخيص.</string>
+    <string name="unknown_value">غير متاح</string>
+    <string name="audit_separator"> — </string>
+</resources>

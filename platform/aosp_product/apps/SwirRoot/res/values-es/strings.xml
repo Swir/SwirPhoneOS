@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">SwirRoot</string>
+    <string name="subtitle">Estado root controlado por el propietario y seguridad de recuperación para compilaciones SwirPhoneOS compatibles.</string>
+    <string name="state_title">Estado root actual</string>
+    <string name="state_unavailable">No disponible</string>
+    <string name="state_off">Root desactivado</string>
+    <string name="state_on">Root activado</string>
+    <string name="state_transition">Transición en curso</string>
+    <string name="build_title">Huella de la compilación actual</string>
+    <string name="safety_title">Controles de seguridad</string>
+    <string name="safety_body">Los cambios root requieren una compilación exacta compatible, un perfil de dispositivo verificado, material de reversión, un registro, un estado de actualización seguro y confirmación explícita del propietario. Esta etapa de código no tiene backend de modificación.</string>
+    <string name="workflow_title">Flujo del propietario</string>
+    <string name="workflow_body">Revisar un flujo nunca cambia el dispositivo. Activar root y quitar root permanecen bloqueados hasta disponer de un backend específico de compilación verificado físicamente y una ruta de reversión.</string>
+    <string name="enable_review">Revisar activación root</string>
+    <string name="unroot_review">Revisar eliminación de root</string>
+    <string name="diagnostics">Actualizar diagnósticos</string>
+    <string name="audit_title">Registro de auditoría</string>
+    <string name="audit_empty">No se ha registrado ninguna revisión de flujo en esta sesión.</string>
+    <string name="confirm_enable_title">Revisar activación root</string>
+    <string name="confirm_enable_body">Continúa solo para revisar los controles de seguridad. No se ejecutará ningún cambio root.</string>
+    <string name="confirm_unroot_title">Revisar eliminación de root</string>
+    <string name="confirm_unroot_body">Continúa solo para revisar los controles de restauración. No se cambiará el sistema ni la imagen de arranque.</string>
+    <string name="cancel">Cancelar</string>
+    <string name="continue_label">Continuar</string>
+    <string name="decision_denied_unsupported">Bloqueado: esta compilación no tiene un backend de modificación SwirRoot verificado.</string>
+    <string name="decision_denied_build">Bloqueado: la compilación exacta no está verificada.</string>
+    <string name="decision_denied_profile">Bloqueado: el perfil del dispositivo no está verificado.</string>
+    <string name="decision_denied_owner">Bloqueado: se requiere confirmación del propietario.</string>
+    <string name="decision_denied_rollback">Bloqueado: falta material de reversión verificado.</string>
+    <string name="decision_denied_journal">Bloqueado: no hay un registro de recuperación disponible.</string>
+    <string name="decision_denied_update">Bloqueado: el estado de actualización no es seguro para una transición root.</string>
+    <string name="decision_denied_expected_state">Bloqueado: no se conoce el estado esperado sin root.</string>
+    <string name="decision_ready_enable">La revisión de seguridad del plan de activación pasó. La ejecución aún requiere el backend verificado.</string>
+    <string name="decision_ready_unroot">La revisión de seguridad del plan de eliminación de root pasó. La ejecución aún requiere el backend verificado.</string>
+    <string name="last_result">Último resultado de revisión</string>
+    <string name="audit_attempt_enable">Revisión de activación</string>
+    <string name="audit_attempt_unroot">Revisión de eliminación de root</string>
+    <string name="audit_refresh">Diagnósticos actualizados</string>
+    <string name="diagnostics_refreshed">Diagnósticos actualizados.</string>
+    <string name="unknown_value">No disponible</string>
+    <string name="audit_separator"> — </string>
+</resources>

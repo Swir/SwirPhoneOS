@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">SwirRoot</string>
+    <string name="subtitle">Owner-controlled root status and recovery safety for supported SwirPhoneOS builds.</string>
+    <string name="state_title">Current root state</string>
+    <string name="state_unavailable">Unavailable</string>
+    <string name="state_off">Root off</string>
+    <string name="state_on">Root on</string>
+    <string name="state_transition">Transition in progress</string>
+    <string name="build_title">Current build fingerprint</string>
+    <string name="safety_title">Safety gates</string>
+    <string name="safety_body">Root changes require an exact supported build, a verified device profile, rollback material, a journal, a safe update state and explicit owner confirmation. This source stage has no mutation backend.</string>
+    <string name="workflow_title">Owner workflow</string>
+    <string name="workflow_body">Reviewing a workflow never changes the device. Enable and unroot stay blocked until a physically verified build-specific backend and rollback path exist.</string>
+    <string name="enable_review">Review root enable</string>
+    <string name="unroot_review">Review unroot</string>
+    <string name="diagnostics">Refresh diagnostics</string>
+    <string name="audit_title">Audit log</string>
+    <string name="audit_empty">No workflow review recorded in this session.</string>
+    <string name="confirm_enable_title">Review root enable</string>
+    <string name="confirm_enable_body">Continue only to review the safety gates. No root change will be executed.</string>
+    <string name="confirm_unroot_title">Review unroot</string>
+    <string name="confirm_unroot_body">Continue only to review the restore gates. No system or boot image will be changed.</string>
+    <string name="cancel">Cancel</string>
+    <string name="continue_label">Continue</string>
+    <string name="decision_denied_unsupported">Blocked: this build has no verified SwirRoot mutation backend.</string>
+    <string name="decision_denied_build">Blocked: the exact build is not verified.</string>
+    <string name="decision_denied_profile">Blocked: the device profile is not verified.</string>
+    <string name="decision_denied_owner">Blocked: owner confirmation is required.</string>
+    <string name="decision_denied_rollback">Blocked: verified rollback material is missing.</string>
+    <string name="decision_denied_journal">Blocked: a recovery journal is unavailable.</string>
+    <string name="decision_denied_update">Blocked: update state is not safe for a root transition.</string>
+    <string name="decision_denied_expected_state">Blocked: the expected non-root restore state is not known.</string>
+    <string name="decision_ready_enable">Safety review passed for an enable plan. Execution still requires the verified backend.</string>
+    <string name="decision_ready_unroot">Safety review passed for an unroot plan. Execution still requires the verified backend.</string>
+    <string name="last_result">Last review result</string>
+    <string name="audit_attempt_enable">Enable review</string>
+    <string name="audit_attempt_unroot">Unroot review</string>
+    <string name="audit_refresh">Diagnostics refreshed</string>
+    <string name="diagnostics_refreshed">Diagnostics refreshed.</string>
+    <string name="unknown_value">Not available</string>
+    <string name="audit_separator"> — </string>
+</resources>

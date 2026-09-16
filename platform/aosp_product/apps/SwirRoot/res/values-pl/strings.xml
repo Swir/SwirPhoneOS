@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">SwirRoot</string>
+    <string name="subtitle">Kontrola stanu root przez właściciela i bezpieczeństwo odzyskiwania dla obsługiwanych wersji SwirPhoneOS.</string>
+    <string name="state_title">Bieżący stan root</string>
+    <string name="state_unavailable">Niedostępny</string>
+    <string name="state_off">Root wyłączony</string>
+    <string name="state_on">Root włączony</string>
+    <string name="state_transition">Trwa zmiana</string>
+    <string name="build_title">Odcisk bieżącej kompilacji</string>
+    <string name="safety_title">Bramki bezpieczeństwa</string>
+    <string name="safety_body">Zmiany root wymagają dokładnie obsługiwanej kompilacji, zweryfikowanego profilu urządzenia, materiału do wycofania, dziennika, bezpiecznego stanu aktualizacji i wyraźnej zgody właściciela. Ten etap źródłowy nie ma mechanizmu modyfikacji.</string>
+    <string name="workflow_title">Przepływ właściciela</string>
+    <string name="workflow_body">Przegląd przepływu nigdy nie zmienia urządzenia. Włączenie root i unroot pozostają zablokowane do czasu fizycznej weryfikacji mechanizmu dla konkretnej kompilacji oraz ścieżki wycofania.</string>
+    <string name="enable_review">Sprawdź włączenie root</string>
+    <string name="unroot_review">Sprawdź unroot</string>
+    <string name="diagnostics">Odśwież diagnostykę</string>
+    <string name="audit_title">Dziennik audytu</string>
+    <string name="audit_empty">Brak przeglądów przepływu w tej sesji.</string>
+    <string name="confirm_enable_title">Sprawdź włączenie root</string>
+    <string name="confirm_enable_body">Kontynuuj tylko, aby sprawdzić bramki bezpieczeństwa. Root nie zostanie zmieniony.</string>
+    <string name="confirm_unroot_title">Sprawdź unroot</string>
+    <string name="confirm_unroot_body">Kontynuuj tylko, aby sprawdzić bramki przywracania. System ani obraz rozruchowy nie zostaną zmienione.</string>
+    <string name="cancel">Anuluj</string>
+    <string name="continue_label">Kontynuuj</string>
+    <string name="decision_denied_unsupported">Zablokowane: ta kompilacja nie ma zweryfikowanego mechanizmu modyfikacji SwirRoot.</string>
+    <string name="decision_denied_build">Zablokowane: dokładna kompilacja nie jest zweryfikowana.</string>
+    <string name="decision_denied_profile">Zablokowane: profil urządzenia nie jest zweryfikowany.</string>
+    <string name="decision_denied_owner">Zablokowane: wymagana jest zgoda właściciela.</string>
+    <string name="decision_denied_rollback">Zablokowane: brak zweryfikowanego materiału do wycofania.</string>
+    <string name="decision_denied_journal">Zablokowane: dziennik odzyskiwania jest niedostępny.</string>
+    <string name="decision_denied_update">Zablokowane: stan aktualizacji nie jest bezpieczny dla zmiany root.</string>
+    <string name="decision_denied_expected_state">Zablokowane: oczekiwany stan bez root nie jest znany.</string>
+    <string name="decision_ready_enable">Przegląd bezpieczeństwa planu włączenia zakończony. Wykonanie nadal wymaga zweryfikowanego mechanizmu.</string>
+    <string name="decision_ready_unroot">Przegląd bezpieczeństwa planu unroot zakończony. Wykonanie nadal wymaga zweryfikowanego mechanizmu.</string>
+    <string name="last_result">Ostatni wynik przeglądu</string>
+    <string name="audit_attempt_enable">Przegląd włączenia</string>
+    <string name="audit_attempt_unroot">Przegląd unroot</string>
+    <string name="audit_refresh">Odświeżono diagnostykę</string>
+    <string name="diagnostics_refreshed">Odświeżono diagnostykę.</string>
+    <string name="unknown_value">Brak danych</string>
+    <string name="audit_separator"> — </string>
+</resources>

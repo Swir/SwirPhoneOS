@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">SwirRoot</string>
+    <string name="subtitle">Eierstyrt root-status og gjenopprettingssikkerhet for støttede SwirPhoneOS-bygg.</string>
+    <string name="state_title">Gjeldende root-status</string>
+    <string name="state_unavailable">Utilgjengelig</string>
+    <string name="state_off">Root av</string>
+    <string name="state_on">Root på</string>
+    <string name="state_transition">Overgang pågår</string>
+    <string name="build_title">Gjeldende byggfingeravtrykk</string>
+    <string name="safety_title">Sikkerhetsporter</string>
+    <string name="safety_body">Root-endringer krever et nøyaktig støttet bygg, verifisert enhetsprofil, tilbakeføringsmateriale, journal, trygg oppdateringstilstand og eksplisitt eierbekreftelse. Dette kildestadiet har ingen mutasjonsmotor.</string>
+    <string name="workflow_title">Eierflyt</string>
+    <string name="workflow_body">Gjennomgang av en flyt endrer aldri enheten. Aktivering og unroot forblir blokkert til en fysisk verifisert byggspesifikk motor og tilbakeføringsvei finnes.</string>
+    <string name="enable_review">Gjennomgå root-aktivering</string>
+    <string name="unroot_review">Gjennomgå unroot</string>
+    <string name="diagnostics">Oppdater diagnostikk</string>
+    <string name="audit_title">Revisjonslogg</string>
+    <string name="audit_empty">Ingen flytgjennomgang registrert i denne økten.</string>
+    <string name="confirm_enable_title">Gjennomgå root-aktivering</string>
+    <string name="confirm_enable_body">Fortsett bare for å kontrollere sikkerhetsportene. Ingen root-endring blir utført.</string>
+    <string name="confirm_unroot_title">Gjennomgå unroot</string>
+    <string name="confirm_unroot_body">Fortsett bare for å kontrollere gjenopprettingsportene. System eller oppstartsavbildning blir ikke endret.</string>
+    <string name="cancel">Avbryt</string>
+    <string name="continue_label">Fortsett</string>
+    <string name="decision_denied_unsupported">Blokkert: dette bygget har ingen verifisert SwirRoot-mutasjonsmotor.</string>
+    <string name="decision_denied_build">Blokkert: det nøyaktige bygget er ikke verifisert.</string>
+    <string name="decision_denied_profile">Blokkert: enhetsprofilen er ikke verifisert.</string>
+    <string name="decision_denied_owner">Blokkert: eierbekreftelse kreves.</string>
+    <string name="decision_denied_rollback">Blokkert: verifisert tilbakeføringsmateriale mangler.</string>
+    <string name="decision_denied_journal">Blokkert: gjenopprettingsjournal er utilgjengelig.</string>
+    <string name="decision_denied_update">Blokkert: oppdateringstilstanden er ikke trygg for root-overgang.</string>
+    <string name="decision_denied_expected_state">Blokkert: forventet ikke-root-tilstand er ikke kjent.</string>
+    <string name="decision_ready_enable">Sikkerhetsgjennomgang bestått for aktiveringsplan. Utføring krever fortsatt verifisert motor.</string>
+    <string name="decision_ready_unroot">Sikkerhetsgjennomgang bestått for unroot-plan. Utføring krever fortsatt verifisert motor.</string>
+    <string name="last_result">Siste gjennomgangsresultat</string>
+    <string name="audit_attempt_enable">Aktiveringsgjennomgang</string>
+    <string name="audit_attempt_unroot">Unroot-gjennomgang</string>
+    <string name="audit_refresh">Diagnostikk oppdatert</string>
+    <string name="diagnostics_refreshed">Diagnostikk oppdatert.</string>
+    <string name="unknown_value">Ikke tilgjengelig</string>
+    <string name="audit_separator"> — </string>
+</resources>

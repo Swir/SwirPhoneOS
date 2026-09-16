@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">SwirRoot</string>
+    <string name="subtitle">Vom Besitzer kontrollierter Root-Status und Wiederherstellungssicherheit für unterstützte SwirPhoneOS-Builds.</string>
+    <string name="state_title">Aktueller Root-Status</string>
+    <string name="state_unavailable">Nicht verfügbar</string>
+    <string name="state_off">Root aus</string>
+    <string name="state_on">Root an</string>
+    <string name="state_transition">Übergang läuft</string>
+    <string name="build_title">Aktueller Build-Fingerabdruck</string>
+    <string name="safety_title">Sicherheitsprüfungen</string>
+    <string name="safety_body">Root-Änderungen erfordern einen exakt unterstützten Build, ein verifiziertes Geräteprofil, Rollback-Material, ein Journal, einen sicheren Update-Status und eine ausdrückliche Bestätigung des Besitzers. Diese Quellstufe hat kein Änderungs-Backend.</string>
+    <string name="workflow_title">Besitzer-Workflow</string>
+    <string name="workflow_body">Die Prüfung eines Workflows ändert das Gerät nie. Aktivierung und Unroot bleiben blockiert, bis ein physisch verifiziertes build-spezifisches Backend und ein Rollback-Pfad existieren.</string>
+    <string name="enable_review">Root-Aktivierung prüfen</string>
+    <string name="unroot_review">Unroot prüfen</string>
+    <string name="diagnostics">Diagnose aktualisieren</string>
+    <string name="audit_title">Audit-Protokoll</string>
+    <string name="audit_empty">In dieser Sitzung wurde keine Workflow-Prüfung aufgezeichnet.</string>
+    <string name="confirm_enable_title">Root-Aktivierung prüfen</string>
+    <string name="confirm_enable_body">Nur fortfahren, um die Sicherheitsprüfungen zu prüfen. Root wird nicht geändert.</string>
+    <string name="confirm_unroot_title">Unroot prüfen</string>
+    <string name="confirm_unroot_body">Nur fortfahren, um die Wiederherstellungsprüfungen zu prüfen. System oder Boot-Image werden nicht geändert.</string>
+    <string name="cancel">Abbrechen</string>
+    <string name="continue_label">Fortfahren</string>
+    <string name="decision_denied_unsupported">Blockiert: Dieser Build hat kein verifiziertes SwirRoot-Änderungs-Backend.</string>
+    <string name="decision_denied_build">Blockiert: Der exakte Build ist nicht verifiziert.</string>
+    <string name="decision_denied_profile">Blockiert: Das Geräteprofil ist nicht verifiziert.</string>
+    <string name="decision_denied_owner">Blockiert: Besitzerbestätigung ist erforderlich.</string>
+    <string name="decision_denied_rollback">Blockiert: Verifiziertes Rollback-Material fehlt.</string>
+    <string name="decision_denied_journal">Blockiert: Ein Wiederherstellungsjournal ist nicht verfügbar.</string>
+    <string name="decision_denied_update">Blockiert: Der Update-Status ist für einen Root-Übergang nicht sicher.</string>
+    <string name="decision_denied_expected_state">Blockiert: Der erwartete Zustand ohne Root ist nicht bekannt.</string>
+    <string name="decision_ready_enable">Sicherheitsprüfung für den Aktivierungsplan bestanden. Die Ausführung benötigt weiterhin das verifizierte Backend.</string>
+    <string name="decision_ready_unroot">Sicherheitsprüfung für den Unroot-Plan bestanden. Die Ausführung benötigt weiterhin das verifizierte Backend.</string>
+    <string name="last_result">Letztes Prüfergebnis</string>
+    <string name="audit_attempt_enable">Aktivierungsprüfung</string>
+    <string name="audit_attempt_unroot">Unroot-Prüfung</string>
+    <string name="audit_refresh">Diagnose aktualisiert</string>
+    <string name="diagnostics_refreshed">Diagnose aktualisiert.</string>
+    <string name="unknown_value">Nicht verfügbar</string>
+    <string name="audit_separator"> — </string>
+</resources>
