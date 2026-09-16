@@ -44,11 +44,11 @@ The canonical ledger is `project.json`. Weights sum to 100; completion is the su
 - [ ] security_ota
 - [ ] beta_release
 
-The read-only CLI is a first slice of desktop_diagnostics, not completion of its 8-point gate. Foundation evidence: `ARCHITECTURE.md`, `BETA_RELEASE_GATE.md`, `swirphoneos/readiness.py`, `tests/test_readiness.py` and the local test results recorded in `BUILD_STATUS.md`.
+The read-only CLI and Flash Studio GUI are slices of desktop_diagnostics, not completion of its 8-point gate. The GUI has native-window tests, asynchronous inspection, EN/PL/NB catalogs and local report export. Fastboot/FastbootD, profile validation, packaged Windows delivery and real USB evidence remain outstanding. Foundation evidence: `ARCHITECTURE.md`, `BETA_RELEASE_GATE.md`, `swirphoneos/readiness.py`, `tests/test_readiness.py` and the test results recorded in `BUILD_STATUS.md`.
 
 ## Next engineering work
 
-Select and pin an upstream AOSP baseline after checking actual build resources and vendor constraints. Implement a source/environment preflight without starting an unbounded download. Expand profile/schema and read-only Fastboot diagnostics with strict mode/identity handling. Build the desktop GUI around this core without enabling writes. No hardware milestone may be completed without physical test evidence.
+Select and pin an upstream AOSP baseline after checking actual build resources and vendor constraints. Implement a source/environment preflight without starting an unbounded download. Expand profile/schema and read-only Fastboot diagnostics with strict mode/identity handling, and integrate them into the existing GUI without enabling writes. Add Windows packaging and real local USB validation. No hardware milestone may be completed without physical test evidence.
 
 ## Release stages
 
