@@ -44,13 +44,13 @@ The canonical ledger is `project.json`. Weights sum to 100; completion is the su
 - [ ] security_ota
 - [ ] beta_release
 
-The read-only ADB CLI, Fastboot/FastbootD inspection, strict schema-v1 profile registry and first SwirPhoneStudio GUI are slices of `desktop_diagnostics`, not completion of its 8-point gate. Foundation evidence: `ARCHITECTURE.md`, `BETA_RELEASE_GATE.md`, `swirphoneos/readiness.py`, `tests/test_readiness.py` and the results recorded in `BUILD_STATUS.md`.
+The read-only ADB CLI, Fastboot/FastbootD inspection, strict schema-v1 profile registry and first SwirPhoneStudio GUI are slices of `desktop_diagnostics`, not completion of its 8-point gate. Android 17 discovery metadata is a slice of `aosp_baseline`, not completion of its 10-point gate. Foundation evidence: `ARCHITECTURE.md`, `BETA_RELEASE_GATE.md`, `swirphoneos/readiness.py`, `tests/test_readiness.py` and the results recorded in `BUILD_STATUS.md`.
 
 ## Next engineering work
 
 Harden **SwirPhoneStudio** into a reproducible Windows package: add packaging metadata/build workflow, connect the existing project icon to the packaged executable, add startup/error-path smoke tests and keep OS-language detection with English fallback. Perform real Windows/USB ADB + Fastboot/FastbootD smoke tests when reference hardware is available; only then can `desktop_diagnostics` be considered for completion.
 
-In parallel, select and pin the upstream AOSP baseline after checking actual build-resource requirements and vendor constraints. Add bounded source/environment preflight and reproducible build metadata without starting an unbounded source download. Then target an emulator boot before claiming any GSI or physical-phone support.
+For the platform, the current Android 17 candidate must move from `CANDIDATE_NOT_PINNED` to a preserved revision-locked manifest snapshot with checksums and a documented build host. Add a bounded offline build-host preflight before any large source sync. Then complete a reproducible AOSP platform build and target an emulator boot before claiming GSI or physical-phone support.
 
 The profile schema must evolve from metadata-only to an independently verified installation-plan format only after recovery/rollback contracts exist. No generic write operation may be enabled merely because a device reports Treble, a codename or an unlocked bootloader.
 
