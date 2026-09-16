@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### First-party system app suite and SwirRoot scope
+
+Defined the canonical SwirPhoneOS first-party application suite in `docs/SYSTEM_APPS.md`: Phone, Contacts, Messages, Camera, Gallery, Files, Settings, Browser, Clock, Calculator, Notes, Recorder, Calendar, Weather, Update, Backup, Privacy, Device Care, Apps/Software Center and SwirRoot. Added a shared product requirement for original SwirPhoneOS visual language, icons, localization, accessibility, permissions and system integration. The roadmap now separates emulator-capable core apps from hardware-dependent telephony/camera work so static mockups cannot be counted as implementation.
+
+Defined SwirRoot as an owner-controlled first-party root manager for explicitly supported SwirPhoneOS builds/device profiles. Its design requires authoritative root state, explicit confirmation, verified rollback material, operation journaling, a tested unroot path, deny-by-default per-app authorization when the root service exists, and integration with Swir Update/recovery/SwirPhoneStudio. It must not bypass locked bootloaders or OEM protections through exploits. This is product/architecture scope only: no root implementation or working Android system app is claimed, and project progress remains 2%.
+
 ### Read-only Fastboot/FastbootD diagnostics
 
 Added a strictly read-only Fastboot/FastbootD diagnostic core. It requires an explicit trusted Android SDK `fastboot` executable, exactly one local USB device and a small `getvar` allowlist (`product`, `current-slot`, `slot-count`, `unlocked`, `is-userspace`, `secure`). It rejects every command outside that allowlist, never requests serial-number variables, rechecks device identity after inspection and always returns `flash_allowed: false`. Added portable mocked tests and the CLI command `python -m swirphoneos inspect-fastboot --fastboot <absolute-path>`.
