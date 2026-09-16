@@ -11,7 +11,7 @@ An app is not considered implemented merely because a package, screen or static 
 - `ANDROID_RUNTIME` — the app has been built into the pinned SwirPhoneOS product and exercised in the target Android runtime.
 - `HARDWARE_VERIFIED` — hardware-dependent capability has also passed exact-device evidence.
 
-The current registry contains 20 apps: **14 `HOST_CONTRACT`, 6 `ANDROID_SOURCE`, 0 `ANDROID_RUNTIME`, 0 `HARDWARE_VERIFIED`.**
+The current registry contains 20 apps: **13 `HOST_CONTRACT`, 7 `ANDROID_SOURCE`, 0 `ANDROID_RUNTIME`, 0 `HARDWARE_VERIFIED`.**
 
 ## Source-ready apps
 
@@ -43,7 +43,11 @@ SwirPrivacy is a beta-critical permission-free privacy center. It searches and o
 
 At this stage the implemented capability is `permission_review`. Platform-backed live privacy indicators and access history remain explicit future work rather than placeholder claims.
 
-All six source-ready apps use original SwirPhoneOS icons/UI and Android resources for English, Polish, Norwegian Bokmal, German, Spanish, French, Portuguese and Arabic. Layout direction follows the locale. Source validation checks package identity, permission boundaries, localization-key parity, product inclusion and complete bounded AOSP staging. None is `ANDROID_RUNTIME` until a real pinned-AOSP build and Cuttlefish exercise succeeds.
+### SwirClock
+
+SwirClock is a permission-free daily clock source. It shows locale-formatted local time/date plus UTC, provides a foreground stopwatch and bounded foreground timer, and hands alarm creation to Android's system alarm surface with the UI kept visible for owner review. It does not request exact-alarm privileges and does not silently create alarms. A pure-Java `ClockCore` covers timer bounds, alarm-time validation, stopwatch/timer calculations, duration formatting and world-time formatting in host CI.
+
+All seven source-ready apps use original SwirPhoneOS icons/UI and Android resources for English, Polish, Norwegian Bokmal, German, Spanish, French, Portuguese and Arabic. Layout direction follows the locale. Source validation checks package identity, permission boundaries, localization-key parity, product inclusion and complete bounded AOSP staging. None is `ANDROID_RUNTIME` until a real pinned-AOSP build and Cuttlefish exercise succeeds.
 
 ## Design principles
 
@@ -73,7 +77,7 @@ Phone/SMS/Camera/Recorder and other hardware-backed functions are declared only 
 
 ### Emulator-ready core
 
-Prioritize Swir Settings, Files, Update, Privacy, Device Care, Clock and Calculator. Calculator, Settings, Files, Device Care, Update and Privacy now have meaningful Android source, but runtime completion still requires a real SwirPhoneOS Cuttlefish build/boot. Clock remains the next daily-use core app candidate while Update/Privacy need platform integration after runtime surfaces exist.
+Prioritize Swir Settings, Files, Update, Privacy, Device Care, Clock and Calculator. All seven now have meaningful Android source, but runtime completion still requires a real SwirPhoneOS Cuttlefish build/boot and reviewed evidence. The next source work should not displace that runtime gate; Notes or Calendar are reasonable permission-minimal follow-ups after the build path is exercised.
 
 ### Reference hardware
 
