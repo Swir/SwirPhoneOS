@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Calculatrice Swir</string><string name="display_description">Écran de la calculatrice</string><string name="clear">Effacer</string><string name="positive_negative">Changer le signe</string><string name="percent">Pourcentage</string><string name="backspace">Effacer le dernier chiffre</string><string name="decimal">Séparateur décimal</string><string name="plus">Additionner</string><string name="minus">Soustraire</string><string name="multiply">Multiplier</string><string name="divide">Diviser</string><string name="equals">Résultat</string><string name="error">Erreur</string>
+</resources>

@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Swir Kalkulator</string><string name="display_description">Kalkulatorvisning</string><string name="clear">Tøm</string><string name="positive_negative">Bytt fortegn</string><string name="percent">Prosent</string><string name="backspace">Slett siste siffer</string><string name="decimal">Desimalskilletegn</string><string name="plus">Legg til</string><string name="minus">Trekk fra</string><string name="multiply">Multipliser</string><string name="divide">Divider</string><string name="equals">Er lik</string><string name="error">Feil</string>
+</resources>

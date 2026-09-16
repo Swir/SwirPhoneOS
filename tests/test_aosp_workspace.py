@@ -1,16 +1,11 @@
 from __future__ import annotations
 
+import json
 import tempfile
 from pathlib import Path
 import unittest
 
-from swirphoneos.aosp_workspace import (
-    AospWorkspaceError,
-    make_workspace_plan,
-    public_manifest_evidence,
-    stage_product_tree,
-    validate_resolved_manifest,
-)
+from swirphoneos.aosp_workspace import AospWorkspaceError, make_workspace_plan, public_manifest_evidence, stage_product_tree, validate_resolved_manifest
 from swirphoneos.platform import PlatformBaseline
 from swirphoneos.product_contract import ProductContract
 
@@ -18,22 +13,12 @@ from swirphoneos.product_contract import ProductContract
 class AospWorkspaceTests(unittest.TestCase):
     def baseline(self) -> PlatformBaseline:
         return PlatformBaseline(
-            status="PINNED_NOT_BUILT",
-            checked_date="2026-09-16",
-            platform="Android 17",
-            api_level=37,
-            manifest_url="https://android.googlesource.com/platform/manifest",
-            tracking_manifest="android-latest-release",
-            resolved_release_branch="android17-release",
-            candidate_release_tag="android-17.0.0_r1",
-            candidate_build_id="BP1A.250305.019",
-            security_patch_level="2026-03-05",
-            manifest_commit="1" * 40,
-            manifest_tree="2" * 40,
-            tag_object="3" * 40,
-            repo_init_revision="android-17.0.0_r1",
-            download_started=False,
-            build_completed=False,
+            status="PINNED_NOT_BUILT", checked_date="2026-09-16", platform="Android 17", api_level=37,
+            manifest_url="https://android.googlesource.com/platform/manifest", tracking_manifest="android-latest-release",
+            resolved_release_branch="android17-release", candidate_release_tag="android-17.0.0_r1",
+            candidate_build_id="BP1A.250305.019", security_patch_level="2026-03-05", manifest_commit="1" * 40,
+            manifest_tree="2" * 40, tag_object="3" * 40, repo_init_revision="android-17.0.0_r1",
+            download_started=False, build_completed=False,
             sources=("https://source.android.com/docs/setup/start/build-numbers",),
         )
 
@@ -91,11 +76,16 @@ class AospWorkspaceTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             path = Path(temp) / "resolved.xml"
             path.write_text(floating, encoding="utf-8")
-            with self.assertRaises(AospWorkspaceError):
-                validate_resolved_manifest(path)
+            with self.assertRaises(AospWorkspaceError): validate_resolved_manifest(path)
             path.write_text(duplicate, encoding="utf-8")
-            with self.assertRaises(AospWorkspaceError):
-                validate_resolved_manifest(path)
+            with self.assertRaises(AospWorkspaceError): validate_resolved_manifest(path)
+
+    def _fake_checkout(self, root: Path) -> Path:
+        workspace = root / "aosp"
+        (workspace / ".repo").mkdir(parents=True)
+        (workspace / "build").mkdir()
+        (workspace / "build/envsetup.sh").write_text("# test\n", encoding="utf-8")
+        return workspace
 
     def test_staging_is_dry_run_by_default_and_requires_aosp_checkout_to_execute(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
@@ -107,16 +97,46 @@ class AospWorkspaceTests(unittest.TestCase):
             workspace = root / "aosp"
             result = stage_product_tree(product, workspace)
             self.assertFalse(result["executed"])
+            self.assertEqual(result["file_count"], 2)
             self.assertFalse((workspace / "vendor").exists())
-            with self.assertRaises(AospWorkspaceError):
-                stage_product_tree(product, workspace, execute=True)
-
-            (workspace / ".repo").mkdir(parents=True)
-            (workspace / "build").mkdir()
-            (workspace / "build" / "envsetup.sh").write_text("# test\n", encoding="utf-8")
+            with self.assertRaises(AospWorkspaceError): stage_product_tree(product, workspace, execute=True)
+            self._fake_checkout(root)
             result = stage_product_tree(product, workspace, execute=True)
             self.assertTrue(result["executed"])
             self.assertTrue((workspace / "vendor/swir/products/AndroidProducts.mk").is_file())
+
+    def test_manifest_whitelist_stages_nested_app_source(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            product = root / "product"
+            (product / "apps/Test").mkdir(parents=True)
+            (product / "AndroidProducts.mk").write_text("a\n", encoding="utf-8")
+            (product / "swirphoneos_cf_x86_64.mk").write_text("b\n", encoding="utf-8")
+            (product / "apps/Test/Android.bp").write_text("android_app {}\n", encoding="utf-8")
+            data = {"schema_version": 1, "files": [
+                {"source":"AndroidProducts.mk","destination":"vendor/swir/products/AndroidProducts.mk"},
+                {"source":"swirphoneos_cf_x86_64.mk","destination":"vendor/swir/products/swirphoneos_cf_x86_64.mk"},
+                {"source":"apps/Test/Android.bp","destination":"vendor/swir/apps/Test/Android.bp"},
+            ]}
+            (product / "stage_manifest.json").write_text(json.dumps(data), encoding="utf-8")
+            workspace = self._fake_checkout(root)
+            result = stage_product_tree(product, workspace, execute=True)
+            self.assertEqual(result["file_count"], 3)
+            self.assertTrue((workspace / "vendor/swir/apps/Test/Android.bp").is_file())
+
+    def test_stage_manifest_rejects_path_escape(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            product = root / "product"
+            product.mkdir()
+            (product / "AndroidProducts.mk").write_text("a\n", encoding="utf-8")
+            (product / "swirphoneos_cf_x86_64.mk").write_text("b\n", encoding="utf-8")
+            data = {"schema_version": 1, "files": [
+                {"source":"AndroidProducts.mk","destination":"vendor/swir/products/AndroidProducts.mk"},
+                {"source":"swirphoneos_cf_x86_64.mk","destination":"../escape.mk"},
+            ]}
+            (product / "stage_manifest.json").write_text(json.dumps(data), encoding="utf-8")
+            with self.assertRaises(AospWorkspaceError): stage_product_tree(product, root / "aosp")
 
 
 if __name__ == "__main__":

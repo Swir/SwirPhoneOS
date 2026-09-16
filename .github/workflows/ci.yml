@@ -40,6 +40,14 @@ jobs:
         run: python -m swirphoneos product-contract
       - name: Validate reproducible AOSP workspace plan
         run: python -m swirphoneos aosp-plan --workspace ./_aosp-contract --jobs 8
+      - name: Validate first-party Android source bundle
+        run: python -m swirphoneos android-apps
+      - name: Host-test SwirCalculator pure Java engine
+        if: runner.os == 'Linux' && matrix.python == '3.14'
+        run: |
+          mkdir -p _java-test
+          javac -d _java-test platform/aosp_product/apps/SwirCalculator/src/org/swir/phoneos/calculator/CalculatorEngine.java platform/aosp_product/apps/SwirCalculator/hosttest/CalculatorEngineHostTest.java
+          java -cp _java-test org.swir.phoneos.calculator.CalculatorEngineHostTest
       - name: Inspect AOSP host preflight contract
         run: python -m swirphoneos build-preflight --workspace .
       - name: Validate global localization catalogs

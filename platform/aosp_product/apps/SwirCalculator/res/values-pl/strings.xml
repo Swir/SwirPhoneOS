@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Swir Kalkulator</string><string name="display_description">Wyświetlacz kalkulatora</string><string name="clear">Wyczyść</string><string name="positive_negative">Zmień znak</string><string name="percent">Procent</string><string name="backspace">Usuń ostatnią cyfrę</string><string name="decimal">Separator dziesiętny</string><string name="plus">Dodaj</string><string name="minus">Odejmij</string><string name="multiply">Pomnóż</string><string name="divide">Podziel</string><string name="equals">Wynik</string><string name="error">Błąd</string>
+</resources>

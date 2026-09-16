@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Swir Calculator</string>
+    <string name="display_description">Calculator display</string>
+    <string name="clear">Clear</string>
+    <string name="positive_negative">Change sign</string>
+    <string name="percent">Percent</string>
+    <string name="backspace">Backspace</string>
+    <string name="decimal">Decimal separator</string>
+    <string name="plus">Add</string>
+    <string name="minus">Subtract</string>
+    <string name="multiply">Multiply</string>
+    <string name="divide">Divide</string>
+    <string name="equals">Equals</string>
+    <string name="error">Error</string>
+</resources>

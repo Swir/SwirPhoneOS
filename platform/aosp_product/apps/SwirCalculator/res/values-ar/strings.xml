@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">حاسبة Swir</string><string name="display_description">شاشة الحاسبة</string><string name="clear">مسح</string><string name="positive_negative">تغيير الإشارة</string><string name="percent">النسبة المئوية</string><string name="backspace">حذف الرقم الأخير</string><string name="decimal">الفاصل العشري</string><string name="plus">جمع</string><string name="minus">طرح</string><string name="multiply">ضرب</string><string name="divide">قسمة</string><string name="equals">النتيجة</string><string name="error">خطأ</string>
+</resources>

@@ -1,6 +1,6 @@
 """Validated first-party application registry for SwirPhoneOS.
 
-This is a product/runtime contract, not proof that Android packages exist yet.
+Registry status distinguishes host contracts, checked-in Android source and actual runtime evidence.
 """
 from __future__ import annotations
 
@@ -12,40 +12,16 @@ import re
 APP_ID = re.compile(r"[a-z][a-z0-9_]{1,31}\Z")
 PACKAGE = re.compile(r"org\.swir\.phoneos\.[a-z][a-z0-9_.]{1,63}\Z")
 ALLOWED_PHASES = {"emulator_core", "reference_hardware", "beta_integration"}
-ALLOWED_STATUS = {"PLANNED", "HOST_CONTRACT", "ANDROID_RUNTIME", "HARDWARE_VERIFIED"}
+ALLOWED_STATUS = {"PLANNED", "HOST_CONTRACT", "ANDROID_SOURCE", "ANDROID_RUNTIME", "HARDWARE_VERIFIED"}
 REQUIRED_APP_IDS = frozenset(
     {
-        "phone",
-        "contacts",
-        "messages",
-        "camera",
-        "gallery",
-        "files",
-        "settings",
-        "browser",
-        "clock",
-        "calculator",
-        "notes",
-        "recorder",
-        "calendar",
-        "weather",
-        "update",
-        "backup",
-        "privacy",
-        "device_care",
-        "apps",
-        "swirroot",
+        "phone", "contacts", "messages", "camera", "gallery", "files", "settings", "browser",
+        "clock", "calculator", "notes", "recorder", "calendar", "weather", "update", "backup",
+        "privacy", "device_care", "apps", "swirroot",
     }
 )
 REQUIRED_KEYS = {
-    "id",
-    "package",
-    "display_name",
-    "phase",
-    "status",
-    "hardware_dependent",
-    "critical_for_beta",
-    "capabilities",
+    "id", "package", "display_name", "phase", "status", "hardware_dependent", "critical_for_beta", "capabilities",
 }
 
 
@@ -63,6 +39,10 @@ class SystemApp:
     hardware_dependent: bool
     critical_for_beta: bool
     capabilities: tuple[str, ...]
+
+    @property
+    def source_ready(self) -> bool:
+        return self.status in {"ANDROID_SOURCE", "ANDROID_RUNTIME", "HARDWARE_VERIFIED"}
 
     @property
     def runtime_implemented(self) -> bool:
@@ -113,11 +93,7 @@ def _safe_text(value: object, field: str, limit: int = 160) -> str:
 
 def validate_registry(data: object) -> SystemAppRegistry:
     if not isinstance(data, dict) or set(data) != {
-        "schema_version",
-        "namespace",
-        "design_contract",
-        "source_language",
-        "apps",
+        "schema_version", "namespace", "design_contract", "source_language", "apps",
     }:
         raise SystemAppRegistryError("System-app manifest must match schema v1 exactly.")
     if data["schema_version"] != 1:
@@ -175,30 +151,23 @@ def validate_registry(data: object) -> SystemAppRegistry:
 
         ids.add(app_id)
         packages.add(package)
-        apps.append(
-            SystemApp(
-                app_id=app_id,
-                package=package,
-                display_name=display_name,
-                phase=phase,
-                status=status,
-                hardware_dependent=hardware_dependent,
-                critical_for_beta=critical_for_beta,
-                capabilities=tuple(clean_capabilities),
-            )
-        )
+        apps.append(SystemApp(
+            app_id=app_id,
+            package=package,
+            display_name=display_name,
+            phase=phase,
+            status=status,
+            hardware_dependent=hardware_dependent,
+            critical_for_beta=critical_for_beta,
+            capabilities=tuple(clean_capabilities),
+        ))
 
     if ids != REQUIRED_APP_IDS:
         missing = sorted(REQUIRED_APP_IDS - ids)
         extra = sorted(ids - REQUIRED_APP_IDS)
         raise SystemAppRegistryError(f"Essential system-app set mismatch. Missing={missing}, extra={extra}.")
 
-    return SystemAppRegistry(
-        namespace=namespace,
-        design_contract=design_contract,
-        source_language=source_language,
-        apps=tuple(apps),
-    )
+    return SystemAppRegistry(namespace=namespace, design_contract=design_contract, source_language=source_language, apps=tuple(apps))
 
 
 def load_registry(path: Path) -> SystemAppRegistry:
@@ -206,6 +175,7 @@ def load_registry(path: Path) -> SystemAppRegistry:
 
 
 def public_registry_summary(registry: SystemAppRegistry) -> dict[str, object]:
+    source_ready = sum(app.source_ready for app in registry.apps)
     runtime = sum(app.runtime_implemented for app in registry.apps)
     hardware_verified = sum(app.hardware_verified for app in registry.apps)
     beta_critical = [app for app in registry.apps if app.critical_for_beta]
@@ -216,18 +186,15 @@ def public_registry_summary(registry: SystemAppRegistry) -> dict[str, object]:
         "design_contract": registry.design_contract,
         "source_language": registry.source_language,
         "app_count": len(registry.apps),
+        "source_ready": source_ready,
         "runtime_implemented": runtime,
         "hardware_verified": hardware_verified,
         "beta_critical_count": len(beta_critical),
         "beta_critical_runtime_implemented": beta_runtime,
         "apps": [
             {
-                "id": app.app_id,
-                "package": app.package,
-                "display_name": app.display_name,
-                "phase": app.phase,
-                "status": app.status,
-                "hardware_dependent": app.hardware_dependent,
+                "id": app.app_id, "package": app.package, "display_name": app.display_name,
+                "phase": app.phase, "status": app.status, "hardware_dependent": app.hardware_dependent,
                 "critical_for_beta": app.critical_for_beta,
             }
             for app in registry.apps

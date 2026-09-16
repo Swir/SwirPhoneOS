@@ -6,13 +6,7 @@ import json
 from pathlib import Path
 import unittest
 
-from swirphoneos.system_apps import (
-    REQUIRED_APP_IDS,
-    SystemAppRegistryError,
-    load_registry,
-    public_registry_summary,
-    validate_registry,
-)
+from swirphoneos.system_apps import REQUIRED_APP_IDS, SystemAppRegistryError, load_registry, public_registry_summary, validate_registry
 
 MANIFEST = Path("system_apps/manifest.json")
 
@@ -26,8 +20,9 @@ class SystemAppRegistryTests(unittest.TestCase):
         self.assertEqual(registry.app_ids, REQUIRED_APP_IDS)
         self.assertEqual(len(registry.apps), 20)
 
-    def test_current_manifest_does_not_claim_android_runtime(self):
+    def test_source_ready_is_distinct_from_android_runtime(self):
         summary = public_registry_summary(load_registry(MANIFEST))
+        self.assertEqual(summary["source_ready"], 1)
         self.assertEqual(summary["runtime_implemented"], 0)
         self.assertEqual(summary["hardware_verified"], 0)
         self.assertGreaterEqual(summary["beta_critical_count"], 5)

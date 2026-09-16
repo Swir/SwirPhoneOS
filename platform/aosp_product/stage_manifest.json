@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "files": [
+    {"source":"AndroidProducts.mk","destination":"vendor/swir/products/AndroidProducts.mk"},
+    {"source":"swirphoneos_cf_x86_64.mk","destination":"vendor/swir/products/swirphoneos_cf_x86_64.mk"},
+    {"source":"apps/SwirCalculator/Android.bp","destination":"vendor/swir/apps/SwirCalculator/Android.bp"},
+    {"source":"apps/SwirCalculator/AndroidManifest.xml","destination":"vendor/swir/apps/SwirCalculator/AndroidManifest.xml"},
+    {"source":"apps/SwirCalculator/src/org/swir/phoneos/calculator/CalculatorEngine.java","destination":"vendor/swir/apps/SwirCalculator/src/org/swir/phoneos/calculator/CalculatorEngine.java"},
+    {"source":"apps/SwirCalculator/src/org/swir/phoneos/calculator/MainActivity.java","destination":"vendor/swir/apps/SwirCalculator/src/org/swir/phoneos/calculator/MainActivity.java"},
+    {"source":"apps/SwirCalculator/res/drawable/ic_calculator.xml","destination":"vendor/swir/apps/SwirCalculator/res/drawable/ic_calculator.xml"},
+    {"source":"apps/SwirCalculator/res/values/strings.xml","destination":"vendor/swir/apps/SwirCalculator/res/values/strings.xml"},
+    {"source":"apps/SwirCalculator/res/values-pl/strings.xml","destination":"vendor/swir/apps/SwirCalculator/res/values-pl/strings.xml"},
+    {"source":"apps/SwirCalculator/res/values-nb/strings.xml","destination":"vendor/swir/apps/SwirCalculator/res/values-nb/strings.xml"},
+    {"source":"apps/SwirCalculator/res/values-de/strings.xml","destination":"vendor/swir/apps/SwirCalculator/res/values-de/strings.xml"},
+    {"source":"apps/SwirCalculator/res/values-es/strings.xml","destination":"vendor/swir/apps/SwirCalculator/res/values-es/strings.xml"},
+    {"source":"apps/SwirCalculator/res/values-fr/strings.xml","destination":"vendor/swir/apps/SwirCalculator/res/values-fr/strings.xml"},
+    {"source":"apps/SwirCalculator/res/values-pt/strings.xml","destination":"vendor/swir/apps/SwirCalculator/res/values-pt/strings.xml"},
+    {"source":"apps/SwirCalculator/res/values-ar/strings.xml","destination":"vendor/swir/apps/SwirCalculator/res/values-ar/strings.xml"}
+  ]
+}
