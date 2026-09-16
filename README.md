@@ -26,9 +26,11 @@ Each bar segment represents a completed 5 percentage points, rounded down. [proj
 
 The `swirphoneos` Python package provides selected read-only **ADB** property inspection plus a separate read-only **Fastboot/FastbootD** inspection path. Both use explicit trusted Android SDK executable paths, strict single-device selection, tiny command allowlists, private error messages, unknown-state handling and a second transport identity check. The Fastboot path queries only `product`, `current-slot`, `slot-count`, `unlocked`, `is-userspace` and `secure`; it never requests serial-number variables and rejects mutating commands. Reports never authorize flashing.
 
+A strict **device profile registry** validates metadata in `device_packs/<vendor>/<codename>/profile.json`. Schema v1 is deliberately non-executable: it rejects `flash_enabled: true`, rejects flash operations, requires a safe `vendor/codename` ID, validates model allowlists and HTTPS sources, and detects duplicate profile IDs. This lets the project grow toward broad multi-device support without treating an unknown phone as safe to flash.
+
 The status command validates the weighted roadmap and mandatory beta gate ledger. Publication remains disabled even if someone manually checks every ledger box: an independent candidate/artifact/evidence verifier is still required.
 
-The last verified main baseline recorded 41 local Linux/Python 3.13.5 unit tests plus compile and CLI smoke checks. New Fastboot diagnostics are additionally covered by host-side mocks in their feature PR. No physical phone has been validated. Windows/Linux Python 3.11–3.14 are CI targets; a green host matrix still does not establish phone compatibility. See [BUILD_STATUS.md](BUILD_STATUS.md).
+The last verified main baseline recorded 41 local Linux/Python 3.13.5 unit tests plus compile and CLI smoke checks. New Fastboot/profile code is additionally covered by host-side mocked tests in its feature PR. No physical phone has been validated. Windows/Linux Python 3.11–3.14 are CI targets; a green host matrix still does not establish phone compatibility. See [BUILD_STATUS.md](BUILD_STATUS.md).
 
 ## Try the developer tools
 
@@ -38,9 +40,10 @@ Run from the repository root with Python 3.11 or newer. No third-party Python pa
 python -m unittest discover -s tests -v
 python -m swirphoneos status
 python -m swirphoneos gate
+python -m swirphoneos profiles
 ```
 
-`gate` deliberately exits with code **2** while publication is blocked; this is expected, not a failed host test. Errors exit with code 1.
+`profiles` validates and lists the current metadata-only device registry. It never authorizes flashing. `gate` deliberately exits with code **2** while publication is blocked; this is expected, not a failed host test. Errors exit with code 1.
 
 ### Read-only ADB inspection
 
@@ -74,7 +77,7 @@ The paths above are examples. Manufacturer/model/bootloader/Treble/Fastboot valu
 
 **SwirPhoneOS Core:** maintainable AOSP/Linux integration, ARM64 GSI where compatible, device-specific ports where necessary, custom launcher/SystemUI/settings, polished dark/neon visual design, privacy controls and signed OTA updates. Android app compatibility is a goal; Google services and individual apps are not guaranteed.
 
-**SwirPhoneOS Flash Studio:** a Windows-first, Linux-capable desktop companion. Planned features include read-only diagnostics, explicit device packs, verified downloads, pre-flight checks, user-confirmed installation, a transaction journal and tested per-device recovery. The future GUI must use the system language with English fallback, a custom application icon and a `by Swir` GitHub footer.
+**SwirPhoneStudio:** a Windows-first, Linux-capable desktop companion for diagnostics, installation and recovery. Planned features include explicit device packs, verified downloads, pre-flight checks, user-confirmed installation, a transaction journal and tested per-device recovery. The future GUI must use the system language with English fallback, a custom application icon and a `by Swir` GitHub footer.
 
 **First planned reference:** OnePlus Nord AC2003 (`avicii`). Its profile is explicitly `PLANNED_NOT_SUPPORTED`, with no firmware baseline, validated partition map or flash operations. Metadata is not a working port.
 
