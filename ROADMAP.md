@@ -27,8 +27,8 @@ The canonical ledger is `project.json`. Weights sum to 100; completion is the su
 | gsi_validation | 10 | Built ARM64 GSI plus relevant Treble/VTS compatibility evidence and known-issues matrix |
 | reference_hardware | 25 | Exact-model physical boot, firmware baseline, telephony/connectivity/audio/cameras/sensors/storage/charging/thermal/suspend/encryption validation |
 | install_restore | 15 | User-confirmed safe installation and tested recovery/stock restore on the same device/firmware profile |
-| swir_ux | 8 | Integrated launcher/SystemUI/settings, i18n, accessibility and visual/runtime review, not a static mockup |
-| security_ota | 8 | Release signing, update authenticity, security review, tested update/rollback/recovery behavior |
+| swir_ux | 8 | Integrated launcher/SystemUI/settings and essential Swir system-app experience, i18n, accessibility and visual/runtime review, not static mockups |
+| security_ota | 8 | Release signing, update authenticity, security review, tested update/rollback/recovery behavior, including SwirRoot state interaction where enabled |
 | beta_release | 4 | All beta gates reviewed, actual images and Windows package published and post-release verified |
 
 ## Verified milestone checklist
@@ -48,13 +48,51 @@ The read-only ADB CLI and Flash Studio GUI, strict Fastboot/FastbootD inspection
 
 Android 17 / API 37 discovery metadata is a slice of `aosp_baseline`, not completion of its 10-point gate. The candidate is still `CANDIDATE_NOT_PINNED`; no source sync or AOSP build is claimed. Foundation evidence remains `ARCHITECTURE.md`, `BETA_RELEASE_GATE.md`, `swirphoneos/readiness.py`, `tests/test_readiness.py` and the test results recorded in `BUILD_STATUS.md`.
 
+The first-party app suite and SwirRoot product scope are now defined in `docs/SYSTEM_APPS.md`. This is architecture/scope work only and therefore does **not** increase the global percentage. App credit belongs to the relevant runtime, hardware, UX, update/security and release gates when real functionality is implemented and verified.
+
+## System app delivery track
+
+The essential SwirPhoneOS suite is developed in parallel with the platform rather than after the ROM is otherwise complete.
+
+### Emulator/core phase
+
+- [ ] Shared SwirPhoneOS design system, icon rules, package naming, localization and permission conventions integrated into the Android product tree.
+- [ ] Swir Settings usable in the emulator with real platform-backed settings.
+- [ ] Swir Files usable in the emulator with safe local file operations.
+- [ ] Swir Update exposes signed-channel/update state and recovery hand-off appropriate to the development channel.
+- [ ] Swir Privacy and Swir Device Care expose real emulator/platform state rather than placeholder cards.
+- [ ] Swir Clock and Swir Calculator provide functional daily-use baseline apps.
+
+### Reference-hardware phase
+
+- [ ] Swir Phone/Contacts/Messages validated against the exact reference telephony stack.
+- [ ] Swir Camera/Gallery validated against the exact reference camera/media stack.
+- [ ] Swir Recorder validated with the reference audio stack.
+- [ ] Swir Backup/restore paths aligned with the exact reference encryption/storage/recovery behavior.
+- [ ] Calendar, Notes, Browser, Weather and Swir Apps/Software Center integrated to beta-appropriate quality.
+
+### SwirRoot phase
+
+- [ ] SwirRoot displays authoritative ROOT OFF / ROOT ON / UNAVAILABLE state for the exact build/profile.
+- [ ] Enable-root path requires explicit support, owner confirmation, verified rollback material and operation journaling.
+- [ ] Unroot restores the expected non-root boot/system state on the exact tested build/profile.
+- [ ] Per-app root authorization is deny-by-default, revocable and auditable when root service implementation exists.
+- [ ] SwirRoot state is integrated with Swir Update, recovery and SwirPhoneStudio.
+- [ ] Physical enable -> reboot -> use -> disable -> recovery validation completed before any beta claim for root support.
+
+These track checkboxes are engineering sub-deliverables and do not independently change the 10-gate weighted progress calculation.
+
 ## Next engineering work
 
 Harden **SwirPhoneStudio / Flash Studio** into a reproducible Windows package: integrate the existing read-only Fastboot/FastbootD and profile registry into the tested GUI, connect packaged application assets, add packaging/build checks and perform real local Windows/USB ADB + Fastboot/FastbootD smoke tests. No write controls are enabled at this stage.
 
 For the platform, move the Android 17 candidate from `CANDIDATE_NOT_PINNED` to a preserved revision-locked manifest snapshot with checksums and documented build-host versions. Add a bounded offline source/environment preflight before any large AOSP sync. Then complete a reproducible AOSP platform build and target an emulator boot before claiming GSI or physical-phone support.
 
+In parallel, prepare the **shared SwirPhoneOS application foundation** needed immediately after first emulator boot: package namespace policy, design tokens, icon conventions, i18n/accessibility structure, shared system-status contracts and a build-tree location for first-party apps. Prioritize Settings, Files, Update, Privacy and Device Care before hardware-only apps. Do not count static mockups as progress.
+
 After emulator/GSI evidence exists, expand device packs from metadata-only profiles into independently reviewed installation/recovery plans. No generic write operation may be enabled merely because a device reports Treble, a codename or an unlocked bootloader. Each supported hardware profile requires an explicit stock-recovery path and physical evidence.
+
+SwirRoot implementation begins only after the boot/update/recovery contracts are concrete enough to support deterministic rollback. It must use supported build/image paths, not bootloader exploits, and root support remains an exact-build/device capability rather than a universal promise.
 
 ## Release stages
 
