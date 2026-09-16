@@ -9,9 +9,12 @@ import sys
 from . import __version__
 from .diagnostics import DiagnosticError, ReadOnlyAdb
 from .fastboot import FastbootDiagnosticError, ReadOnlyFastboot
+from .i18n import LocalizationError, catalog_summary
 from .platform import PlatformBaselineError, load_baseline, public_baseline_summary
 from .profiles import ProfileError, discover_profiles, public_profile_summary
 from .readiness import evaluate, load_ledger
+from .swirroot import SwirRootPolicyError, load_policy, public_policy_summary
+from .system_apps import SystemAppRegistryError, load_registry, public_registry_summary
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -43,6 +46,17 @@ def main(argv: list[str] | None = None) -> int:
     baseline = sub.add_parser("baseline", help="Validate and show the offline AOSP baseline candidate")
     baseline.add_argument("--file", type=Path, default=Path("platform/aosp_baseline.json"))
 
+    sub.add_parser("i18n", help="Validate shared localization catalogs and show translation coverage")
+
+    apps = sub.add_parser("apps", help="Validate the essential first-party system-app registry")
+    apps.add_argument("--manifest", type=Path, default=Path("system_apps/manifest.json"))
+
+    root_policy = sub.add_parser(
+        "root-policy",
+        help="Validate the fail-closed SwirRoot safety contract; performs no device writes",
+    )
+    root_policy.add_argument("--policy", type=Path, default=Path("swirroot/policy.json"))
+
     args = parser.parse_args(argv)
     try:
         if args.command == "inspect":
@@ -59,6 +73,12 @@ def main(argv: list[str] | None = None) -> int:
             }
         elif args.command == "baseline":
             result = public_baseline_summary(load_baseline(args.file))
+        elif args.command == "i18n":
+            result = catalog_summary()
+        elif args.command == "apps":
+            result = public_registry_summary(load_registry(args.manifest))
+        elif args.command == "root-policy":
+            result = public_policy_summary(load_policy(args.policy))
         else:
             result = evaluate(load_ledger(args.ledger))
         print(json.dumps(result, indent=2, ensure_ascii=True))
@@ -66,13 +86,17 @@ def main(argv: list[str] | None = None) -> int:
     except (
         DiagnosticError,
         FastbootDiagnosticError,
+        LocalizationError,
         PlatformBaselineError,
         ProfileError,
+        SwirRootPolicyError,
+        SystemAppRegistryError,
         OSError,
         ValueError,
     ):
         print(
-            "Operation failed: check project metadata or the trusted Android SDK tool path, USB mode and single-device connection. Raw errors are withheld for privacy.",
+            "Operation failed: check project metadata or the trusted Android SDK tool path, "
+            "USB mode and single-device connection. Raw errors are withheld for privacy.",
             file=sys.stderr,
         )
         return 1

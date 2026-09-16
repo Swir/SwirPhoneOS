@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "policy_id": "swirroot-v1",
+  "states": ["UNAVAILABLE", "ROOT_OFF", "ROOT_ON", "TRANSITION"],
+  "default_state": "UNAVAILABLE",
+  "authorization": {
+    "default": "deny",
+    "per_app": true,
+    "audit_required": true,
+    "emergency_disable": true
+  },
+  "enable_requirements": [
+    "exact_build_match",
+    "verified_device_profile",
+    "owner_confirmation",
+    "rollback_material_verified",
+    "journal_available",
+    "update_state_safe"
+  ],
+  "unroot_requirements": [
+    "exact_build_match",
+    "owner_confirmation",
+    "rollback_material_verified",
+    "journal_available",
+    "expected_nonroot_state_known"
+  ],
+  "forbidden_methods": [
+    "bootloader_exploit",
+    "vendor_protection_bypass",
+    "silent_unlock",
+    "unattended_flash",
+    "account_lock_bypass"
+  ],
+  "write_operations_enabled": false,
+  "supported_builds": [],
+  "notes": "Host-side fail-closed contract only. No root, image patching, bootloader or device-write implementation is enabled."
+}

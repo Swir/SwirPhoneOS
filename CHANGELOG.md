@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+### Global localization, app registry and SwirRoot safety contracts
+
+Moved Flash Studio localization from Python literals into a validated data catalog and expanded the current desktop strings to eight locales: English, Polish, Norwegian Bokmal, German, Spanish, French, Portuguese and Arabic. Added BCP-47-style normalization, English fallback, placeholder-parity validation, duplicate-key rejection, explicit LTR/RTL metadata and machine-readable coverage via `python -m swirphoneos i18n`. Arabic establishes the first RTL catalog metadata path; this does not yet claim complete mobile RTL layout support.
+
+Added `system_apps/manifest.json` plus a strict validator for the complete 20-app first-party suite. The registry fixes the `org.swir.phoneos.*` namespace, delivery phase, hardware dependence, beta-critical status and capability contract for each app. Every current entry is `HOST_CONTRACT`: CI rejects missing essential apps, foreign/duplicate packages and invalid hardware-verification claims. No Android application package is claimed as implemented yet.
+
+Added the first executable SwirRoot safety contract in `swirroot/policy.json` and `swirphoneos/swirroot.py`. Unverified builds must remain `UNAVAILABLE`; authorization is deny-by-default; rollback material, journaling, exact-build/profile checks and owner confirmation are mandatory. Exploit/bypass methods are explicitly forbidden. Current write operations are disabled and there are zero supported root builds, so `root_available` remains false. CI now validates localization, app-registry and SwirRoot contracts on every host matrix job.
+
 ### First-party system app suite and SwirRoot scope
 
 Defined the canonical SwirPhoneOS first-party application suite in `docs/SYSTEM_APPS.md`: Phone, Contacts, Messages, Camera, Gallery, Files, Settings, Browser, Clock, Calculator, Notes, Recorder, Calendar, Weather, Update, Backup, Privacy, Device Care, Apps/Software Center and SwirRoot. Added a shared product requirement for original SwirPhoneOS visual language, icons, localization, accessibility, permissions and system integration. The roadmap now separates emulator-capable core apps from hardware-dependent telephony/camera work so static mockups cannot be counted as implementation.

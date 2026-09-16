@@ -44,11 +44,13 @@ The canonical ledger is `project.json`. Weights sum to 100; completion is the su
 - [ ] security_ota
 - [ ] beta_release
 
-The read-only ADB CLI and Flash Studio GUI, strict Fastboot/FastbootD inspection, and schema-v1 device registry are slices of `desktop_diagnostics`, not completion of its 8-point gate. The GUI has native-window tests, asynchronous ADB inspection, EN/PL/NB catalogs and local report export. Fastboot/profile GUI integration, packaged Windows delivery and real USB evidence remain outstanding.
+The read-only ADB CLI and Flash Studio GUI, strict Fastboot/FastbootD inspection, and schema-v1 device registry are slices of `desktop_diagnostics`, not completion of its 8-point gate. The GUI has native-window tests, asynchronous ADB inspection, a data-driven localization runtime and local report export. Fastboot/profile GUI integration, packaged Windows delivery and real USB evidence remain outstanding.
 
 Android 17 / API 37 discovery metadata is a slice of `aosp_baseline`, not completion of its 10-point gate. The candidate is still `CANDIDATE_NOT_PINNED`; no source sync or AOSP build is claimed. Foundation evidence remains `ARCHITECTURE.md`, `BETA_RELEASE_GATE.md`, `swirphoneos/readiness.py`, `tests/test_readiness.py` and the test results recorded in `BUILD_STATUS.md`.
 
-The first-party app suite and SwirRoot product scope are now defined in `docs/SYSTEM_APPS.md`. This is architecture/scope work only and therefore does **not** increase the global percentage. App credit belongs to the relevant runtime, hardware, UX, update/security and release gates when real functionality is implemented and verified.
+The first-party app suite and SwirRoot product scope are defined in `docs/SYSTEM_APPS.md`. A machine-readable 20-app registry now locks package namespace, delivery phase, hardware dependence, beta-criticality and current implementation status. A fail-closed SwirRoot policy now makes `UNAVAILABLE` the mandatory default on unverified builds and rejects unsafe policy changes. These are host-side engineering contracts, not Android runtime implementation, so the global percentage remains unchanged.
+
+The localization foundation is now data-driven and validates eight current Flash Studio catalogs, including explicit RTL metadata for Arabic, BCP-47-style resolution, English fallback and placeholder compatibility. `docs/I18N.md` defines the future system-wide Android resource contract. This is meaningful preparation for `swir_ux`, but it does not complete the UX milestone until the actual mobile UI uses and passes it.
 
 ## System app delivery track
 
@@ -88,11 +90,11 @@ Harden **SwirPhoneStudio / Flash Studio** into a reproducible Windows package: i
 
 For the platform, move the Android 17 candidate from `CANDIDATE_NOT_PINNED` to a preserved revision-locked manifest snapshot with checksums and documented build-host versions. Add a bounded offline source/environment preflight before any large AOSP sync. Then complete a reproducible AOSP platform build and target an emulator boot before claiming GSI or physical-phone support.
 
-In parallel, prepare the **shared SwirPhoneOS application foundation** needed immediately after first emulator boot: package namespace policy, design tokens, icon conventions, i18n/accessibility structure, shared system-status contracts and a build-tree location for first-party apps. Prioritize Settings, Files, Update, Privacy and Device Care before hardware-only apps. Do not count static mockups as progress.
+In parallel, translate the new host-side app/i18n contracts into the **actual AOSP product tree**: package namespace policy, shared resource conventions, RTL-aware design tokens, accessibility rules and first real emulator applications. Prioritize Settings, Files, Update, Privacy and Device Care. The registry status must move from `HOST_CONTRACT` to `ANDROID_RUNTIME` only when working code is built and exercised; static package shells do not count.
 
 After emulator/GSI evidence exists, expand device packs from metadata-only profiles into independently reviewed installation/recovery plans. No generic write operation may be enabled merely because a device reports Treble, a codename or an unlocked bootloader. Each supported hardware profile requires an explicit stock-recovery path and physical evidence.
 
-SwirRoot implementation begins only after the boot/update/recovery contracts are concrete enough to support deterministic rollback. It must use supported build/image paths, not bootloader exploits, and root support remains an exact-build/device capability rather than a universal promise.
+SwirRoot implementation begins only after the boot/update/recovery contracts are concrete enough to support deterministic rollback. `swirroot/policy.json` must remain fail-closed until an exact-build Android root service and physical enable/unroot/recovery evidence exist. It must use supported build/image paths, not bootloader exploits, and root support remains an exact-build/device capability rather than a universal promise.
 
 ## Release stages
 
