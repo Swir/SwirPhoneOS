@@ -84,7 +84,7 @@ jobs:
           PYTHONPATH="$GITHUB_WORKSPACE/tools" python -m swirphoneos cuttlefish-evidence --adb "${{ inputs.adb_path }}" --manifest "$GITHUB_WORKSPACE/tools/system_apps/manifest.json" > "$GITHUB_WORKSPACE/runtime-evidence.json"
           PYTHONPATH="$GITHUB_WORKSPACE/tools" python -m swirphoneos evidence-bundle --build "$GITHUB_WORKSPACE/build-evidence.json" --runtime "$GITHUB_WORKSPACE/runtime-evidence.json" > "$GITHUB_WORKSPACE/evidence-bundle.json"
       - name: Upload immutable evidence files
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: swirphoneos-aosp-evidence-${{ github.sha }}
           if-no-files-found: error
