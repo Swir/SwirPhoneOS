@@ -28,13 +28,17 @@ The `swirphoneos` Python package provides selected read-only **ADB** property in
 
 A strict **device profile registry** validates metadata in `device_packs/<vendor>/<codename>/profile.json`. Schema v1 is deliberately non-executable: it rejects `flash_enabled: true`, rejects flash operations, requires safe `vendor/codename` IDs, validates bounded model allowlists and HTTPS sources, and rejects duplicate profile IDs. The existing OnePlus Nord AC2003 (`avicii`) entry remains `PLANNED_NOT_SUPPORTED`; metadata is not a working port.
 
-**Flash Studio has a runnable desktop window:** dark/blue branding and the custom icon, trusted ADB file selection, background read-only inspection, elapsed status, read-only JSON report display, create-only local export and a `by Swir` GitHub footer. English, Polish and Norwegian Bokmal catalogs use the system UI language with English fallback; the language can also be changed in the window. Failed inspections clear stale reports. No installation button or write operation is exposed. Fastboot/profile integration into the GUI remains a later desktop step; the new Fastboot/profile paths are currently available through the core/CLI.
+**Flash Studio has a runnable desktop window:** dark/blue branding and the custom icon, trusted ADB file selection, background read-only inspection, elapsed status, read-only JSON report display, create-only local export and a `by Swir` GitHub footer. Its translations are now loaded from a validated data catalog with system-language detection and English fallback. The current desktop strings cover English, Polish, Norwegian Bokmal, German, Spanish, French, Portuguese and Arabic; Arabic also establishes explicit RTL metadata. This is desktop translation coverage only, not a claim that the future mobile OS is already fully localized or RTL-complete. Failed inspections clear stale reports. No installation button or write operation is exposed. Fastboot/profile integration into the GUI remains a later desktop step.
 
 The platform layer records an **Android 17 / API 37 AOSP baseline candidate**. At the 2026-09-16 upstream check, AOSP's recommended `android-latest-release` manifest resolved to `android17-release`; the candidate record references `android-17.0.0_r1` / `CP2A.260605.016`. Its status is deliberately `CANDIDATE_NOT_PINNED`: no source sync or Android build is claimed. See [AOSP baseline policy](docs/UPSTREAM_BASELINE.md).
 
+A machine-readable **system-app registry** now defines the complete 20-app first-party suite under `org.swir.phoneos.*`, including delivery phase, hardware dependence, beta-criticality and current implementation status. Every app is currently `HOST_CONTRACT`; CI rejects missing essential apps, namespace drift and invalid verification claims. This is a real engineering contract, but it is not an Android APK implementation.
+
+The first executable **SwirRoot policy contract** is also fail-closed. Unverified builds must remain `UNAVAILABLE`, authorization is deny-by-default, rollback/journal/owner-confirmation gates are mandatory, exploit/bypass methods are forbidden, and current write operations are disabled with zero supported root builds. `root_available` therefore remains false until later exact-build Android implementation and physical recovery evidence exist.
+
 The status command validates the weighted roadmap and mandatory beta gate ledger. Publication remains disabled even if someone manually checks every ledger box: an independent candidate/artifact/evidence verifier is still required.
 
-The merged desktop slice recorded **46 new local tests** on Linux/Python 3.13.5, including **7 real Tk-window tests with synthetic inspection**, plus the prior 41 foundation host tests. Windows/Linux Python 3.11–3.14 CI runs native Tk smoke checks. New Fastboot/profile/platform code adds portable host-side tests and CI metadata validation. No physical phone has been validated. A green host matrix still does not establish phone compatibility. See [BUILD_STATUS.md](BUILD_STATUS.md).
+The merged desktop slice recorded **46 new local tests** on Linux/Python 3.13.5, including **7 real Tk-window tests with synthetic inspection**, plus the prior 41 foundation host tests. Windows/Linux Python 3.11–3.14 CI runs native Tk smoke checks. Fastboot/profile/platform code and the new localization/app/SwirRoot contracts add portable host-side tests and CI metadata validation. No physical phone has been validated. A green host matrix still does not establish phone compatibility. See [BUILD_STATUS.md](BUILD_STATUS.md).
 
 ## Try the developer tools
 
@@ -46,10 +50,13 @@ python -m swirphoneos status
 python -m swirphoneos gate
 python -m swirphoneos profiles
 python -m swirphoneos baseline
+python -m swirphoneos i18n
+python -m swirphoneos apps
+python -m swirphoneos root-policy
 python -m swirphoneos.studio
 ```
 
-`profiles` validates and lists the metadata-only device registry. `baseline` validates and prints the offline AOSP candidate metadata without downloading source. Neither authorizes flashing. `gate` deliberately exits with code **2** while publication is blocked; this is expected, not a failed host test. Errors exit with code 1. See [Flash Studio instructions](docs/FLASH_STUDIO.md) for native GUI testing, export behavior and current limitations.
+`profiles` validates and lists the metadata-only device registry. `baseline` validates and prints the offline AOSP candidate metadata without downloading source. `i18n` validates locale data and prints translation coverage. `apps` validates the complete first-party application registry without claiming packages are built. `root-policy` validates the fail-closed SwirRoot safety contract and performs no device writes. None of these commands authorizes flashing. `gate` deliberately exits with code **2** while publication is blocked; this is expected, not a failed host test. Errors exit with code 1. See [Flash Studio instructions](docs/FLASH_STUDIO.md) for native GUI testing, export behavior and current limitations.
 
 ### Read-only ADB inspection
 
@@ -83,9 +90,11 @@ Manufacturer/model/bootloader/Treble/Fastboot values are device-reported hints, 
 
 **SwirPhoneOS Core:** maintainable AOSP/Linux integration beginning from a reproducibly pinned Android 17 candidate after build-host preflight; ARM64 GSI where compatible; device-specific ports where necessary; custom launcher/SystemUI/settings; polished dark/neon visual design; privacy controls; and signed OTA updates. Android app compatibility is a goal; Google services and individual apps are not guaranteed.
 
-**First-party system apps:** SwirPhoneOS is planned as a complete everyday phone OS, not only a bootable image. The canonical suite includes Swir Phone, Contacts, Messages, Camera, Gallery, Files, Settings, Browser, Clock, Calculator, Notes, Recorder, Calendar, Weather, Update, Backup, Privacy, Device Care, Apps/Software Center and SwirRoot. All apps share one original SwirPhoneOS design system, icon family, localization/accessibility rules and system-level integration. See [System Apps](docs/SYSTEM_APPS.md).
+**Global language support:** SwirPhoneOS is designed to detect the user's locale during setup, fall back safely to English and make new translations data/resource driven. The mobile contract includes language/script/region handling, locale-specific date/time/number/unit formatting, plural rules, font/input-method support, text expansion, localized accessibility labels and RTL layout mirroring where required. The current host catalog is only the first implementation slice. See [Global localization](docs/I18N.md).
 
-**SwirRoot:** a first-party owner-controlled root manager for explicitly supported SwirPhoneOS builds/device profiles. The design requires clear root state, verified rollback material, explicit confirmation, diagnostics, a tested unroot path and integration with Swir Update/recovery/SwirPhoneStudio. It must not bypass locked bootloaders or OEM protections with exploits, and it is not counted as working until enable/disable/recovery behavior is physically verified.
+**First-party system apps:** SwirPhoneOS is planned as a complete everyday phone OS, not only a bootable image. The canonical suite includes Swir Phone, Contacts, Messages, Camera, Gallery, Files, Settings, Browser, Clock, Calculator, Notes, Recorder, Calendar, Weather, Update, Backup, Privacy, Device Care, Apps/Software Center and SwirRoot. All apps share one original SwirPhoneOS design system, icon family, localization/accessibility rules and system-level integration. The machine-readable contract is [system_apps/manifest.json](system_apps/manifest.json); current `HOST_CONTRACT` state does not claim Android runtime delivery. See [System Apps](docs/SYSTEM_APPS.md).
+
+**SwirRoot:** a first-party owner-controlled root manager for explicitly supported SwirPhoneOS builds/device profiles. The design requires clear root state, verified rollback material, explicit confirmation, diagnostics, a tested unroot path and integration with Swir Update/recovery/SwirPhoneStudio. It must not bypass locked bootloaders or OEM protections with exploits. The current policy intentionally disables all writes and supports zero root builds. See [SwirRoot engineering contract](docs/SWIRROOT.md).
 
 **SwirPhoneOS Flash Studio / SwirPhoneStudio:** a Windows-first, Linux-capable desktop companion. The first read-only GUI slice is implemented. The host core now also contains strict Fastboot/FastbootD diagnostics and a non-executable device registry. Planned next capabilities include GUI integration of those diagnostics, verified downloads, bounded pre-flight checks, packaged Windows delivery, user-confirmed installation plans, a transaction journal and tested per-device recovery before any write controls are enabled.
 
@@ -107,7 +116,7 @@ A beta Release must contain a usable tested system image and verified Windows co
 
 This repository is the sole source of truth for the mobile project previously called SwirOS foundation v0.0.1. It is separate from SWIR OS Desktop, Konofix and KaliPhoneStudio. Repository-facing content is English, with localized runtime translation catalogs; progress reports to the owner are Polish. Scheduled development must follow [AGENTS.md](AGENTS.md), not inflate completion or claim unattended continuous computation.
 
-[Architecture](ARCHITECTURE.md) · [Roadmap](ROADMAP.md) · [System Apps](docs/SYSTEM_APPS.md) · [Changelog](CHANGELOG.md) · [AOSP baseline](docs/UPSTREAM_BASELINE.md) · [Licensing policy](LICENSES.md)
+[Architecture](ARCHITECTURE.md) · [Roadmap](ROADMAP.md) · [System Apps](docs/SYSTEM_APPS.md) · [Global i18n](docs/I18N.md) · [SwirRoot](docs/SWIRROOT.md) · [Changelog](CHANGELOG.md) · [AOSP baseline](docs/UPSTREAM_BASELINE.md) · [Licensing policy](LICENSES.md)
 
 ---
 **by Swir** · [GitHub](https://github.com/Swir)
