@@ -2,13 +2,21 @@
 
 ## Unreleased
 
+### Exact-build Cuttlefish launch and emulator-only app smoke
+
+Extended the manual self-hosted AOSP evidence workflow so runtime collection no longer depends on a separately pre-launched guest. After the exact pinned product builds, the workflow can source that product environment, launch it with `launch_cvd --daemon --report_anonymous_usage_stats=n`, poll the strict schema-v3 runtime collector until verified boot is complete, collect build/runtime fingerprint continuity, and always attempt `stop_cvd` cleanup under an isolated workflow HOME.
+
+Added `swirphoneos.cuttlefish_smoke`, an emulator-only launch-smoke runner for every source-ready application. It first requires complete exact-identity SwirPhoneOS Cuttlefish evidence, then launches only the resolved package-local launcher component through a narrow `am start -W -n` allowlist and confirms the expected package as the resumed foreground activity. Physical/network transports, arbitrary shell, install/uninstall, root, reboot, flash, erase and settings mutation remain rejected. The report explicitly records the transient foreground-state mutation and never auto-promotes registry status.
+
+Added unit coverage for successful/failed `am start -W` parsing, foreground confirmation, physical/persistent-mutation rejection and the complete nine-app source-ready exercise path. Documentation now treats `app-smoke-evidence.json` as an additional runtime review artifact. No real AOSP build/boot has completed yet, so weighted progress remains **2%** and Beta remains **0/9**.
+
 ### AOSP build provenance and exact runtime identity binding
 
 Added fail-closed `build-evidence` tooling that binds a completed local AOSP output to the fully pinned `repo manifest -r`, hashes reviewed core product artifacts, and extracts the exact build fingerprint/build ID/release/API/build type from the produced system properties. Added `evidence-bundle` so a complete Cuttlefish report is accepted only when its runtime fingerprint exactly matches the fingerprint from the hashed build output. The canonical bundle receives its own SHA-256 and never auto-promotes registry state.
 
 Cuttlefish evidence schema v3 now requires the exact SwirPhoneOS product, `vsoc_x86_64_only` device identity, `Swir` manufacturer, Android 17 / API 37, `userdebug`, build ID/fingerprint, all source-ready packages and package-local launcher resolution. Added negative tests for API drift, missing artifacts, fingerprint mismatch and duplicate-key evidence JSON.
 
-Added a manual-only `aosp-build-evidence.yml` workflow for a dedicated self-hosted `swir-aosp-builder`. It performs exact-tag init/sync, resolved-manifest capture, reviewed source staging, the real Cuttlefish product build and build-evidence capture; runtime collection is optional and read-only. No successful AOSP build/boot is claimed yet, so weighted progress remains **2%** and Beta remains **0/9**.
+Added a manual-only `aosp-build-evidence.yml` workflow for a dedicated self-hosted `swir-aosp-builder`. It performs exact-tag init/sync, resolved-manifest capture, reviewed source staging, the real Cuttlefish product build and build-evidence capture. No successful AOSP build/boot is claimed yet, so weighted progress remains **2%** and Beta remains **0/9**.
 
 ### SwirNotes, SwirCalendar, composable staging and stronger runtime evidence
 

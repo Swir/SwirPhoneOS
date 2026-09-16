@@ -34,7 +34,7 @@ The development baseline is pinned to **Android 17 / API 37** at `android-17.0.0
 
 The repository contains an x86_64 Cuttlefish product, exact-tag workspace planning, resolved `repo manifest -r` verification, bounded `vendor/swir/` source staging and strict build/runtime evidence tooling. `build-evidence` hashes reviewed core image artifacts and extracts the exact built fingerprint from `system/build.prop`; schema-v3 Cuttlefish evidence requires the exact product/device/manufacturer, Android 17 / API 37, `userdebug`, all source-ready packages and package-local launcher resolution. `evidence-bundle` is accepted only when the runtime fingerprint exactly matches the hashed build output and then adds a canonical SHA-256 over the complete evidence payload. None of these tools promotes registry state or writes to physical hardware.
 
-A manual-only self-hosted workflow, `aosp-build-evidence.yml`, now encodes the exact-tag sync → reviewed staging → build → provenance path for a dedicated `swir-aosp-builder`. It has not completed a real AOSP build yet, so the weighted platform/runtime gates remain open.
+A manual-only self-hosted workflow, `aosp-build-evidence.yml`, encodes the exact-tag sync → reviewed staging → build → provenance path for a dedicated `swir-aosp-builder`. When runtime collection is explicitly enabled, the workflow can now launch the **exact product it just built** with Cuttlefish, wait for strict verified boot evidence, run an emulator-only launch smoke over every source-ready app, bind build/runtime fingerprints, and execute `stop_cvd` in cleanup. This path is implemented but has **not** completed a real AOSP build/boot yet, so weighted platform/runtime gates remain open.
 
 ### Functional Android application sources
 
@@ -51,6 +51,8 @@ Nine first-party applications are wired into `PRODUCT_PACKAGES` as meaningful **
 - **SwirCalendar** — local SQLite agenda with date/time editing, search, sharing and portable iCalendar (`.ics`) export; Android CalendarProvider bridging is deliberately not claimed yet.
 
 All nine apps ship English, Polish, Norwegian Bokmål, German, Spanish, French, Portuguese and Arabic resources, including RTL-aware application layout. Their manifests, package identities, permission boundaries, localization parity, host-testable pure-Java policy cores and AOSP staging are checked in CI.
+
+The new `swirphoneos.cuttlefish_smoke` runner is deliberately **emulator-only**. It first requires complete exact-identity Cuttlefish evidence, then launches each already-installed source-ready package through its resolved package-local launcher component, requires Android `am start -W` success, and confirms the expected package as resumed foreground activity. Its allowlist does not expose arbitrary shell/install/root/reboot/flash/settings operations and it never promotes app status automatically.
 
 ### Complete system-app plan and SwirRoot
 
@@ -77,6 +79,7 @@ python -m swirphoneos android-apps
 python -m swirphoneos build-preflight --workspace /path/to/aosp
 python -m swirphoneos build-evidence --workspace /path/to/aosp --manifest /path/to/aosp/swirphoneos-pinned-manifest.xml
 python -m swirphoneos cuttlefish-evidence --adb /absolute/path/to/adb > runtime-evidence.json
+python -m swirphoneos.cuttlefish_smoke --adb /absolute/path/to/adb > app-smoke-evidence.json
 python -m swirphoneos evidence-bundle --build build-evidence.json --runtime runtime-evidence.json
 python -m swirphoneos i18n
 python -m swirphoneos apps
@@ -84,7 +87,7 @@ python -m swirphoneos root-policy
 python -m swirphoneos.studio
 ```
 
-`gate` intentionally exits blocked while mandatory beta evidence is missing. `android-apps` validates checked-in source only. Build/runtime evidence is fail-closed and remains emulator/build evidence, not physical-device compatibility proof.
+`gate` intentionally exits blocked while mandatory beta evidence is missing. `android-apps` validates checked-in source only. Build/runtime/app-smoke evidence remains emulator/build evidence, not physical-device compatibility proof.
 
 ## Product direction
 
