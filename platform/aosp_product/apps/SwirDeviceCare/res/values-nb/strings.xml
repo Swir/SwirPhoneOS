@@ -1,0 +1,24 @@
+<resources>
+    <string name="app_name">Swir Device Care</string>
+    <string name="subtitle">Direkte enhetsstatus uten privilegert tilgang.</string>
+    <string name="refresh">Oppdater</string>
+    <string name="device">Enhet</string>
+    <string name="device_value">%1$s %2$s
+Android %3$s · Sikkerhetsoppdatering %4$s</string>
+    <string name="battery">Batteri</string>
+    <string name="battery_value">%1$s · %2$s</string>
+    <string name="charging">Lader</string>
+    <string name="full">Fullt</string>
+    <string name="not_charging">Lader ikke</string>
+    <string name="storage">Lagring</string>
+    <string name="storage_value">%1$s brukt av %2$s · %3$s</string>
+    <string name="memory">Minne</string>
+    <string name="memory_value">%1$s tilgjengelig av %2$s · %3$s brukt</string>
+    <string name="thermal">Termisk</string>
+    <string name="thermal_nominal">Normal</string>
+    <string name="thermal_warm">Varm</string>
+    <string name="thermal_hot">Høy</string>
+    <string name="thermal_critical">Kritisk</string>
+    <string name="unknown">Ukjent</string>
+    <string name="percent_value">%1$d%%</string>
+</resources>

@@ -1,0 +1,36 @@
+<resources>
+    <string name="app_name">Swir Files</string>
+    <string name="subtitle">Control privado de archivos solo en carpetas que autorizas expresamente.</string>
+    <string name="no_folder">No hay carpeta seleccionada</string>
+    <string name="choose_folder">Elegir carpeta</string>
+    <string name="up">Subir</string>
+    <string name="new_folder">Nueva carpeta</string>
+    <string name="clipboard_empty">El portapapeles está vacío</string>
+    <string name="paste_here">Pegar aquí</string>
+    <string name="search_hint">Buscar en esta carpeta</string>
+    <string name="choose_folder_prompt">Elige una carpeta para empezar</string>
+    <string name="no_results">No hay elementos coincidentes</string>
+    <string name="file_with_size">%1$s  ·  %2$s</string>
+    <string name="folder_item_description">Carpeta %1$s</string>
+    <string name="file_item_description">Archivo %1$s</string>
+    <string name="location_selected">Carpeta autorizada seleccionada</string>
+    <string name="location_format">Carpeta: %1$s</string>
+    <string name="open">Abrir</string>
+    <string name="share">Compartir</string>
+    <string name="rename">Cambiar nombre</string>
+    <string name="copy">Copiar</string>
+    <string name="move">Mover</string>
+    <string name="delete">Eliminar</string>
+    <string name="cancel">Cancelar</string>
+    <string name="confirm">Confirmar</string>
+    <string name="clipboard_copy">Listo para copiar: %1$s</string>
+    <string name="clipboard_move">Listo para mover: %1$s</string>
+    <string name="delete_confirm">¿Eliminar %1$s? El proveedor de almacenamiento realiza la operación y Swir Files no puede deshacerla.</string>
+    <string name="invalid_name">Usa un nombre válido sin barras ni caracteres de control.</string>
+    <string name="access_failed">No se pudo conservar el acceso a la carpeta.</string>
+    <string name="read_failed">No se pudo leer esta carpeta.</string>
+    <string name="operation_complete">Operación completada.</string>
+    <string name="operation_failed">El proveedor de almacenamiento rechazó la operación.</string>
+    <string name="open_failed">Ninguna aplicación puede abrir este archivo.</string>
+    <string name="share_failed">Ninguna aplicación puede compartir este archivo.</string>
+</resources>

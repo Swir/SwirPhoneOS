@@ -1,0 +1,36 @@
+<resources>
+    <string name="app_name">Swir Files</string>
+    <string name="subtitle">Private file control through folders you explicitly grant.</string>
+    <string name="no_folder">No folder selected</string>
+    <string name="choose_folder">Choose folder</string>
+    <string name="up">Up</string>
+    <string name="new_folder">New folder</string>
+    <string name="clipboard_empty">Clipboard is empty</string>
+    <string name="paste_here">Paste here</string>
+    <string name="search_hint">Search this folder</string>
+    <string name="choose_folder_prompt">Choose a folder to start</string>
+    <string name="no_results">No matching items</string>
+    <string name="file_with_size">%1$s  ·  %2$s</string>
+    <string name="folder_item_description">Folder %1$s</string>
+    <string name="file_item_description">File %1$s</string>
+    <string name="location_selected">Granted folder selected</string>
+    <string name="location_format">Folder: %1$s</string>
+    <string name="open">Open</string>
+    <string name="share">Share</string>
+    <string name="rename">Rename</string>
+    <string name="copy">Copy</string>
+    <string name="move">Move</string>
+    <string name="delete">Delete</string>
+    <string name="cancel">Cancel</string>
+    <string name="confirm">Confirm</string>
+    <string name="clipboard_copy">Copy ready: %1$s</string>
+    <string name="clipboard_move">Move ready: %1$s</string>
+    <string name="delete_confirm">Delete %1$s? This uses the storage provider and cannot be undone by Swir Files.</string>
+    <string name="invalid_name">Use a valid name without slashes or control characters.</string>
+    <string name="access_failed">Folder access could not be persisted.</string>
+    <string name="read_failed">This folder could not be read.</string>
+    <string name="operation_complete">Operation completed.</string>
+    <string name="operation_failed">The storage provider rejected the operation.</string>
+    <string name="open_failed">No app can open this file.</string>
+    <string name="share_failed">No app can share this file.</string>
+</resources>

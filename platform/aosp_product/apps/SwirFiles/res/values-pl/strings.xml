@@ -1,0 +1,36 @@
+<resources>
+    <string name="app_name">Swir Files</string>
+    <string name="subtitle">Prywatna kontrola plików tylko w folderach, do których jawnie udzielisz dostępu.</string>
+    <string name="no_folder">Nie wybrano folderu</string>
+    <string name="choose_folder">Wybierz folder</string>
+    <string name="up">Wyżej</string>
+    <string name="new_folder">Nowy folder</string>
+    <string name="clipboard_empty">Schowek jest pusty</string>
+    <string name="paste_here">Wklej tutaj</string>
+    <string name="search_hint">Szukaj w tym folderze</string>
+    <string name="choose_folder_prompt">Wybierz folder, aby rozpocząć</string>
+    <string name="no_results">Brak pasujących elementów</string>
+    <string name="file_with_size">%1$s  ·  %2$s</string>
+    <string name="folder_item_description">Folder %1$s</string>
+    <string name="file_item_description">Plik %1$s</string>
+    <string name="location_selected">Wybrano udostępniony folder</string>
+    <string name="location_format">Folder: %1$s</string>
+    <string name="open">Otwórz</string>
+    <string name="share">Udostępnij</string>
+    <string name="rename">Zmień nazwę</string>
+    <string name="copy">Kopiuj</string>
+    <string name="move">Przenieś</string>
+    <string name="delete">Usuń</string>
+    <string name="cancel">Anuluj</string>
+    <string name="confirm">Potwierdź</string>
+    <string name="clipboard_copy">Gotowe do kopiowania: %1$s</string>
+    <string name="clipboard_move">Gotowe do przeniesienia: %1$s</string>
+    <string name="delete_confirm">Usunąć %1$s? Operację wykonuje dostawca pamięci i Swir Files nie może jej cofnąć.</string>
+    <string name="invalid_name">Użyj poprawnej nazwy bez ukośników i znaków sterujących.</string>
+    <string name="access_failed">Nie udało się zachować dostępu do folderu.</string>
+    <string name="read_failed">Nie udało się odczytać tego folderu.</string>
+    <string name="operation_complete">Operacja zakończona.</string>
+    <string name="operation_failed">Dostawca pamięci odrzucił operację.</string>
+    <string name="open_failed">Brak aplikacji mogącej otworzyć ten plik.</string>
+    <string name="share_failed">Brak aplikacji mogącej udostępnić ten plik.</string>
+</resources>
