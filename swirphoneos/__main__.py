@@ -9,6 +9,7 @@ import sys
 from . import __version__
 from .diagnostics import DiagnosticError, ReadOnlyAdb
 from .fastboot import FastbootDiagnosticError, ReadOnlyFastboot
+from .platform import PlatformBaselineError, load_baseline, public_baseline_summary
 from .profiles import ProfileError, discover_profiles, public_profile_summary
 from .readiness import evaluate, load_ledger
 
@@ -37,6 +38,10 @@ def main(argv: list[str] | None = None) -> int:
 
     profiles = sub.add_parser("profiles", help="Validate and list metadata-only device profiles")
     profiles.add_argument("--root", type=Path, default=Path("device_packs"))
+
+    baseline = sub.add_parser("baseline", help="Validate and show the offline AOSP baseline candidate")
+    baseline.add_argument("--file", type=Path, default=Path("platform/aosp_baseline.json"))
+
     sub.add_parser("studio", help="Open the read-only SwirPhoneStudio developer GUI")
 
     args = parser.parse_args(argv)
@@ -53,6 +58,8 @@ def main(argv: list[str] | None = None) -> int:
                 "profiles": [public_profile_summary(profile) for profile in registry],
                 "flash_allowed": False,
             }
+        elif args.command == "baseline":
+            result = public_baseline_summary(load_baseline(args.file))
         elif args.command == "studio":
             # Lazy import keeps headless status/gate/CI commands independent of Tk.
             from .studio import launch
@@ -62,9 +69,18 @@ def main(argv: list[str] | None = None) -> int:
             result = evaluate(load_ledger(args.ledger))
         print(json.dumps(result, indent=2, ensure_ascii=True))
         return 2 if args.command == "gate" and not result["beta_release_allowed"] else 0
-    except (DiagnosticError, FastbootDiagnosticError, ProfileError, ImportError, RuntimeError, OSError, ValueError):
+    except (
+        DiagnosticError,
+        FastbootDiagnosticError,
+        PlatformBaselineError,
+        ProfileError,
+        ImportError,
+        RuntimeError,
+        OSError,
+        ValueError,
+    ):
         print(
-            "Operation failed: check the project ledger/profile data, GUI availability or trusted Android SDK tool path, USB mode and single-device connection. Raw errors are withheld for privacy.",
+            "Operation failed: check the project ledger/profile/baseline data, GUI availability or trusted Android SDK tool path, USB mode and single-device connection. Raw errors are withheld for privacy.",
             file=sys.stderr,
         )
         return 1
