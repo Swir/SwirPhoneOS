@@ -1,6 +1,6 @@
 {
-  "schema_version": 1,
-  "status": "CANDIDATE_NOT_PINNED",
+  "schema_version": 2,
+  "status": "PINNED_NOT_BUILT",
   "checked_date": "2026-09-16",
   "platform": "Android 17",
   "api_level": 37,
@@ -10,11 +10,16 @@
   "candidate_release_tag": "android-17.0.0_r1",
   "candidate_build_id": "CP2A.260605.016",
   "candidate_security_patch_level": "2026-06-05",
+  "manifest_commit": "5bc9a7ce1cd78dd53613bbfd0ebf506e1e4adb0f",
+  "manifest_tree": "1541b7154f1532032baf7c73f222256cc29e8cfb",
+  "tag_object": "7a9e46ba6ed424f922a3457f4964e67e0b966201",
+  "repo_init_revision": "android-17.0.0_r1",
   "download_started": false,
   "build_completed": false,
   "sources": [
     "https://source.android.com/docs/whatsnew/site-updates",
-    "https://source.android.com/docs/setup/reference/build-numbers"
+    "https://source.android.com/docs/setup/reference/build-numbers",
+    "https://android.googlesource.com/platform/manifest/+/refs/tags/android-17.0.0_r1"
   ],
-  "notes": "Discovery metadata only. Before any platform milestone is completed, resolve and preserve the exact manifest/project revisions, build environment, checksums and successful build evidence. Do not treat android-latest-release as a reproducible pin."
+  "notes": "Exact Android 17 release-tag manifest identity is preserved: annotated tag object 7a9e46ba6ed424f922a3457f4964e67e0b966201 -> manifest commit 5bc9a7ce1cd78dd53613bbfd0ebf506e1e4adb0f -> tree 1541b7154f1532032baf7c73f222256cc29e8cfb. Source sync and platform build have not started. After sync, SwirPhoneOS must still preserve repo manifest -r output, host/tool versions and artifact hashes before reproducibility is claimed."
 }
