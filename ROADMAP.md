@@ -16,7 +16,7 @@
 | --- | --- | --- | --- |
 | 1 | 9 | 10 | 2% |
 
-The canonical ledger is `project.json`. Weights total 100 and only evidence-complete gates contribute. Source scaffolding, host tests and desktop packaging do not substitute for an Android build, boot or physical-device validation. Beta readiness is tracked separately: **0/9 gates passed**.
+The canonical ledger is `project.json`. Weights total 100 and only evidence-complete gates contribute. Source scaffolding, host tests and desktop packaging do not substitute for an Android build, boot or physical-device validation. Beta readiness remains **0/9 gates passed**.
 
 | Gate | Weight | Completion evidence required |
 | --- | ---: | --- |
@@ -44,40 +44,36 @@ The canonical ledger is `project.json`. Weights total 100 and only evidence-comp
 - [ ] security_ota
 - [ ] beta_release
 
-## Current verified engineering slices
+## Current engineering slices
 
-### Desktop
+### Platform and runtime evidence
 
-Read-only ADB/Fastboot/FastbootD diagnostics, metadata-only profile hints, multilingual SwirPhoneStudio and Windows one-file developer packaging exist. Real owner-controlled Windows USB ADB + Fastboot/FastbootD evidence is still missing, so `desktop_diagnostics` remains incomplete.
+Android 17 / API 37 is pinned to `android-17.0.0_r1`. Exact-tag planning, build-host preflight, resolved-manifest SHA validation and bounded AOSP staging exist. The staging contract now accepts independently reviewed JSON fragments while enforcing global uniqueness and the `vendor/swir/` destination boundary.
 
-### Platform
-
-Android 17 / API 37 is pinned to `android-17.0.0_r1`. A read-only build-host preflight, exact-tag workspace plan, resolved-manifest validator and bounded source staging path exist. The x86_64 Cuttlefish product definition is checked in. A new strict read-only `cuttlefish-evidence` collector is ready to verify `sys.boot_completed=1`, exact product identity, build fingerprint and source-ready package presence once a real image exists. No completed source sync, Kati/Soong build or Cuttlefish boot is claimed, so `aosp_baseline` and `emulator_boot` remain incomplete.
+The local Cuttlefish evidence collector is strictly read-only. A future report is complete only when the Swir product reports `sys.boot_completed=1`, the exact product identity and fingerprint exist, every source-ready package is installed and every one resolves its launcher activity inside its own package. The collector does not start activities, install packages, mutate state or promote registry status. No completed source sync, Kati/Soong build or Cuttlefish boot exists yet, so `aosp_baseline` and `emulator_boot` remain incomplete.
 
 ### Android application source
 
-SwirCalculator, SwirSettings, SwirFiles, SwirDeviceCare, SwirUpdate, SwirPrivacy and SwirClock are now **`ANDROID_SOURCE`** and included in the SwirPhoneOS Cuttlefish product definition. Calculator provides host-tested BigDecimal basic math. Settings exposes localized search, real build/device status and reviewed settings routes. Files uses a user-granted Storage Access Framework tree rather than broad storage permissions. Device Care reads real framework device/security-patch, battery/charging, storage, memory and thermal state without privileged permissions.
+Nine applications are now **`ANDROID_SOURCE`** and included in the Cuttlefish product: SwirCalculator, SwirSettings, SwirFiles, SwirDeviceCare, SwirUpdate, SwirPrivacy, SwirClock, SwirNotes and SwirCalendar.
 
-Update adds real local channel/build state and host-tested SHA-256/RSA signed-metadata verification, while deliberately omitting package download/staging/recovery installation until the platform update path is designed and verified. Privacy adds a host-tested exact allowlist of authoritative Android privacy/permission settings routes, while live privacy indicators and access history remain future platform work. Clock adds localized local/UTC time, a foreground stopwatch/timer and a user-visible alarm hand-off without exact-alarm privileges or silent alarm creation.
+Notes adds real offline SQLite CRUD/search, sharing and user-selected Markdown export. Calendar adds a local SQLite agenda, date/time editing, search, sharing and iCalendar export. Both are permission-free, have original SwirPhoneOS icons/UI, eight locale resource sets including Arabic/RTL and dependency-free host tests for their pure-Java policies. CalendarProvider bridging remains an explicit future capability and is rejected by source validation at this stage.
 
-All seven have original icons/UI, eight locale resource sets including Arabic/RTL metadata, source-level safety validation and bounded AOSP staging. **None is `ANDROID_RUNTIME`: no pinned-AOSP APK build or emulator execution has happened yet.** Calculator scientific math, Update staged/recovery state and Privacy live indicators/access history remain declared targets, not implemented capabilities. Source-only progress therefore does not complete the emulator/core delivery checkboxes or change the weighted project percentage.
+All nine remain below `ANDROID_RUNTIME`. Source-only work therefore receives no weighted gate credit. Current intentional gaps include Calculator scientific math, Update staged/recovery state, Privacy live indicators/access history and Calendar provider bridging.
 
-### SwirRoot
+### Desktop and SwirRoot
 
-SwirRoot is still a fail-closed policy only. No exact-build root service, mutation path or physical enable/unroot/recovery evidence exists; supported root builds remain zero.
+Read-only ADB/Fastboot/FastbootD diagnostics, multilingual SwirPhoneStudio and Windows developer packaging exist, but real owner-controlled Windows USB ADB + Fastboot/FastbootD evidence is still missing. SwirRoot remains fail-closed: no exact-build root service, mutation path or physical enable/unroot/recovery evidence exists; supported root builds remain zero.
 
 ## System app delivery track
 
 ### Emulator/core phase
 
-- [ ] Shared SwirPhoneOS design system, icon rules, package naming, localization and permission conventions integrated into the Android product tree.
-- [ ] Swir Settings usable in the emulator with real platform-backed settings.
-- [ ] Swir Files usable in the emulator with safe local file operations.
-- [ ] Swir Update exposes signed-channel/update state and recovery hand-off appropriate to the development channel.
-- [ ] Swir Privacy and Swir Device Care expose real emulator/platform state rather than placeholder cards.
-- [ ] Swir Clock and Swir Calculator provide functional daily-use baseline apps.
+- [ ] Shared SwirPhoneOS design system, icon rules, package naming, localization and permission conventions integrated into the built Android image.
+- [ ] Settings, Files, Update, Privacy and Device Care usable with real runtime/platform state.
+- [ ] Clock, Calculator, Notes and Calendar built and exercised inside SwirPhoneOS Cuttlefish.
+- [ ] Runtime accessibility, RTL and locale-switch review for all source-ready apps.
 
-> Source progress: SwirCalculator, SwirSettings, SwirFiles, SwirDeviceCare, SwirUpdate, SwirPrivacy and SwirClock now contain meaningful Android source and host-tested pure-Java logic/contracts, but their checkboxes stay open until the relevant capabilities are built and exercised inside the SwirPhoneOS emulator image. Source-only work receives no weighted gate credit.
+> Source progress: nine apps contain meaningful Android source and host-tested policy/logic, but the checkboxes stay open until they are built and exercised in the SwirPhoneOS image.
 
 ### Reference-hardware phase
 
@@ -85,7 +81,7 @@ SwirRoot is still a fail-closed policy only. No exact-build root service, mutati
 - [ ] Swir Camera/Gallery validated against the exact reference camera/media stack.
 - [ ] Swir Recorder validated with the reference audio stack.
 - [ ] Swir Backup/restore aligned with exact encryption/storage/recovery behavior.
-- [ ] Calendar, Notes, Browser, Weather and Swir Apps integrated to beta-appropriate quality.
+- [ ] Calendar provider bridge, Browser, Weather and Swir Apps integrated to beta-appropriate quality.
 
 ### SwirRoot phase
 
@@ -94,17 +90,15 @@ SwirRoot is still a fail-closed policy only. No exact-build root service, mutati
 - [ ] Unroot restores the expected non-root boot/system state on the exact build/profile.
 - [ ] Per-app root authorization is deny-by-default, revocable and auditable.
 - [ ] SwirRoot integrates with Swir Update, recovery and SwirPhoneStudio.
-- [ ] Physical enable -> reboot -> use -> disable -> recovery validation before any beta root claim.
-
-These sub-deliverables do not independently change the ten-gate weighted percentage.
+- [ ] Physical enable → reboot → use → disable → recovery validation before any beta root claim.
 
 ## Next engineering work
 
-1. On a capable Linux x86-64 AOSP builder, run preflight, initialize/sync exact `android-17.0.0_r1`, preserve `repo manifest -r` + SHA-256/tool versions, stage the manifest-whitelisted `vendor/swir/` product/app bundle, and compile `swirphoneos_cf_x86_64-aosp_current-userdebug`.
-2. Boot the resulting image in Cuttlefish and preserve `sys.boot_completed=1`, SystemUI plus Calculator/Settings/Files/DeviceCare/Update/Privacy/Clock runtime evidence. Use the read-only `cuttlefish-evidence` collector together with the exact manifest/build checksums; only reviewed evidence can move source status toward `ANDROID_RUNTIME`.
-3. After the real runtime exists, connect SwirUpdate to a signed metadata/channel service and a rollback-aware staged update/recovery contract; add platform-backed privacy indicators/access-history only through reviewed Android APIs. Keep all write/install paths disabled until rollback/recovery is proven.
-4. Continue the shared SwirPhoneOS visual/accessibility system and move the next permission-minimal daily app (likely Notes or Calendar) from contract to meaningful source only when it has real behavior and tests.
-5. Continue hardening SwirPhoneStudio; the next desktop gate evidence is an actual Windows USB read-only ADB + Fastboot/FastbootD smoke on an owner-controlled device.
+1. On a capable Linux x86-64 AOSP builder, run preflight, initialize/sync exact `android-17.0.0_r1`, preserve `repo manifest -r` plus SHA-256/tool versions, stage the bounded `vendor/swir/` bundle and compile `swirphoneos_cf_x86_64-aosp_current-userdebug`.
+2. Boot that image in Cuttlefish and preserve `sys.boot_completed=1`, exact product/fingerprint, package and launcher-resolution evidence for all nine source-ready apps. Pair the read-only report with the exact manifest/build checksums and interactive smoke evidence before any `ANDROID_RUNTIME` promotion.
+3. Fix any real Kati/Soong/Android runtime regressions before expanding more app source. Runtime evidence now has higher priority than increasing the app count.
+4. After runtime exists, connect SwirUpdate to a signed metadata/channel service and rollback-aware staged update/recovery contract; add platform-backed privacy history/indicators only through reviewed Android APIs.
+5. Continue SwirPhoneStudio hardening; the next desktop gate evidence is actual Windows USB read-only ADB + Fastboot/FastbootD smoke on an owner-controlled device.
 6. After emulator/GSI evidence, expand device packs into reviewed installation/recovery plans. Never enable generic writes from Treble/codename/unlocked state alone.
 
 ## Release stages
