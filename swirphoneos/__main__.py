@@ -37,6 +37,7 @@ def main(argv: list[str] | None = None) -> int:
 
     profiles = sub.add_parser("profiles", help="Validate and list metadata-only device profiles")
     profiles.add_argument("--root", type=Path, default=Path("device_packs"))
+    sub.add_parser("studio", help="Open the read-only SwirPhoneStudio developer GUI")
 
     args = parser.parse_args(argv)
     try:
@@ -52,13 +53,18 @@ def main(argv: list[str] | None = None) -> int:
                 "profiles": [public_profile_summary(profile) for profile in registry],
                 "flash_allowed": False,
             }
+        elif args.command == "studio":
+            # Lazy import keeps headless status/gate/CI commands independent of Tk.
+            from .studio import launch
+
+            return launch()
         else:
             result = evaluate(load_ledger(args.ledger))
         print(json.dumps(result, indent=2, ensure_ascii=True))
         return 2 if args.command == "gate" and not result["beta_release_allowed"] else 0
-    except (DiagnosticError, FastbootDiagnosticError, ProfileError, OSError, ValueError):
+    except (DiagnosticError, FastbootDiagnosticError, ProfileError, ImportError, RuntimeError, OSError, ValueError):
         print(
-            "Operation failed: check the project ledger/profile data or trusted Android SDK tool path, USB mode and single-device connection. Raw errors are withheld for privacy.",
+            "Operation failed: check the project ledger/profile data, GUI availability or trusted Android SDK tool path, USB mode and single-device connection. Raw errors are withheld for privacy.",
             file=sys.stderr,
         )
         return 1
