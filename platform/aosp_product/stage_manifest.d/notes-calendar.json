@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "files": [
+    {"source":"apps/SwirNotes/Android.bp","destination":"vendor/swir/apps/SwirNotes/Android.bp"},
+    {"source":"apps/SwirNotes/AndroidManifest.xml","destination":"vendor/swir/apps/SwirNotes/AndroidManifest.xml"},
+    {"source":"apps/SwirNotes/src/org/swir/phoneos/notes/NotePolicy.java","destination":"vendor/swir/apps/SwirNotes/src/org/swir/phoneos/notes/NotePolicy.java"},
+    {"source":"apps/SwirNotes/src/org/swir/phoneos/notes/MainActivity.java","destination":"vendor/swir/apps/SwirNotes/src/org/swir/phoneos/notes/MainActivity.java"},
+    {"source":"apps/SwirNotes/res/drawable/ic_notes.xml","destination":"vendor/swir/apps/SwirNotes/res/drawable/ic_notes.xml"},
+    {"source":"apps/SwirNotes/res/values/strings.xml","destination":"vendor/swir/apps/SwirNotes/res/values/strings.xml"},
+    {"source":"apps/SwirNotes/res/values-pl/strings.xml","destination":"vendor/swir/apps/SwirNotes/res/values-pl/strings.xml"},
+    {"source":"apps/SwirNotes/res/values-nb/strings.xml","destination":"vendor/swir/apps/SwirNotes/res/values-nb/strings.xml"},
+    {"source":"apps/SwirNotes/res/values-de/strings.xml","destination":"vendor/swir/apps/SwirNotes/res/values-de/strings.xml"},
+    {"source":"apps/SwirNotes/res/values-es/strings.xml","destination":"vendor/swir/apps/SwirNotes/res/values-es/strings.xml"},
+    {"source":"apps/SwirNotes/res/values-fr/strings.xml","destination":"vendor/swir/apps/SwirNotes/res/values-fr/strings.xml"},
+    {"source":"apps/SwirNotes/res/values-pt/strings.xml","destination":"vendor/swir/apps/SwirNotes/res/values-pt/strings.xml"},
+    {"source":"apps/SwirNotes/res/values-ar/strings.xml","destination":"vendor/swir/apps/SwirNotes/res/values-ar/strings.xml"},
+    {"source":"apps/SwirCalendar/Android.bp","destination":"vendor/swir/apps/SwirCalendar/Android.bp"},
+    {"source":"apps/SwirCalendar/AndroidManifest.xml","destination":"vendor/swir/apps/SwirCalendar/AndroidManifest.xml"},
+    {"source":"apps/SwirCalendar/src/org/swir/phoneos/calendar/EventPolicy.java","destination":"vendor/swir/apps/SwirCalendar/src/org/swir/phoneos/calendar/EventPolicy.java"},
+    {"source":"apps/SwirCalendar/src/org/swir/phoneos/calendar/MainActivity.java","destination":"vendor/swir/apps/SwirCalendar/src/org/swir/phoneos/calendar/MainActivity.java"},
+    {"source":"apps/SwirCalendar/res/drawable/ic_calendar.xml","destination":"vendor/swir/apps/SwirCalendar/res/drawable/ic_calendar.xml"},
+    {"source":"apps/SwirCalendar/res/values/strings.xml","destination":"vendor/swir/apps/SwirCalendar/res/values/strings.xml"},
+    {"source":"apps/SwirCalendar/res/values-pl/strings.xml","destination":"vendor/swir/apps/SwirCalendar/res/values-pl/strings.xml"},
+    {"source":"apps/SwirCalendar/res/values-nb/strings.xml","destination":"vendor/swir/apps/SwirCalendar/res/values-nb/strings.xml"},
+    {"source":"apps/SwirCalendar/res/values-de/strings.xml","destination":"vendor/swir/apps/SwirCalendar/res/values-de/strings.xml"},
+    {"source":"apps/SwirCalendar/res/values-es/strings.xml","destination":"vendor/swir/apps/SwirCalendar/res/values-es/strings.xml"},
+    {"source":"apps/SwirCalendar/res/values-fr/strings.xml","destination":"vendor/swir/apps/SwirCalendar/res/values-fr/strings.xml"},
+    {"source":"apps/SwirCalendar/res/values-pt/strings.xml","destination":"vendor/swir/apps/SwirCalendar/res/values-pt/strings.xml"},
+    {"source":"apps/SwirCalendar/res/values-ar/strings.xml","destination":"vendor/swir/apps/SwirCalendar/res/values-ar/strings.xml"}
+  ]
+}

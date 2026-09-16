@@ -17,4 +17,6 @@ PRODUCT_PACKAGES += \
     SwirDeviceCare \
     SwirUpdate \
     SwirPrivacy \
-    SwirClock
+    SwirClock \
+    SwirNotes \
+    SwirCalendar
