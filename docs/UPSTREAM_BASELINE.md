@@ -1,48 +1,72 @@
 # AOSP Upstream Baseline
 
-Checked: **2026-09-16**. This document records discovery only; it is not evidence of a completed Android build.
+Checked: **2026-09-16**. This document records a reproducibility pin and build policy; it is not evidence of a completed Android build.
 
-## Current candidate
+## Current pinned candidate
 
-Official AOSP documentation currently recommends the moving `android-latest-release` manifest for AOSP development. At the checked date it resolves to the `android17-release` release branch. The AOSP build-number table lists Android 17 / API 37 and the release tag `android-17.0.0_r1` with build ID `CP2A.260605.016` and security patch level `2026-06-05`.
+Official AOSP documentation currently recommends the moving `android-latest-release` manifest for upstream development. At the checked date it resolves to `android17-release`. The AOSP build-number table lists Android 17 / API 37 and release tag `android-17.0.0_r1`, build ID `CP2A.260605.016`, with security patch level `2026-06-05`.
 
-SwirPhoneOS therefore records Android 17 as the current **baseline candidate**, while keeping `platform/aosp_baseline.json` at `CANDIDATE_NOT_PINNED`.
+SwirPhoneOS now preserves the exact official manifest identity for that release tag:
+
+| Field | Pinned value |
+| --- | --- |
+| Repo init revision | `android-17.0.0_r1` |
+| Annotated tag object | `7a9e46ba6ed424f922a3457f4964e67e0b966201` |
+| Manifest commit | `5bc9a7ce1cd78dd53613bbfd0ebf506e1e4adb0f` |
+| Manifest tree | `1541b7154f1532032baf7c73f222256cc29e8cfb` |
+| Build ID | `CP2A.260605.016` |
+| API level | `37` |
+
+`platform/aosp_baseline.json` is therefore **`PINNED_NOT_BUILT`**, not `CANDIDATE_NOT_PINNED`. This removes a moving-reference ambiguity but does **not** complete the AOSP milestone. No source sync or Android build has been performed by this repository automation.
 
 Primary references:
 
 - https://source.android.com/docs/whatsnew/site-updates
 - https://source.android.com/docs/setup/reference/build-numbers
-- https://android.googlesource.com/platform/manifest
+- https://android.googlesource.com/platform/manifest/+/refs/tags/android-17.0.0_r1
 
-## Why `android-latest-release` is not our reproducible pin
+## Reproducibility contract
 
-`android-latest-release` intentionally tracks the newest AOSP release branch. That is useful for discovery and upstream development, but a moving reference is insufficient for a reproducible SwirPhoneOS release.
+The exact tag pin is only the first lock. Before the `aosp_baseline` milestone can complete, the project must:
 
-Before the `aosp_baseline` milestone can move forward, the project must:
-
-1. select an exact release candidate/tag after compatibility review;
-2. initialize the AOSP manifest from the official Android manifest repository;
-3. resolve every project revision and preserve a revision-locked manifest snapshot (for example, the equivalent of `repo manifest -r` after sync);
-4. record the manifest snapshot SHA-256 plus Repo/Git/JDK/build-host versions;
+1. initialize Repo from the official Android manifest repository at the exact `android-17.0.0_r1` revision;
+2. sync the complete source tree in a controlled build workspace;
+3. preserve the resolved `repo manifest -r` output so every project revision is recorded rather than relying only on the top-level manifest commit;
+4. record a SHA-256 for that resolved manifest plus Repo/Git/JDK/build-host versions;
 5. record required proprietary/vendor inputs separately and verify their legal source;
-6. complete the platform build and preserve build logs, artifact hashes and exact candidate commit;
-7. repeat the build from the preserved metadata before calling it reproducible.
+6. complete the platform build and preserve logs, artifact hashes and the exact SwirPhoneOS candidate commit;
+7. repeat the build from the preserved metadata before calling the result reproducible.
 
-No source sync has been started by this repository automation, and no Android image has been built.
+The baseline validator intentionally rejects incomplete pin metadata and prevents `BUILT_VERIFIED` from being claimed until both source acquisition and build completion are recorded.
+
+## Build-host preflight
+
+A bounded read-only preflight is now implemented as:
+
+```sh
+python -m swirphoneos build-preflight --workspace /absolute/path/to/workspace
+```
+
+It checks host/architecture, glibc, free workspace capacity, RAM visibility, required `git`/`repo` commands and reports KVM availability. It does **not** install packages, download source, configure Cuttlefish/KVM, alter the host or start a build.
+
+The current conservative full-build floor follows the official AOSP setup guidance: 64-bit x86 Linux, glibc 2.17 or newer, at least 400 GiB free disk and at least 64 GiB RAM. Passing this preflight means only that the basic host gate is plausible; a real source sync/build is still required.
+
+References:
+
+- https://source.android.com/docs/setup/start
+- https://source.android.com/docs/setup/start/requirements
 
 ## GSI policy
 
-AOSP describes GSI as a generic system image for Treble-capable Android devices, but the same official guidance states that Android devices have different designs and there is no single generic flashing command or instruction set that applies to all devices.
+AOSP describes GSI as a generic system image for Treble-capable Android devices, but Android devices still differ in bootloader, AVB, partition, kernel/vendor and recovery behavior. SwirPhoneOS will therefore use GSI as one compatibility path, not as proof that one image or flashing sequence is safe for every phone.
 
-SwirPhoneOS will use GSI as one compatibility path, not as proof that one image or installer is safe for every phone. Device-specific bootloader, AVB, partition, kernel/vendor and recovery requirements remain profile/port work and require hardware evidence.
+Device-specific bootloader, AVB, partition, kernel/vendor and recovery requirements remain profile/port work and require physical hardware evidence.
 
 References:
 
 - https://source.android.com/docs/core/tests/vts/gsi
 - https://source.android.com/docs/core/architecture/bootloader/locking_unlocking
 
-## Build-resource gate
+## Next platform gate
 
-Before any large AOSP source download is started, re-check the official AOSP build-environment requirements in `docs/SOURCES.md`, confirm adequate disk/RAM/CPU capacity and choose the build host intentionally. A bounded preflight should fail before downloading hundreds of gigabytes when the environment is unsuitable.
-
-The next safe platform task is an **offline build-host preflight and reproducibility manifest design**, not an unbounded automatic source sync.
+The next safe platform task is a controlled source sync at the exact pinned release tag in a host that passes preflight, followed by preservation of `repo manifest -r`, toolchain/host metadata and the first reproducible platform build attempt. Emulator/Cuttlefish boot comes only after a successful built product exists.

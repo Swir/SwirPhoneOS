@@ -34,8 +34,10 @@ jobs:
         run: python -m swirphoneos status
       - name: Validate non-executable device registry
         run: python -m swirphoneos profiles
-      - name: Validate offline AOSP baseline metadata
+      - name: Validate pinned AOSP baseline metadata
         run: python -m swirphoneos baseline
+      - name: Inspect AOSP host preflight contract
+        run: python -m swirphoneos build-preflight --workspace .
       - name: Validate global localization catalogs
         run: python -m swirphoneos i18n
       - name: Validate essential system-app registry

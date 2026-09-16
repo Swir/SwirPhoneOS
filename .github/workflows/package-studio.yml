@@ -1,0 +1,49 @@
+name: SwirPhoneStudio Windows package
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: studio-package-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  package-windows-x64:
+    name: Windows x64 / Python 3.14
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.14'
+      - name: Install pinned packager
+        run: python -m pip install --disable-pip-version-check pyinstaller==6.22.3
+      - name: Build one-file developer executable
+        run: pyinstaller --noconfirm --clean packaging/SwirPhoneStudio.spec
+      - name: Frozen GUI smoke test
+        env:
+          SWIR_GUI_TESTS: '1'
+        run: dist\SwirPhoneStudio.exe --smoke-test
+      - name: Record SHA-256
+        shell: pwsh
+        run: |
+          $hash = (Get-FileHash -Algorithm SHA256 dist\SwirPhoneStudio.exe).Hash.ToLowerInvariant()
+          "$hash  SwirPhoneStudio.exe" | Set-Content -Encoding ascii dist\SHA256SUMS.txt
+      - name: Upload developer artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: SwirPhoneStudio-windows-x64
+          path: |
+            dist/SwirPhoneStudio.exe
+            dist/SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 14

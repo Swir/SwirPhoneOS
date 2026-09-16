@@ -1,6 +1,7 @@
-"""Offline validation for the candidate AOSP platform baseline.
+"""Offline validation for the pinned AOSP platform baseline.
 
-This module does not download source code or claim a reproducible Android build.
+This module validates reproducibility metadata only. It does not download source
+code, execute Repo, build Android, or claim a successful platform build.
 """
 from __future__ import annotations
 
@@ -13,16 +14,22 @@ import re
 TOKEN = re.compile(r"[A-Za-z0-9][A-Za-z0-9._/-]{0,127}\Z")
 TAG = re.compile(r"android-[0-9]+\.[0-9]+\.[0-9]+_r[0-9]+\Z")
 BUILD_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,63}\Z")
+SHA1 = re.compile(r"[0-9a-f]{40}\Z")
 ALLOWED_STATUS = {"CANDIDATE_NOT_PINNED", "PINNED_NOT_BUILT", "BUILT_VERIFIED"}
+ALLOWED_SOURCE_PREFIXES = (
+    "https://source.android.com/",
+    "https://android.googlesource.com/",
+)
 REQUIRED_KEYS = {
     "schema_version", "status", "checked_date", "platform", "api_level", "manifest_url",
     "tracking_manifest", "resolved_release_branch", "candidate_release_tag", "candidate_build_id",
-    "candidate_security_patch_level", "download_started", "build_completed", "sources", "notes",
+    "candidate_security_patch_level", "manifest_commit", "manifest_tree", "tag_object",
+    "repo_init_revision", "download_started", "build_completed", "sources", "notes",
 }
 
 
 class PlatformBaselineError(ValueError):
-    """Raised when platform discovery metadata is malformed or overstated."""
+    """Raised when platform baseline metadata is malformed or overstated."""
 
 
 @dataclass(frozen=True)
@@ -37,13 +44,24 @@ class PlatformBaseline:
     candidate_release_tag: str
     candidate_build_id: str
     security_patch_level: str
+    manifest_commit: str | None
+    manifest_tree: str | None
+    tag_object: str | None
+    repo_init_revision: str | None
     download_started: bool
     build_completed: bool
     sources: tuple[str, ...]
 
     @property
+    def pinned(self) -> bool:
+        return all(
+            value is not None
+            for value in (self.manifest_commit, self.manifest_tree, self.tag_object, self.repo_init_revision)
+        )
+
+    @property
     def milestone_complete(self) -> bool:
-        return self.status == "BUILT_VERIFIED" and self.build_completed
+        return self.status == "BUILT_VERIFIED" and self.pinned and self.build_completed
 
 
 def _bounded_text(value: object, field: str, limit: int = 512) -> str:
@@ -57,10 +75,19 @@ def _bounded_text(value: object, field: str, limit: int = 512) -> str:
     return value
 
 
+def _optional_sha(value: object, field: str) -> str | None:
+    if value is None:
+        return None
+    value = _bounded_text(value, field, 40)
+    if not SHA1.fullmatch(value):
+        raise PlatformBaselineError(f"{field} must be a 40-character lowercase Git SHA-1.")
+    return value
+
+
 def validate_baseline(data: object) -> PlatformBaseline:
     if not isinstance(data, dict) or set(data) != REQUIRED_KEYS:
-        raise PlatformBaselineError("AOSP baseline must match schema v1 exactly.")
-    if data["schema_version"] != 1:
+        raise PlatformBaselineError("AOSP baseline must match schema v2 exactly.")
+    if data["schema_version"] != 2:
         raise PlatformBaselineError("Unsupported AOSP baseline schema version.")
 
     status = _bounded_text(data["status"], "status", 64)
@@ -79,8 +106,8 @@ def validate_baseline(data: object) -> PlatformBaseline:
         raise PlatformBaselineError("api_level is invalid.")
 
     manifest_url = _bounded_text(data["manifest_url"], "manifest_url")
-    if not manifest_url.startswith("https://android.googlesource.com/"):
-        raise PlatformBaselineError("manifest_url must use the official Android Git host.")
+    if manifest_url != "https://android.googlesource.com/platform/manifest":
+        raise PlatformBaselineError("manifest_url must be the official Android manifest repository.")
 
     tracking = _bounded_text(data["tracking_manifest"], "tracking_manifest", 128)
     branch = _bounded_text(data["resolved_release_branch"], "resolved_release_branch", 128)
@@ -100,6 +127,26 @@ def validate_baseline(data: object) -> PlatformBaseline:
     except ValueError as exc:
         raise PlatformBaselineError("candidate_security_patch_level must be an ISO date.") from exc
 
+    manifest_commit = _optional_sha(data["manifest_commit"], "manifest_commit")
+    manifest_tree = _optional_sha(data["manifest_tree"], "manifest_tree")
+    tag_object = _optional_sha(data["tag_object"], "tag_object")
+    repo_init_revision_raw = data["repo_init_revision"]
+    repo_init_revision = None if repo_init_revision_raw is None else _bounded_text(
+        repo_init_revision_raw, "repo_init_revision", 128
+    )
+    if repo_init_revision is not None and not TAG.fullmatch(repo_init_revision):
+        raise PlatformBaselineError("repo_init_revision must be an exact Android release tag.")
+
+    pin_values = (manifest_commit, manifest_tree, tag_object, repo_init_revision)
+    if status == "CANDIDATE_NOT_PINNED":
+        if any(value is not None for value in pin_values):
+            raise PlatformBaselineError("An unpinned candidate cannot contain partial pin metadata.")
+    else:
+        if any(value is None for value in pin_values):
+            raise PlatformBaselineError("Pinned/built baselines require complete manifest pin metadata.")
+        if repo_init_revision != tag:
+            raise PlatformBaselineError("repo_init_revision must match candidate_release_tag.")
+
     download_started = data["download_started"]
     build_completed = data["build_completed"]
     if not isinstance(download_started, bool) or not isinstance(build_completed, bool):
@@ -110,8 +157,8 @@ def validate_baseline(data: object) -> PlatformBaseline:
         raise PlatformBaselineError("An unpinned candidate cannot claim source download/build completion.")
     if status == "PINNED_NOT_BUILT" and build_completed:
         raise PlatformBaselineError("PINNED_NOT_BUILT cannot claim a completed build.")
-    if status == "BUILT_VERIFIED" and not build_completed:
-        raise PlatformBaselineError("BUILT_VERIFIED requires build_completed=true.")
+    if status == "BUILT_VERIFIED" and not (download_started and build_completed):
+        raise PlatformBaselineError("BUILT_VERIFIED requires downloaded source and a completed build.")
 
     sources_raw = data["sources"]
     if not isinstance(sources_raw, list) or not sources_raw or len(sources_raw) > 32:
@@ -119,8 +166,8 @@ def validate_baseline(data: object) -> PlatformBaseline:
     sources: list[str] = []
     for source in sources_raw:
         source = _bounded_text(source, "source")
-        if not source.startswith("https://source.android.com/"):
-            raise PlatformBaselineError("Platform sources must use source.android.com.")
+        if not source.startswith(ALLOWED_SOURCE_PREFIXES):
+            raise PlatformBaselineError("Platform sources must use official Android documentation/Git hosts.")
         sources.append(source)
 
     _bounded_text(data["notes"], "notes", 4096)
@@ -135,6 +182,10 @@ def validate_baseline(data: object) -> PlatformBaseline:
         candidate_release_tag=tag,
         candidate_build_id=build_id,
         security_patch_level=patch,
+        manifest_commit=manifest_commit,
+        manifest_tree=manifest_tree,
+        tag_object=tag_object,
+        repo_init_revision=repo_init_revision,
         download_started=download_started,
         build_completed=build_completed,
         sources=tuple(sources),
@@ -156,6 +207,7 @@ def load_baseline(path: Path) -> PlatformBaseline:
 
 def public_baseline_summary(baseline: PlatformBaseline) -> dict[str, object]:
     return {
+        "schema_version": 2,
         "status": baseline.status,
         "checked_date": baseline.checked_date,
         "platform": baseline.platform,
@@ -165,6 +217,11 @@ def public_baseline_summary(baseline: PlatformBaseline) -> dict[str, object]:
         "candidate_release_tag": baseline.candidate_release_tag,
         "candidate_build_id": baseline.candidate_build_id,
         "security_patch_level": baseline.security_patch_level,
+        "manifest_commit": baseline.manifest_commit,
+        "manifest_tree": baseline.manifest_tree,
+        "tag_object": baseline.tag_object,
+        "repo_init_revision": baseline.repo_init_revision,
+        "pinned": baseline.pinned,
         "download_started": baseline.download_started,
         "build_completed": baseline.build_completed,
         "aosp_milestone_complete": baseline.milestone_complete,
