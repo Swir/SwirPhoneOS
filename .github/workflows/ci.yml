@@ -84,6 +84,18 @@ jobs:
           mkdir -p _clock-java-test
           javac -d _clock-java-test platform/aosp_product/apps/SwirClock/src/org/swir/phoneos/clock/ClockCore.java platform/aosp_product/apps/SwirClock/hosttest/ClockCoreHostTest.java
           java -cp _clock-java-test org.swir.phoneos.clock.ClockCoreHostTest
+      - name: Host-test SwirNotes note policy
+        if: runner.os == 'Linux' && matrix.python == '3.14'
+        run: |
+          mkdir -p _notes-java-test
+          javac -d _notes-java-test platform/aosp_product/apps/SwirNotes/src/org/swir/phoneos/notes/NotePolicy.java platform/aosp_product/apps/SwirNotes/hosttest/NotePolicyHostTest.java
+          java -cp _notes-java-test org.swir.phoneos.notes.NotePolicyHostTest
+      - name: Host-test SwirCalendar event policy
+        if: runner.os == 'Linux' && matrix.python == '3.14'
+        run: |
+          mkdir -p _calendar-java-test
+          javac -d _calendar-java-test platform/aosp_product/apps/SwirCalendar/src/org/swir/phoneos/calendar/EventPolicy.java platform/aosp_product/apps/SwirCalendar/hosttest/EventPolicyHostTest.java
+          java -cp _calendar-java-test org.swir.phoneos.calendar.EventPolicyHostTest
       - name: Inspect AOSP host preflight contract
         run: python -m swirphoneos build-preflight --workspace .
       - name: Validate global localization catalogs
