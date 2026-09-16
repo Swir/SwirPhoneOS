@@ -16,4 +16,5 @@ PRODUCT_PACKAGES += \
     SwirFiles \
     SwirDeviceCare \
     SwirUpdate \
-    SwirPrivacy
+    SwirPrivacy \
+    SwirClock
