@@ -1,0 +1,9 @@
+{
+  "schema_version": 1,
+  "files": [
+    {
+      "source": "apps/SwirClock/res/values/invariants.xml",
+      "destination": "vendor/swir/apps/SwirClock/res/values/invariants.xml"
+    }
+  ]
+}
