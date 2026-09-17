@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+### Exact AOSP staging-tree closure
+
+Hardened the persistent self-hosted AOSP build path against stale or unreviewed files under `vendor/swir/`. `stage-product` schema v5 now inventories the complete regular-file destination tree before copying and fails closed if a file from an older revision or any other unreviewed source remains outside the current staging manifest. It deliberately does not auto-delete stale files. After copying, the exact destination set must equal the reviewed manifest and the report records pre-existing/current file counts plus `destination_tree_closed=true`.
+
+Extended post-build staged-source evidence to independently re-inventory the full `vendor/swir/` file set after Kati/Soong. A changed/missing staged file, symlink substitution, generated extra file or stale source now blocks build provenance even when all originally listed files still hash correctly. `aosp-run-evidence` and the manual builder workflow require the new schema-v5 closure proof before accepting a build chain. Added cross-platform regression tests for stale pre-build files, post-build extras, closure/count tampering and workflow schema drift, and refreshed AOSP operator documentation.
+
+This is reproducibility/supply-chain hardening only. No Android build, Cuttlefish boot, physical-device support, phone write, root path or release gate is claimed, so weighted progress remains **2%** and Beta remains **0/9**.
+
 ### Scoped Swir Gallery and foreground Swir Recorder Android sources
 
 Added `SwirGallery` as meaningful Android source using the least-privilege `READ_MEDIA_IMAGES` and `READ_MEDIA_VIDEO` permissions. It browses granted local photos/videos through MediaStore, supports local search, opens and shares URI-granted media, and delegates deletion to Android's owner-confirmed `MediaStore.createDeleteRequest` flow. It does not request broad storage access or direct media-write privileges. Album grouping remains an explicit future capability.
