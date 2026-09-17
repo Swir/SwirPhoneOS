@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import copy
+import hashlib
 import json
 from pathlib import Path
 import tempfile
@@ -21,6 +22,9 @@ from swirphoneos.transaction_evidence import validate_plan
 
 
 FINGERPRINT = "OnePlus/avicii_EEA/avicii:12/RKQ1.211119.001/220624:user/release-keys"
+SERIAL_DIGEST = hashlib.sha256(b"ABC123").hexdigest()
+ADB_TOOL_DIGEST = "a" * 64
+FASTBOOT_TOOL_DIGEST = "b" * 64
 
 
 def profile():
@@ -54,7 +58,7 @@ def reports():
         "ro.boot.flash.locked": "0",
         "ro.boot.verifiedbootstate": "orange",
         "ro.boot.vbmeta.device_state": "unlocked",
-    })
+    }, transport_serial_sha256=SERIAL_DIGEST, tool_sha256=ADB_TOOL_DIGEST)
     fastboot = summarize_fastboot({
         "product": "avicii",
         "current-slot": "a",
@@ -66,7 +70,7 @@ def reports():
         "partition-size:boot": "0x06000000",
         "has-slot:super": "no",
         "partition-size:super": "0x1c0000000",
-    })
+    }, transport_serial_sha256=SERIAL_DIGEST, tool_sha256=FASTBOOT_TOOL_DIGEST)
     return (
         build_unified_report("adb", adb, [current_profile]),
         build_unified_report("fastboot", fastboot, [current_profile]),
@@ -97,8 +101,13 @@ class HardwareEvidenceTests(unittest.TestCase):
     def test_correlates_matching_reports_without_authorizing_writes(self):
         adb, fastboot, current_profile = reports()
         evidence = create_hardware_evidence(adb, fastboot, [current_profile])
+        self.assertEqual(evidence["schema_version"], 2)
         self.assertEqual(evidence["profile_id"], "oneplus/avicii")
         self.assertEqual(evidence["adb_build_fingerprint_reported"], FINGERPRINT)
+        self.assertEqual(evidence["transport_serial_sha256"], SERIAL_DIGEST)
+        self.assertEqual(evidence["adb_tool_sha256"], ADB_TOOL_DIGEST)
+        self.assertEqual(evidence["fastboot_tool_sha256"], FASTBOOT_TOOL_DIGEST)
+        self.assertIn("transport_serial_sha256_matches_across_transports", evidence["correlations"])
         self.assertEqual(evidence["state"], "CORRELATED_READ_ONLY_NOT_VERIFIED")
         self.assertFalse(evidence["hardware_verified"])
         self.assertFalse(evidence["write_allowed"])
@@ -107,6 +116,24 @@ class HardwareEvidenceTests(unittest.TestCase):
         self.assertEqual(evidence["partition_hints_reported"][0]["name"], "boot")
         self.assertEqual(evidence["partition_hints_reported"][0]["size_bytes_reported"], 0x06000000)
         validate_hardware_evidence(evidence)
+
+    def test_rejects_cross_transport_serial_digest_mismatch(self):
+        adb, fastboot, current_profile = reports()
+        fastboot["transport_report"]["transport_serial_sha256"] = hashlib.sha256(b"OTHER").hexdigest()
+        with self.assertRaises(HardwareEvidenceError):
+            create_hardware_evidence(adb, fastboot, [current_profile])
+
+    def test_rejects_missing_transport_provenance(self):
+        adb, fastboot, current_profile = reports()
+        adb["transport_report"]["transport_serial_sha256"] = None
+        with self.assertRaises(HardwareEvidenceError):
+            create_hardware_evidence(adb, fastboot, [current_profile])
+
+    def test_rejects_invalid_tool_digest(self):
+        adb, fastboot, current_profile = reports()
+        fastboot["transport_report"]["tool_sha256"] = "bad"
+        with self.assertRaises(HardwareEvidenceError):
+            create_hardware_evidence(adb, fastboot, [current_profile])
 
     def test_rejects_cross_transport_slot_mismatch(self):
         adb, fastboot, current_profile = reports()
@@ -128,10 +155,18 @@ class HardwareEvidenceTests(unittest.TestCase):
         with self.assertRaises(HardwareEvidenceError):
             validate_hardware_evidence(tampered)
 
+    def test_integrity_hash_detects_tool_digest_tampering(self):
+        adb, fastboot, current_profile = reports()
+        evidence = create_hardware_evidence(adb, fastboot, [current_profile])
+        tampered = copy.deepcopy(evidence)
+        tampered["adb_tool_sha256"] = "c" * 64
+        with self.assertRaises(HardwareEvidenceError):
+            validate_hardware_evidence(tampered)
+
     def test_persisted_evidence_rejects_duplicate_json_keys(self):
         with tempfile.TemporaryDirectory() as temporary:
             path = Path(temporary) / "hardware.json"
-            path.write_text('{"schema_version":1,"schema_version":1}', encoding="utf-8")
+            path.write_text('{"schema_version":2,"schema_version":2}', encoding="utf-8")
             with self.assertRaises(HardwareEvidenceError):
                 load_hardware_evidence(path)
 
