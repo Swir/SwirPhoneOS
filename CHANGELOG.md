@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+### Cross-transport read-only hardware evidence
+
+Expanded the physical-device diagnostics path without adding any write capability. ADB observations now include exact build fingerprint, board/hardware, slot and verified-boot/VBMeta state hints. Fastboot can optionally query only bounded `has-slot:<partition>` and `partition-size:<partition>` variables for a reviewed partition-name allowlist; `getvar all` and every mutating Fastboot command remain unavailable.
+
+Added `swirphoneos.hardware_evidence` plus the `hardware-evidence` and `transaction-device-check` CLI commands. Saved ADB and Fastboot unified reports can be correlated only when they resolve to the same local metadata profile, model/codename agree, an exact ADB firmware fingerprint exists, and reported slot/bootloader state does not conflict. The result is integrity-hashed but explicitly remains `CORRELATED_READ_ONLY_NOT_VERIFIED`, with hardware verification, SwirPhoneOS support, writes, flashing and root all false. A transaction plan may be matched against that exact observed profile/model/codename/build fingerprint, but the match remains preparation-only and cannot enable installation.
+
+Added fail-closed tests for evidence tampering, duplicate JSON keys, missing firmware fingerprint, cross-transport slot mismatch and transaction fingerprint mismatch, plus operator documentation in `docs/HARDWARE_EVIDENCE.md`. The `oneplus/avicii` profile remains `PLANNED_NOT_SUPPORTED`; no real device observation or physical restore proof is claimed. Weighted progress therefore remains **2%** and Beta remains **0/9**.
+
 ### Fail-closed install/rollback transaction evidence
 
 Added `swirphoneos.transaction_evidence`, a local-only preparation layer for future device-specific installation and recovery work. Schema v1 binds one transaction to an exact device profile/current-build/target-build tuple, requires both install and rollback artifact sets, verifies exact byte sizes and SHA-256 digests, rejects traversal/symlink/duplicate-key/unknown-field inputs, and can persist a create-only fsynced JSON journal. The journal remains explicitly `ARTIFACTS_VERIFIED_READ_ONLY`, records `owner_confirmation_recorded=false`, and can never set `write_allowed=true`.

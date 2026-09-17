@@ -35,8 +35,12 @@ def report_json(report: dict[str, object]) -> str:
             raise ValueError("Invalid reported boolean.")
     if report["bootloader_reported"] not in ("locked", "unlocked", "unknown"):
         raise ValueError("Invalid reported bootloader state.")
-    for key in ("manufacturer", "model", "codename", "abi", "android_release",
-                "reported_security_patch", "slot_suffix_reported"):
+    for key in (
+        "manufacturer", "model", "codename", "abi", "board_reported", "hardware_reported",
+        "android_release", "build_fingerprint_reported", "reported_security_patch",
+        "verified_boot_state_reported", "vbmeta_device_state_reported", "slot_reported",
+        "slot_suffix_reported",
+    ):
         value = report[key]
         if value is not None and (
             not isinstance(value, str) or not value or len(value) > 256

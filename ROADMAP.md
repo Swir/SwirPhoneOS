@@ -16,7 +16,7 @@
 | --- | --- | --- | --- |
 | 1 | 9 | 10 | 2% |
 
-The canonical ledger is `project.json`. Weights total 100 and only evidence-complete gates contribute. Source scaffolding, host tests, provenance tooling, transaction preparation evidence and desktop packaging do not substitute for an Android build, boot or physical-device validation. Beta readiness remains **0/9 gates passed**.
+The canonical ledger is `project.json`. Weights total 100 and only evidence-complete gates contribute. Source scaffolding, host tests, provenance tooling, read-only hardware correlation, transaction preparation evidence and desktop packaging do not substitute for an Android build, boot or physical-device validation. Beta readiness remains **0/9 gates passed**.
 
 | Gate | Weight | Completion evidence required |
 | --- | ---: | --- |
@@ -56,13 +56,17 @@ Cuttlefish runtime evidence requires `sys.boot_completed=1`, exact product/devic
 
 No completed source sync, Kati/Soong build or Cuttlefish boot exists yet, so `aosp_baseline` and `emulator_boot` remain incomplete. This automation closes orchestration gaps; it does not itself satisfy a runtime milestone.
 
-### Install, rollback and recovery evidence
+### Physical-device observation, install, rollback and recovery evidence
 
-A preparation-only transaction evidence layer now exists before any future device write engine. Schema v1 binds an exact device profile/current-build/target-build tuple to explicit install and rollback artifact sets, verifies their byte sizes and SHA-256 values under an absolute local artifact root, rejects path traversal/symlinks/duplicate JSON keys/unknown fields, and can create a new fsynced recovery journal that is never overwritten.
+ADB diagnostics now capture exact reported firmware fingerprint, board/hardware, slot and verified-boot/VBMeta state while retaining the single-local-USB and fixed-`getprop` allowlist. Fastboot can optionally collect bounded `has-slot:<partition>` and `partition-size:<partition>` hints for reviewed partition names; it still does not use `getvar all` and exposes no reboot/unlock/flash/erase/format/slot-change command.
+
+Saved ADB and Fastboot unified reports can be correlated into integrity-hashed hardware evidence only when both resolve to the same metadata profile, model/codename agree, an exact current firmware fingerprint exists, and reported slot/bootloader state does not conflict. This is deliberately `CORRELATED_READ_ONLY_NOT_VERIFIED`: it cannot prove that both reports came from the same physical handset, cannot mark a profile supported and always keeps hardware verification, writes, flashing and root false. A preparation transaction may be compared against this evidence and must match profile, codename, model and exact current firmware fingerprint, but even a complete match remains preparation-only.
+
+A preparation-only transaction evidence layer exists before any future device write engine. Schema v1 binds an exact device profile/current-build/target-build tuple to explicit install and rollback artifact sets, verifies their byte sizes and SHA-256 values under an absolute local artifact root, rejects path traversal/symlinks/duplicate JSON keys/unknown fields, and can create a new fsynced recovery journal that is never overwritten.
 
 The layer remains deliberately unable to authorize installation: accepted plans require `write_enabled=false`, explicit owner confirmation remains required but unrecorded, rollback material is mandatory, and journals state `write_allowed=false`. It contains no executable commands or partition/slot instructions. This is useful recovery infrastructure but **does not complete `install_restore`**. The current `avicii` profile still has no verified partition map, firmware baseline, validated SwirPhoneOS build or physical restore evidence.
 
-Before any future write-capable Studio control can exist, the journal must be bound to an exact hardware-verified profile, reviewed partition/slot map, owner confirmation captured after diagnostics, deterministic interrupted-transaction recovery, tested stock restore on the same firmware, and update/recovery/SwirRoot coordination. See `docs/RECOVERY_TRANSACTIONS.md`.
+Before any future write-capable Studio control can exist, correlated observations must be upgraded through controlled physical verification, the journal must be bound to an exact hardware-verified profile and reviewed partition/slot map, owner confirmation must be captured after diagnostics, interrupted-transaction recovery must be deterministic, stock restore must be tested on the same firmware, and update/recovery/SwirRoot coordination must be validated. See `docs/HARDWARE_EVIDENCE.md` and `docs/RECOVERY_TRANSACTIONS.md`.
 
 ### Android application source
 
@@ -76,7 +80,7 @@ All ten remain below `ANDROID_RUNTIME`. Source-only work therefore receives no w
 
 ### Desktop and SwirRoot
 
-Read-only ADB/Fastboot/FastbootD diagnostics, multilingual SwirPhoneStudio and Windows developer packaging exist, but real owner-controlled Windows USB ADB + Fastboot/FastbootD evidence is still missing. The new local transaction evidence module gives Studio a future safe prerequisite for recovery-aware installation, but no write controls are exposed. SwirRoot Android source is present, but there is still no exact-build mutation implementation, supported root build, physical enable/unroot path, recovery proof or per-app privileged authorization backend.
+Read-only ADB/Fastboot/FastbootD diagnostics, multilingual SwirPhoneStudio and Windows developer packaging exist, but real owner-controlled Windows USB ADB + Fastboot/FastbootD evidence is still missing. The new cross-transport evidence and local transaction evidence modules give Studio stronger future prerequisites for exact-device/recovery-aware installation, but no write controls are exposed. SwirRoot Android source is present, but there is still no exact-build mutation implementation, supported root build, physical enable/unroot path, recovery proof or per-app privileged authorization backend.
 
 ## System app delivery track
 
@@ -112,11 +116,12 @@ Read-only ADB/Fastboot/FastbootD diagnostics, multilingual SwirPhoneStudio and W
 1. Provision or attach a capable dedicated Linux x86-64 runner labeled `swir-aosp-builder`, set `SWIR_AOSP_WORKSPACE`, ensure Cuttlefish host prerequisites plus the trusted absolute `adb` path exist, and run the manual `AOSP build evidence` workflow with runtime collection enabled. It must initialize/sync exact `android-17.0.0_r1`, preserve `repo manifest -r`, stage the bounded `vendor/swir/` bundle and compile `swirphoneos_cf_x86_64-aosp_current-userdebug`.
 2. Preserve the resulting `build-evidence.json`, `runtime-evidence.json`, `app-smoke-evidence.json` and `evidence-bundle.json`. The exact built fingerprint must match the booted fingerprint and all ten source-ready launchers, including SwirRoot, must successfully become resumed foreground activities before any runtime review.
 3. Perform focused interactive checks that launch-smoke cannot prove: Settings/Files/Update/Privacy/DeviceCare flows, Notes/Calendar persistence/export, Clock timer/alarm hand-off, SwirRoot's fail-closed state/confirmation/audit UI, accessibility, text expansion, locale switching and Arabic RTL. Only then review any `ANDROID_RUNTIME` promotion.
-4. For the reference-hardware track, collect exact owner-controlled `avicii` firmware/build and partition/slot evidence **read-only first**. Only after that evidence is reviewed should a device-specific transaction plan be authored and its target+rollback bytes verified into a create-only journal. The profile remains `PLANNED_NOT_SUPPORTED` and no write path should be enabled yet.
-5. Fix any real Kati/Soong/Android runtime regressions before expanding more app source. Runtime evidence has higher priority than increasing the app count.
-6. Continue SwirPhoneStudio hardening; the next desktop gate evidence is actual Windows USB read-only ADB + Fastboot/FastbootD smoke on an owner-controlled device. Later Studio install UI must consume reviewed transaction evidence rather than inventing recovery state from device hints.
-7. After emulator/GSI and recovery evidence, design a legitimate exact-build SwirRoot backend only for explicitly supported unlocked/owner-controlled device paths. Never bypass locked bootloaders, OEM protections or verification controls through exploits.
-8. Expand device packs into reviewed installation/recovery plans only after exact-device evidence exists. Never enable generic writes from Treble/codename/unlocked state alone.
+4. On the owner-controlled `avicii`, capture an ADB `inspect-device` observation while Android is running, then manually enter documented Fastboot/FastbootD and capture the second observation with `--partitions`. Correlate them with `hardware-evidence`, review the exact firmware fingerprint plus reported slot/partition hints, and keep the result explicitly below hardware verification. The profile remains `PLANNED_NOT_SUPPORTED` and no write path should be enabled from correlation alone.
+5. Only after the physical observation set is reviewed should a device-specific transaction plan be authored. Bind it with `transaction-device-check`, verify exact target+rollback bytes and create a recovery journal. Physical restore evidence and a verified partition map are still required before any write-capable implementation.
+6. Fix any real Kati/Soong/Android runtime regressions before expanding more app source. Runtime evidence has higher priority than increasing the app count.
+7. Continue SwirPhoneStudio hardening; the next desktop gate evidence is actual Windows USB read-only ADB + Fastboot/FastbootD smoke on an owner-controlled device. Later Studio install UI must consume reviewed hardware+transaction evidence rather than inventing recovery state from device hints.
+8. After emulator/GSI and recovery evidence, design a legitimate exact-build SwirRoot backend only for explicitly supported unlocked/owner-controlled device paths. Never bypass locked bootloaders, OEM protections or verification controls through exploits.
+9. Expand device packs into reviewed installation/recovery plans only after exact-device evidence exists. Never enable generic writes from Treble/codename/unlocked state alone.
 
 ## Release stages
 

@@ -20,6 +20,16 @@ GETVARS = (
     "is-userspace",
     "secure",
 )
+PARTITIONS = (
+    "boot", "init_boot", "vendor_boot", "dtbo", "vbmeta", "vbmeta_system",
+    "vbmeta_vendor", "super", "system", "system_ext", "product", "vendor",
+    "odm", "recovery", "userdata",
+)
+PARTITION_GETVARS = tuple(
+    item
+    for partition in PARTITIONS
+    for item in (f"has-slot:{partition}", f"partition-size:{partition}")
+)
 
 
 class FastbootDiagnosticError(RuntimeError):
@@ -69,9 +79,13 @@ def _clean_value(value: str) -> str | None:
     return value
 
 
+def _allowed_getvar(name: str) -> bool:
+    return name in GETVARS or name in PARTITION_GETVARS
+
+
 def parse_getvar(name: str, stdout: str, stderr: str) -> str | None:
     """Extract one requested variable without accepting unrelated device output."""
-    if name not in GETVARS:
+    if not _allowed_getvar(name):
         raise FastbootDiagnosticError("Fastboot variable is outside the read-only allowlist.")
     matches: list[str] = []
     prefix = f"{name}:"
@@ -90,6 +104,39 @@ def parse_getvar(name: str, stdout: str, stderr: str) -> str | None:
     return next(iter(unique), None)
 
 
+def _reported_bool(value: str | None) -> bool | None:
+    if value is None:
+        return None
+    return {
+        "yes": True, "true": True, "1": True,
+        "no": False, "false": False, "0": False,
+    }.get(value.casefold())
+
+
+def _partition_size(value: str | None) -> int | None:
+    if value is None:
+        return None
+    try:
+        size = int(value, 16) if value.lower().startswith("0x") else int(value, 10)
+    except ValueError:
+        return None
+    return size if 0 < size <= (16 * 1024 * 1024 * 1024 * 1024) else None
+
+
+def _partition_hints(values: dict[str, str | None]) -> list[dict[str, object]]:
+    hints: list[dict[str, object]] = []
+    for partition in PARTITIONS:
+        has_slot = _reported_bool(values.get(f"has-slot:{partition}"))
+        size = _partition_size(values.get(f"partition-size:{partition}"))
+        if has_slot is not None or size is not None:
+            hints.append({
+                "name": partition,
+                "has_slot_reported": has_slot,
+                "size_bytes_reported": size,
+            })
+    return hints
+
+
 def summarize_fastboot(values: dict[str, str | None]) -> dict[str, object]:
     is_userspace = values.get("is-userspace")
     unlocked = values.get("unlocked")
@@ -101,7 +148,7 @@ def summarize_fastboot(values: dict[str, str | None]) -> dict[str, object]:
     if slot_count is not None and not 0 <= slot_count <= 8:
         slot_count = None
     return {
-        "schema_version": 1,
+        "schema_version": 2,
         "source": "fastboot_reported_getvars_not_hardware_verification",
         "product_reported": values.get("product"),
         "transport_mode_reported": {
@@ -123,11 +170,12 @@ def summarize_fastboot(values: dict[str, str | None]) -> dict[str, object]:
         "current_slot_reported": values.get("current-slot"),
         "slot_count_reported": slot_count,
         "secure_reported": values.get("secure"),
+        "partition_hints_reported": _partition_hints(values),
         "swirphoneos_support": "NOT_VALIDATED",
         "flash_allowed": False,
         "warnings": [
             "Fastboot getvars are device-reported hints, not proof of model identity or compatibility.",
-            "No partition layout, firmware baseline, recovery path or SwirPhoneOS image is certified by this report.",
+            "Partition size/slot hints are read-only device reports, not a verified partition map.",
             "No reboot, unlock, erase, flash, format, boot, relock or restore command was attempted.",
         ],
     }
@@ -154,7 +202,7 @@ class ReadOnlyFastboot:
             and args[0] == "-s"
             and bool(SERIAL.fullmatch(args[1]))
             and args[2] == "getvar"
-            and args[3] in GETVARS
+            and _allowed_getvar(args[3])
         )
         if not permitted:
             raise FastbootDiagnosticError("Command is outside the read-only Fastboot allowlist.")
@@ -182,14 +230,15 @@ class ReadOnlyFastboot:
             raise FastbootDiagnosticError("Fastboot returned an oversized response.")
         return result.returncode, result.stdout, result.stderr
 
-    def inspect(self) -> dict[str, object]:
+    def inspect(self, *, include_partitions: bool = False) -> dict[str, object]:
         code, stdout, _ = self._run(("devices",))
         if code != 0:
             raise FastbootDiagnosticError("Fastboot device listing failed; raw output is withheld for privacy.")
         device = select_fastboot_device(parse_fastboot_devices(stdout))
 
+        names = (*GETVARS, *PARTITION_GETVARS) if include_partitions else GETVARS
         values: dict[str, str | None] = {}
-        for name in GETVARS:
+        for name in names:
             code, out, err = self._run(("-s", device.serial, "getvar", name))
             values[name] = parse_getvar(name, out, err) if code == 0 else None
 
