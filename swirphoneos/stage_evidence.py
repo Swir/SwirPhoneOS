@@ -71,8 +71,11 @@ def _safe_destination(root: Path, relative_text: str) -> Path:
         if index < len(posix.parts) - 1:
             if not current.is_dir():
                 raise StageEvidenceError("Stage destination parent is missing or not a directory.")
-        elif not current.is_file():
-            raise StageEvidenceError("A staged source path is missing or not a regular file.")
+        else:
+            if not current.is_file():
+                raise StageEvidenceError("A staged source path is missing or not a regular file.")
+            if current.stat().st_nlink != 1:
+                raise StageEvidenceError("A staged source path is hard-linked and not uniquely owned.")
     return current
 
 
@@ -102,6 +105,8 @@ def _inventory_stage_tree(root: Path) -> set[str]:
             child = current / name
             if child.is_symlink() or not child.is_file():
                 raise StageEvidenceError("vendor/swir contains an unsafe file entry.")
+            if child.stat().st_nlink != 1:
+                raise StageEvidenceError("vendor/swir contains a hard-linked file entry.")
             relative = child.relative_to(root).as_posix()
             if relative in files:
                 raise StageEvidenceError("vendor/swir contains a duplicate file identity.")
