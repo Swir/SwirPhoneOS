@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "files": [
+    {"source":"apps/SwirContacts/Android.bp","destination":"vendor/swir/apps/SwirContacts/Android.bp"},
+    {"source":"apps/SwirContacts/AndroidManifest.xml","destination":"vendor/swir/apps/SwirContacts/AndroidManifest.xml"},
+    {"source":"apps/SwirContacts/src/org/swir/phoneos/contacts/ContactPolicy.java","destination":"vendor/swir/apps/SwirContacts/src/org/swir/phoneos/contacts/ContactPolicy.java"},
+    {"source":"apps/SwirContacts/src/org/swir/phoneos/contacts/MainActivity.java","destination":"vendor/swir/apps/SwirContacts/src/org/swir/phoneos/contacts/MainActivity.java"},
+    {"source":"apps/SwirContacts/res/drawable/ic_contacts.xml","destination":"vendor/swir/apps/SwirContacts/res/drawable/ic_contacts.xml"},
+    {"source":"apps/SwirContacts/res/values/strings.xml","destination":"vendor/swir/apps/SwirContacts/res/values/strings.xml"},
+    {"source":"apps/SwirContacts/res/values-pl/strings.xml","destination":"vendor/swir/apps/SwirContacts/res/values-pl/strings.xml"},
+    {"source":"apps/SwirContacts/res/values-nb/strings.xml","destination":"vendor/swir/apps/SwirContacts/res/values-nb/strings.xml"},
+    {"source":"apps/SwirContacts/res/values-de/strings.xml","destination":"vendor/swir/apps/SwirContacts/res/values-de/strings.xml"},
+    {"source":"apps/SwirContacts/res/values-es/strings.xml","destination":"vendor/swir/apps/SwirContacts/res/values-es/strings.xml"},
+    {"source":"apps/SwirContacts/res/values-fr/strings.xml","destination":"vendor/swir/apps/SwirContacts/res/values-fr/strings.xml"},
+    {"source":"apps/SwirContacts/res/values-pt/strings.xml","destination":"vendor/swir/apps/SwirContacts/res/values-pt/strings.xml"},
+    {"source":"apps/SwirContacts/res/values-ar/strings.xml","destination":"vendor/swir/apps/SwirContacts/res/values-ar/strings.xml"},
+    {"source":"apps/SwirApps/Android.bp","destination":"vendor/swir/apps/SwirApps/Android.bp"},
+    {"source":"apps/SwirApps/AndroidManifest.xml","destination":"vendor/swir/apps/SwirApps/AndroidManifest.xml"},
+    {"source":"apps/SwirApps/src/org/swir/phoneos/apps/AppCatalogPolicy.java","destination":"vendor/swir/apps/SwirApps/src/org/swir/phoneos/apps/AppCatalogPolicy.java"},
+    {"source":"apps/SwirApps/src/org/swir/phoneos/apps/MainActivity.java","destination":"vendor/swir/apps/SwirApps/src/org/swir/phoneos/apps/MainActivity.java"},
+    {"source":"apps/SwirApps/res/drawable/ic_apps.xml","destination":"vendor/swir/apps/SwirApps/res/drawable/ic_apps.xml"},
+    {"source":"apps/SwirApps/res/values/strings.xml","destination":"vendor/swir/apps/SwirApps/res/values/strings.xml"},
+    {"source":"apps/SwirApps/res/values-pl/strings.xml","destination":"vendor/swir/apps/SwirApps/res/values-pl/strings.xml"},
+    {"source":"apps/SwirApps/res/values-nb/strings.xml","destination":"vendor/swir/apps/SwirApps/res/values-nb/strings.xml"},
+    {"source":"apps/SwirApps/res/values-de/strings.xml","destination":"vendor/swir/apps/SwirApps/res/values-de/strings.xml"},
+    {"source":"apps/SwirApps/res/values-es/strings.xml","destination":"vendor/swir/apps/SwirApps/res/values-es/strings.xml"},
+    {"source":"apps/SwirApps/res/values-fr/strings.xml","destination":"vendor/swir/apps/SwirApps/res/values-fr/strings.xml"},
+    {"source":"apps/SwirApps/res/values-pt/strings.xml","destination":"vendor/swir/apps/SwirApps/res/values-pt/strings.xml"},
+    {"source":"apps/SwirApps/res/values-ar/strings.xml","destination":"vendor/swir/apps/SwirApps/res/values-ar/strings.xml"}
+  ]
+}

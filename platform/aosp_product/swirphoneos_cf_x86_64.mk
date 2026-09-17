@@ -22,4 +22,6 @@ PRODUCT_PACKAGES += \
     SwirCalendar \
     SwirGallery \
     SwirRecorder \
+    SwirContacts \
+    SwirApps \
     SwirRoot

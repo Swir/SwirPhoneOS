@@ -108,6 +108,18 @@ jobs:
           mkdir -p _recorder-java-test
           javac -d _recorder-java-test platform/aosp_product/apps/SwirRecorder/src/org/swir/phoneos/recorder/RecorderPolicy.java platform/aosp_product/apps/SwirRecorder/hosttest/RecorderPolicyHostTest.java
           java -cp _recorder-java-test org.swir.phoneos.recorder.RecorderPolicyHostTest
+      - name: Host-test SwirContacts policy
+        if: runner.os == 'Linux' && matrix.python == '3.14'
+        run: |
+          mkdir -p _contacts-java-test
+          javac -d _contacts-java-test platform/aosp_product/apps/SwirContacts/src/org/swir/phoneos/contacts/ContactPolicy.java platform/aosp_product/apps/SwirContacts/hosttest/ContactPolicyHostTest.java
+          java -cp _contacts-java-test org.swir.phoneos.contacts.ContactPolicyHostTest
+      - name: Host-test SwirApps catalog policy
+        if: runner.os == 'Linux' && matrix.python == '3.14'
+        run: |
+          mkdir -p _apps-java-test
+          javac -d _apps-java-test platform/aosp_product/apps/SwirApps/src/org/swir/phoneos/apps/AppCatalogPolicy.java platform/aosp_product/apps/SwirApps/hosttest/AppCatalogPolicyHostTest.java
+          java -cp _apps-java-test org.swir.phoneos.apps.AppCatalogPolicyHostTest
       - name: Host-test SwirRoot fail-closed transition policy
         if: runner.os == 'Linux' && matrix.python == '3.14'
         run: |
