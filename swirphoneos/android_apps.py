@@ -44,6 +44,8 @@ _RESOURCE_DIR = {
 }
 _MAX_TEXT = 1_000_000
 _SPECS = {
+    "phone": _AppSpec("phone","SwirPhone","SwirPhone","org.swir.phoneos.phone","src/org/swir/phoneos/phone/DialPolicy.java","src/org/swir/phoneos/phone/MainActivity.java","hosttest/DialPolicyHostTest.java","res/drawable/ic_phone.xml",("dialer",)),
+    "contacts": _AppSpec("contacts","SwirContacts","SwirContacts","org.swir.phoneos.contacts","src/org/swir/phoneos/contacts/ContactPolicy.java","src/org/swir/phoneos/contacts/MainActivity.java","hosttest/ContactPolicyHostTest.java","res/drawable/ic_contacts.xml",("local_contacts","import_export")),
     "calculator": _AppSpec("calculator","SwirCalculator","SwirCalculator","org.swir.phoneos.calculator","src/org/swir/phoneos/calculator/CalculatorEngine.java","src/org/swir/phoneos/calculator/MainActivity.java","hosttest/CalculatorEngineHostTest.java","res/drawable/ic_calculator.xml",("basic_math",)),
     "settings": _AppSpec("settings","SwirSettings","SwirSettings","org.swir.phoneos.settings","src/org/swir/phoneos/settings/SettingsCatalog.java","src/org/swir/phoneos/settings/MainActivity.java","hosttest/SettingsCatalogHostTest.java","res/drawable/ic_settings.xml",("system_settings","search","device_status")),
     "files": _AppSpec("files","SwirFiles","SwirFiles","org.swir.phoneos.files","src/org/swir/phoneos/files/FilePolicy.java","src/org/swir/phoneos/files/MainActivity.java","hosttest/FilePolicyHostTest.java","res/drawable/ic_files.xml",("browse","search","copy_move_rename","share","safe_delete")),
@@ -159,6 +161,28 @@ def _validate_common(product_root: Path, product_mk: str, app, spec: _AppSpec, s
     return localized, len(required_stage), logic, activity, java_bundle
 
 
+def _validate_phone(logic, activity):
+    if any(x not in logic for x in ("MAX_NUMBER_LENGTH","normalize","valid","append","backspace")):
+        raise AndroidAppSourceError("SwirPhone host-tested dial policy drifted.")
+    required = ("InputType.TYPE_CLASS_PHONE","Intent.ACTION_DIAL","Uri.fromParts(\"tel\"","DialPolicy.normalize","DialPolicy.valid","setClassName(\"org.swir.phoneos.contacts\"","resolveActivity(getPackageManager())")
+    if any(x not in activity for x in required):
+        raise AndroidAppSourceError("SwirPhone must retain its owner-visible ACTION_DIAL handoff and Contacts integration.")
+    dangerous = ("Intent.ACTION_CALL","TelecomManager.placeCall","InCallService","CALL_PHONE")
+    if any(x in activity for x in dangerous):
+        raise AndroidAppSourceError("SwirPhone source stage must not silently place calls or overclaim in-call integration.")
+
+
+def _validate_contacts(logic, activity):
+    if any(x not in logic for x in ("normalizeName","normalizePhone","normalizeEmail","validContact","validEmail","matches","toVCard","escapeVCard","MAX_IMPORT_BYTES")):
+        raise AndroidAppSourceError("SwirContacts host-tested contact/vCard policy drifted.")
+    required = ("SQLiteOpenHelper","getWritableDatabase().insert","getWritableDatabase().delete","Intent.ACTION_CREATE_DOCUMENT","openOutputStream","ContactPolicy.toVCard","AlertDialog.Builder","Intent.ACTION_DIAL","Intent.ACTION_SENDTO")
+    if any(x not in activity for x in required):
+        raise AndroidAppSourceError("SwirContacts must retain app-private CRUD, explicit export and owner-confirmed delete flows.")
+    forbidden = ("ContactsContract","READ_CONTACTS","WRITE_CONTACTS")
+    if any(x in activity for x in forbidden):
+        raise AndroidAppSourceError("SwirContacts source stage must remain app-private until provider bridging is reviewed.")
+
+
 def _validate_calculator(logic, activity):
     if "java.math.BigDecimal" not in logic or "equalsResult" not in logic: raise AndroidAppSourceError("SwirCalculator must retain its host-tested decimal engine.")
     if "DecimalFormatSymbols" not in activity: raise AndroidAppSourceError("SwirCalculator must preserve locale-aware decimal display.")
@@ -228,7 +252,7 @@ def _validate_swirroot(logic: str, activity: str, java_bundle: str) -> None:
     if any(token in java_bundle for token in dangerous): raise AndroidAppSourceError("SwirRoot source stage must not contain a root/device mutation primitive.")
 
 
-_VALIDATORS = {"calculator":_validate_calculator,"settings":_validate_settings,"files":_validate_files,"device_care":_validate_device_care,"update":_validate_update,"privacy":_validate_privacy,"clock":_validate_clock,"notes":_validate_notes,"calendar":_validate_calendar,"gallery":_validate_gallery,"recorder":_validate_recorder}
+_VALIDATORS = {"phone":_validate_phone,"contacts":_validate_contacts,"calculator":_validate_calculator,"settings":_validate_settings,"files":_validate_files,"device_care":_validate_device_care,"update":_validate_update,"privacy":_validate_privacy,"clock":_validate_clock,"notes":_validate_notes,"calendar":_validate_calendar,"gallery":_validate_gallery,"recorder":_validate_recorder}
 
 
 def validate_android_app_sources(product_root: Path = Path("platform/aosp_product"), registry_path: Path = Path("system_apps/manifest.json")) -> AndroidAppSourceSummary:
