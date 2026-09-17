@@ -2,7 +2,6 @@ package org.swir.phoneos.camera;
 
 import android.app.Activity;
 import android.content.Intent;
-import android.graphics.Color;
 import android.graphics.ImageFormat;
 import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraManager;
@@ -24,11 +23,12 @@ public final class MainActivity extends Activity {
         setTitle(R.string.app_name);
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
-        root.setPadding(28, 28, 28, 28);
-        root.setBackgroundColor(Color.rgb(7, 18, 34));
-        root.addView(text(R.string.title, 28));
-        root.addView(text(R.string.subtitle, 15));
-        root.addView(text(R.string.source_stage_notice, 13));
+        int pagePadding = dim(R.dimen.swir_space_lg);
+        root.setPadding(pagePadding, pagePadding, pagePadding, pagePadding);
+        root.setBackgroundColor(getColor(R.color.swir_background));
+        root.addView(text(R.string.title, 28, R.color.swir_text_primary));
+        root.addView(text(R.string.subtitle, 15, R.color.swir_text_secondary));
+        root.addView(text(R.string.source_stage_notice, 13, R.color.swir_accent_cyan));
         LinearLayout actions = new LinearLayout(this);
         actions.setOrientation(LinearLayout.HORIZONTAL);
         Button refresh = button(R.string.refresh);
@@ -38,7 +38,7 @@ public final class MainActivity extends Activity {
         actions.addView(photo, new LinearLayout.LayoutParams(0, -2, 1));
         actions.addView(video, new LinearLayout.LayoutParams(0, -2, 1));
         root.addView(actions);
-        report = text(R.string.capability_empty, 15);
+        report = text(R.string.capability_empty, 15, R.color.swir_text_primary);
         ScrollView scroll = new ScrollView(this);
         scroll.addView(report);
         root.addView(scroll, new LinearLayout.LayoutParams(-1, 0, 1));
@@ -49,18 +49,19 @@ public final class MainActivity extends Activity {
         refreshCapabilities();
     }
 
-    private TextView text(int id, int sp) {
+    private TextView text(int id, int sp, int colorRes) {
         TextView view = new TextView(this);
         view.setText(id);
         view.setTextSize(sp);
-        view.setTextColor(Color.WHITE);
-        view.setPadding(0, 6, 0, 12);
+        view.setTextColor(getColor(colorRes));
+        view.setPadding(0, dim(R.dimen.swir_space_xs), 0, dim(R.dimen.swir_space_sm));
         return view;
     }
 
     private Button button(int id) {
         Button button = new Button(this);
         button.setText(id);
+        button.setMinHeight(dim(R.dimen.swir_touch_min));
         return button;
     }
 
@@ -108,4 +109,6 @@ public final class MainActivity extends Activity {
         if (intent.resolveActivity(getPackageManager()) != null) startActivity(intent);
         else Toast.makeText(this, R.string.handoff_unavailable, Toast.LENGTH_LONG).show();
     }
+
+    private int dim(int id) { return getResources().getDimensionPixelSize(id); }
 }

@@ -2,7 +2,6 @@ package org.swir.phoneos.phone;
 
 import android.app.Activity;
 import android.content.Intent;
-import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
 import android.text.InputType;
@@ -29,27 +28,29 @@ public final class MainActivity extends Activity {
     private View buildUi() {
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
-        root.setPadding(dp(24), dp(24), dp(24), dp(24));
-        root.setBackgroundColor(Color.rgb(5, 13, 24));
+        int pagePadding = dim(R.dimen.swir_space_lg);
+        root.setPadding(pagePadding, pagePadding, pagePadding, pagePadding);
+        root.setBackgroundColor(getColor(R.color.swir_background));
 
-        TextView eyebrow = text(getString(R.string.eyebrow), 13, Color.rgb(74, 222, 255));
+        TextView eyebrow = text(getString(R.string.eyebrow), 13, getColor(R.color.swir_accent_cyan));
         root.addView(eyebrow, matchWrap());
-        TextView title = text(getString(R.string.title), 30, Color.WHITE);
+        TextView title = text(getString(R.string.title), 30, getColor(R.color.swir_text_primary));
         root.addView(title, matchWrap());
-        TextView subtitle = text(getString(R.string.subtitle), 15, Color.rgb(170, 191, 211));
+        TextView subtitle = text(getString(R.string.subtitle), 15, getColor(R.color.swir_text_secondary));
         root.addView(subtitle, matchWrap());
 
         number = new EditText(this);
         number.setHint(R.string.number_hint);
-        number.setTextColor(Color.WHITE);
-        number.setHintTextColor(Color.rgb(115, 139, 160));
+        number.setTextColor(getColor(R.color.swir_text_primary));
+        number.setHintTextColor(getColor(R.color.swir_text_secondary));
         number.setTextSize(28);
         number.setGravity(Gravity.CENTER_HORIZONTAL);
         number.setSingleLine(true);
         number.setInputType(InputType.TYPE_CLASS_PHONE);
         number.setContentDescription(getString(R.string.number_content_description));
+        number.setMinHeight(dim(R.dimen.swir_touch_min));
         LinearLayout.LayoutParams numberParams = new LinearLayout.LayoutParams(-1, dp(64));
-        numberParams.topMargin = dp(24);
+        numberParams.topMargin = dim(R.dimen.swir_space_lg);
         root.addView(number, numberParams);
         number.addTextChangedListener(new SimpleTextWatcher(this::refreshDialState));
 
@@ -59,7 +60,7 @@ public final class MainActivity extends Activity {
         String[] keys = getResources().getStringArray(R.array.dial_keys);
         for (String key : keys) keypad.addView(keyButton(key), gridCell());
         LinearLayout.LayoutParams keypadParams = new LinearLayout.LayoutParams(-1, 0, 1f);
-        keypadParams.topMargin = dp(14);
+        keypadParams.topMargin = dim(R.dimen.swir_space_md);
         root.addView(keypad, keypadParams);
 
         LinearLayout actions = new LinearLayout(this);
@@ -74,7 +75,7 @@ public final class MainActivity extends Activity {
         actions.addView(dial, weighted());
         root.addView(actions, matchWrap());
 
-        TextView safety = text(getString(R.string.handoff_notice), 13, Color.rgb(127, 151, 173));
+        TextView safety = text(getString(R.string.handoff_notice), 13, getColor(R.color.swir_text_secondary));
         safety.setGravity(Gravity.CENTER_HORIZONTAL);
         root.addView(safety, matchWrap());
         return root;
@@ -84,7 +85,8 @@ public final class MainActivity extends Activity {
         Button button = new Button(this);
         button.setText(label);
         button.setTextSize(24);
-        button.setTextColor(Color.WHITE);
+        button.setTextColor(getColor(R.color.swir_text_primary));
+        button.setMinHeight(dim(R.dimen.swir_touch_min));
         button.setContentDescription(getString(R.string.key_content_description, label));
         button.setOnClickListener(v -> {
             String next = DialerPolicy.appendKey(number.getText().toString(), label.charAt(0));
@@ -117,13 +119,15 @@ public final class MainActivity extends Activity {
         view.setText(value);
         view.setTextSize(sp);
         view.setTextColor(color);
-        view.setPadding(0, dp(5), 0, dp(5));
+        int vertical = dim(R.dimen.swir_space_xs);
+        view.setPadding(0, vertical, 0, vertical);
         return view;
     }
 
     private Button actionButton(int textRes) {
         Button button = new Button(this);
         button.setText(textRes);
+        button.setMinHeight(dim(R.dimen.swir_touch_min));
         return button;
     }
 
@@ -134,9 +138,11 @@ public final class MainActivity extends Activity {
         params.width = 0;
         params.height = dp(62);
         params.columnSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f);
-        params.setMargins(dp(4), dp(4), dp(4), dp(4));
+        int margin = dim(R.dimen.swir_space_xs);
+        params.setMargins(margin, margin, margin, margin);
         return params;
     }
+    private int dim(int id) { return getResources().getDimensionPixelSize(id); }
     private int dp(int value) { return Math.round(value * getResources().getDisplayMetrics().density); }
 
     private static final class SimpleTextWatcher implements android.text.TextWatcher {
