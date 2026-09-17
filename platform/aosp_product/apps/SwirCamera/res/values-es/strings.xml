@@ -1,0 +1,14 @@
+<resources>
+    <string name="app_name">Swir Camera</string>
+    <string name="title">Swir Camera</string>
+    <string name="subtitle">Inspector de capacidades de cámara y traspaso seguro de captura</string>
+    <string name="source_stage_notice">Aún no se declara captura directa con Camera2. Esta etapa de código informa capacidades reales y abre la superficie visible de captura de Android.</string>
+    <string name="refresh">Actualizar</string>
+    <string name="photo_handoff">Foto</string>
+    <string name="video_handoff">Vídeo</string>
+    <string name="capability_empty">No hay datos de capacidades de cámara.</string>
+    <string name="camera_row">Cámara %1$s · %2$s</string>
+    <string name="size_row">JPEG más grande: %1$d × %2$d · %3$s MP</string>
+    <string name="handoff_unavailable">No hay una aplicación de captura compatible.</string>
+    <string name="capability_error">Falló la inspección de capacidades de cámara.</string>
+</resources>

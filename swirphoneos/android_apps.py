@@ -44,23 +44,28 @@ _MAX_TEXT = 1_000_000
 _SPECS = {
     "phone": _AppSpec("phone","SwirPhone","SwirPhone","org.swir.phoneos.phone","src/org/swir/phoneos/phone/DialerPolicy.java","src/org/swir/phoneos/phone/MainActivity.java","hosttest/DialerPolicyHostTest.java","res/drawable/ic_phone.xml",("dialer",)),
     "messages": _AppSpec("messages","SwirMessages","SwirMessages","org.swir.phoneos.messages","src/org/swir/phoneos/messages/MessagePolicy.java","src/org/swir/phoneos/messages/MainActivity.java","hosttest/MessagePolicyHostTest.java","res/drawable/ic_messages.xml",("sms",)),
+    "camera": _AppSpec("camera","SwirCamera","SwirCamera","org.swir.phoneos.camera","src/org/swir/phoneos/camera/CameraPolicy.java","src/org/swir/phoneos/camera/MainActivity.java","hosttest/CameraPolicyHostTest.java","res/drawable/ic_camera.xml",("camera_capability_report",)),
     "calculator": _AppSpec("calculator","SwirCalculator","SwirCalculator","org.swir.phoneos.calculator","src/org/swir/phoneos/calculator/CalculatorEngine.java","src/org/swir/phoneos/calculator/MainActivity.java","hosttest/CalculatorEngineHostTest.java","res/drawable/ic_calculator.xml",("basic_math",)),
     "settings": _AppSpec("settings","SwirSettings","SwirSettings","org.swir.phoneos.settings","src/org/swir/phoneos/settings/SettingsCatalog.java","src/org/swir/phoneos/settings/MainActivity.java","hosttest/SettingsCatalogHostTest.java","res/drawable/ic_settings.xml",("system_settings","search","device_status")),
     "files": _AppSpec("files","SwirFiles","SwirFiles","org.swir.phoneos.files","src/org/swir/phoneos/files/FilePolicy.java","src/org/swir/phoneos/files/MainActivity.java","hosttest/FilePolicyHostTest.java","res/drawable/ic_files.xml",("browse","search","copy_move_rename","share","safe_delete")),
+    "browser": _AppSpec("browser","SwirBrowser","SwirBrowser","org.swir.phoneos.browser","src/org/swir/phoneos/browser/BrowserPolicy.java","src/org/swir/phoneos/browser/MainActivity.java","hosttest/BrowserPolicyHostTest.java","res/drawable/ic_browser.xml",("web_browsing","privacy_controls"),("android.permission.INTERNET",)),
     "device_care": _AppSpec("device_care","SwirDeviceCare","SwirDeviceCare","org.swir.phoneos.device_care","src/org/swir/phoneos/device_care/HealthModel.java","src/org/swir/phoneos/device_care/MainActivity.java","hosttest/HealthModelHostTest.java","res/drawable/ic_device_care.xml",("storage_status","battery_status","thermal_status","hardware_diagnostics")),
     "update": _AppSpec("update","SwirUpdate","SwirUpdate","org.swir.phoneos.update","src/org/swir/phoneos/update/UpdatePolicy.java","src/org/swir/phoneos/update/MainActivity.java","hosttest/UpdatePolicyHostTest.java","res/drawable/ic_update.xml",("channel_status","signed_metadata")),
     "privacy": _AppSpec("privacy","SwirPrivacy","SwirPrivacy","org.swir.phoneos.privacy","src/org/swir/phoneos/privacy/PrivacyCatalog.java","src/org/swir/phoneos/privacy/MainActivity.java","hosttest/PrivacyCatalogHostTest.java","res/drawable/ic_privacy.xml",("permission_review",)),
     "clock": _AppSpec("clock","SwirClock","SwirClock","org.swir.phoneos.clock","src/org/swir/phoneos/clock/ClockCore.java","src/org/swir/phoneos/clock/MainActivity.java","hosttest/ClockCoreHostTest.java","res/drawable/ic_clock.xml",("alarms","timers","stopwatch","world_clock")),
     "notes": _AppSpec("notes","SwirNotes","SwirNotes","org.swir.phoneos.notes","src/org/swir/phoneos/notes/NotePolicy.java","src/org/swir/phoneos/notes/MainActivity.java","hosttest/NotePolicyHostTest.java","res/drawable/ic_notes.xml",("offline_notes","export","share")),
     "calendar": _AppSpec("calendar","SwirCalendar","SwirCalendar","org.swir.phoneos.calendar","src/org/swir/phoneos/calendar/EventPolicy.java","src/org/swir/phoneos/calendar/MainActivity.java","hosttest/EventPolicyHostTest.java","res/drawable/ic_calendar.xml",("local_calendar",)),
+    "weather": _AppSpec("weather","SwirWeather","SwirWeather","org.swir.phoneos.weather","src/org/swir/phoneos/weather/WeatherPolicy.java","src/org/swir/phoneos/weather/MainActivity.java","hosttest/WeatherPolicyHostTest.java","res/drawable/ic_weather.xml",("forecast","provider_attribution","unit_preferences"),("android.permission.INTERNET",)),
     "gallery": _AppSpec("gallery","SwirGallery","SwirGallery","org.swir.phoneos.gallery","src/org/swir/phoneos/gallery/MediaPolicy.java","src/org/swir/phoneos/gallery/MainActivity.java","hosttest/MediaPolicyHostTest.java","res/drawable/ic_gallery.xml",("local_media","share","safe_delete"),("android.permission.READ_MEDIA_IMAGES","android.permission.READ_MEDIA_VIDEO")),
     "recorder": _AppSpec("recorder","SwirRecorder","SwirRecorder","org.swir.phoneos.recorder","src/org/swir/phoneos/recorder/RecorderPolicy.java","src/org/swir/phoneos/recorder/MainActivity.java","hosttest/RecorderPolicyHostTest.java","res/drawable/ic_recorder.xml",("audio_recording","microphone_state","file_export"),("android.permission.RECORD_AUDIO",)),
     "contacts": _AppSpec("contacts","SwirContacts","SwirContacts","org.swir.phoneos.contacts","src/org/swir/phoneos/contacts/ContactPolicy.java","src/org/swir/phoneos/contacts/MainActivity.java","hosttest/ContactPolicyHostTest.java","res/drawable/ic_contacts.xml",("local_contacts","import_export","provider_bridge"),("android.permission.READ_CONTACTS",)),
+    "backup": _AppSpec("backup","SwirBackup","SwirBackup","org.swir.phoneos.backup","src/org/swir/phoneos/backup/BackupPolicy.java","src/org/swir/phoneos/backup/MainActivity.java","hosttest/BackupPolicyHostTest.java","res/drawable/ic_backup.xml",("supported_data_backup","recovery_metadata")),
     "apps": _AppSpec("apps","SwirApps","SwirApps","org.swir.phoneos.apps","src/org/swir/phoneos/apps/AppCatalogPolicy.java","src/org/swir/phoneos/apps/MainActivity.java","hosttest/AppCatalogPolicyHostTest.java","res/drawable/ic_apps.xml",("package_catalog","signature_provenance")),
     "swirroot": _AppSpec("swirroot","SwirRoot","SwirRoot","org.swir.phoneos.swirroot","src/org/swir/phoneos/swirroot/RootPolicy.java","src/org/swir/phoneos/swirroot/MainActivity.java","hosttest/RootPolicyHostTest.java","res/drawable/ic_swirroot.xml",("root_state","authorization_audit")),
 }
 _SETTINGS_ACTIONS = frozenset({"android.settings.WIFI_SETTINGS","android.settings.BLUETOOTH_SETTINGS","android.settings.DISPLAY_SETTINGS","android.settings.SOUND_SETTINGS","android.settings.SECURITY_SETTINGS","android.settings.PRIVACY_SETTINGS","android.settings.ACCESSIBILITY_SETTINGS","android.settings.LOCALE_SETTINGS","android.settings.INTERNAL_STORAGE_SETTINGS","android.settings.APPLICATION_SETTINGS"})
 _PRIVACY_ACTIONS = frozenset({"android.settings.PRIVACY_SETTINGS","android.settings.MANAGE_PERMISSIONS","android.settings.LOCATION_SOURCE_SETTINGS","android.settings.APPLICATION_SETTINGS","android.settings.MANAGE_SPECIAL_APP_ACCESSES"})
+_NETWORK_APPS = frozenset({"browser", "weather"})
 
 
 def _read(path: Path) -> str:
@@ -114,8 +119,11 @@ def _validate_common(product_root: Path, product_mk: str, app, spec: _AppSpec, s
     java_files=sorted(path for path in app_root.rglob("*.java") if path.is_file() and "hosttest" not in path.parts)
     if not java_files: raise AndroidAppSourceError(f"{spec.module} has no Android Java source.")
     java_bundle="\n".join(_read(path) for path in java_files)
-    forbidden=("Runtime.getRuntime","ProcessBuilder","android.permission.INTERNET",'"su"',"DexClassLoader","System.loadLibrary","MANAGE_EXTERNAL_STORAGE","READ_EXTERNAL_STORAGE","WRITE_EXTERNAL_STORAGE")
-    if any(token in java_bundle or token in manifest_text for token in forbidden): raise AndroidAppSourceError(f"{spec.module} source contains a forbidden execution/network/storage primitive.")
+    forbidden=("Runtime.getRuntime","ProcessBuilder",'"su"',"DexClassLoader","System.loadLibrary","MANAGE_EXTERNAL_STORAGE","READ_EXTERNAL_STORAGE","WRITE_EXTERNAL_STORAGE")
+    if any(token in java_bundle or token in manifest_text for token in forbidden): raise AndroidAppSourceError(f"{spec.module} source contains a forbidden execution/storage primitive.")
+    network_tokens=("java.net.","javax.net.","android.webkit.","loadUrl(")
+    if spec.app_id not in _NETWORK_APPS and any(token in java_bundle for token in network_tokens): raise AndroidAppSourceError(f"{spec.module} source contains an unreviewed network primitive.")
+    if spec.app_id not in _NETWORK_APPS and "android.permission.INTERNET" in manifest_text: raise AndroidAppSourceError(f"{spec.module} may not request network access.")
     english=_string_keys(app_root/"res/values/strings.xml"); localized=0
     for locale in _LOCALES:
         if _string_keys(app_root/"res"/_RESOURCE_DIR[locale]/"strings.xml")!=english: raise AndroidAppSourceError(f"{spec.module} localization keys drifted for {locale}.")
@@ -139,6 +147,12 @@ def _validate_messages(logic,activity):
     forbidden=("SmsManager","sendTextMessage","sendMultipartTextMessage","Telephony.Sms","Manifest.permission.SEND_SMS","Manifest.permission.READ_SMS","Manifest.permission.RECEIVE_SMS")
     if any(x in activity or x in logic for x in forbidden): raise AndroidAppSourceError("SwirMessages source stage must not silently send/read SMS or claim conversation history.")
 
+def _validate_camera(logic,activity):
+    if any(x not in logic for x in ("validDimensions","megapixels","formatMegapixels","lensLabel")): raise AndroidAppSourceError("SwirCamera host-tested capability policy drifted.")
+    required=("CameraManager","getCameraIdList","CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP","getOutputSizes(ImageFormat.JPEG)","MediaStore.ACTION_IMAGE_CAPTURE","MediaStore.ACTION_VIDEO_CAPTURE","CameraPolicy.formatMegapixels")
+    if any(x not in activity for x in required): raise AndroidAppSourceError("SwirCamera must retain capability reporting and owner-visible capture hand-off.")
+    if any(x in activity for x in ("openCamera(","CameraDevice","MediaRecorder","ImageReader.newInstance")): raise AndroidAppSourceError("SwirCamera source stage must not claim direct photo/video capture before hardware validation.")
+
 def _validate_calculator(logic,activity):
     if "java.math.BigDecimal" not in logic or "equalsResult" not in logic: raise AndroidAppSourceError("SwirCalculator must retain its host-tested decimal engine.")
     if "DecimalFormatSymbols" not in activity: raise AndroidAppSourceError("SwirCalculator must preserve locale-aware decimal display.")
@@ -148,6 +162,10 @@ def _validate_settings(logic,activity):
 def _validate_files(logic,activity):
     required=("Intent.ACTION_OPEN_DOCUMENT_TREE","takePersistableUriPermission","DocumentsContract.buildChildDocumentsUriUsingTree","DocumentsContract.createDocument","DocumentsContract.renameDocument","DocumentsContract.copyDocument","DocumentsContract.moveDocument","DocumentsContract.deleteDocument","Intent.FLAG_GRANT_READ_URI_PERMISSION","Intent.FLAG_GRANT_WRITE_URI_PERMISSION")
     if any(x not in activity for x in required) or "validName" not in logic or "Character.isISOControl" not in logic: raise AndroidAppSourceError("SwirFiles must retain its reviewed user-granted SAF workflow and file policy.")
+def _validate_browser(logic,activity):
+    if any(x not in logic for x in ("MAX_URL_LENGTH","MAX_QUERY_LENGTH","normalizeUrl","searchUrl","isSafeUrl","URI")): raise AndroidAppSourceError("SwirBrowser host-tested URL policy drifted.")
+    required=("WebView","setJavaScriptEnabled(false)","setAllowFileAccess(false)","setAllowContentAccess(false)","MIXED_CONTENT_NEVER_ALLOW","setSafeBrowsingEnabled(true)","setAcceptThirdPartyCookies(webView, false)","shouldOverrideUrlLoading","BrowserPolicy.normalizeUrl","removeAllCookies")
+    if any(x not in activity for x in required): raise AndroidAppSourceError("SwirBrowser must retain HTTPS-first browsing and conservative privacy defaults.")
 def _validate_device_care(logic,activity):
     required=("Build.VERSION.SECURITY_PATCH","BatteryManager","StatFs","ActivityManager.MemoryInfo","getCurrentThermalStatus","Formatter.formatFileSize")
     if any(x not in activity for x in required) or any(x not in logic for x in ("percentUsed","thermalBand","batteryLevelValid")): raise AndroidAppSourceError("SwirDeviceCare must retain real framework health state and calculations.")
@@ -165,6 +183,11 @@ def _validate_notes(logic,activity):
 def _validate_calendar(logic,activity):
     if any(x not in logic for x in ("normalizeEnd","matches","escapeIcs","toIcs","BEGIN:VCALENDAR")): raise AndroidAppSourceError("SwirCalendar event/ICS policy drifted.")
     if any(x not in activity for x in ("SQLiteOpenHelper","DatePickerDialog","TimePickerDialog","Intent.ACTION_CREATE_DOCUMENT","Intent.ACTION_SEND","EventPolicy.toIcs")) or "CalendarContract" in activity: raise AndroidAppSourceError("SwirCalendar must remain local-first until provider integration is reviewed.")
+def _validate_weather(logic,activity):
+    if any(x not in logic for x in ("validLatitude","validLongitude","forecastUrl","providerUrl","temperatureUnit","windUnit")): raise AndroidAppSourceError("SwirWeather host-tested forecast policy drifted.")
+    required=("HttpsURLConnection","JSONObject","WeatherPolicy.forecastUrl","getSharedPreferences","Intent.ACTION_VIEW","MAX_RESPONSE_CHARS")
+    if any(x not in activity for x in required): raise AndroidAppSourceError("SwirWeather must retain bounded HTTPS forecast retrieval, owner-selected coordinates and provider attribution.")
+    if any(x in activity for x in ("LocationManager","FusedLocationProviderClient","ACCESS_FINE_LOCATION","ACCESS_COARSE_LOCATION")): raise AndroidAppSourceError("SwirWeather source stage must not collect device location without a reviewed permission flow.")
 def _validate_gallery(logic,activity):
     if any(x not in logic for x in ("supportedMime","matches","isVideo","safeEpochSeconds")): raise AndroidAppSourceError("SwirGallery host-tested media policy drifted.")
     if any(x not in activity for x in ("Manifest.permission.READ_MEDIA_IMAGES","Manifest.permission.READ_MEDIA_VIDEO","MediaStore.Files.getContentUri","MediaStore.createDeleteRequest","startIntentSenderForResult","Intent.ACTION_VIEW","Intent.ACTION_SEND","MediaPolicy.matches")): raise AndroidAppSourceError("SwirGallery must retain scoped MediaStore browse/share and owner-confirmed delete flows.")
@@ -175,6 +198,11 @@ def _validate_contacts(logic,activity):
     if any(x not in logic for x in ("validLookupKey","matches","safeExportBase","vcardFileName")): raise AndroidAppSourceError("SwirContacts host-tested contact policy drifted.")
     required=("Manifest.permission.READ_CONTACTS","requestPermissions","ContactsContract.Contacts.CONTENT_URI","ContactsContract.CommonDataKinds.Phone.CONTENT_URI","Intent.ACTION_INSERT","Intent.ACTION_EDIT","Intent.ACTION_OPEN_DOCUMENT","Intent.ACTION_CREATE_DOCUMENT","ContactsContract.Contacts.CONTENT_VCARD_URI","ContactPolicy.vcardFileName")
     if any(x not in activity for x in required): raise AndroidAppSourceError("SwirContacts must retain scoped provider browse/search plus explicit import/export hand-offs.")
+def _validate_backup(logic,activity):
+    if any(x not in logic for x in ("MAX_FILES","MAX_ENTRY_BYTES","MAX_TOTAL_BYTES","validEntryName","safeEntryName","backupFileName","sizeAllowed")): raise AndroidAppSourceError("SwirBackup host-tested archive policy drifted.")
+    required=("Intent.ACTION_OPEN_DOCUMENT","Intent.EXTRA_ALLOW_MULTIPLE","Intent.ACTION_CREATE_DOCUMENT","ZipOutputStream","ZipInputStream","OpenableColumns.DISPLAY_NAME","Build.FINGERPRINT","copyLimited")
+    if any(x not in activity for x in required): raise AndroidAppSourceError("SwirBackup must retain owner-selected bounded archive creation and safe structural inspection.")
+    if any(x in activity for x in ("ZipFile.extract","FileOutputStream","getDataDirectory()","/data/")): raise AndroidAppSourceError("SwirBackup source stage must not restore arbitrary archive entries or read app-private data.")
 def _validate_apps(logic,activity):
     if any(x not in logic for x in ("validPackageName","matches","sha256","shortDigest")): raise AndroidAppSourceError("SwirApps host-tested catalog policy drifted.")
     required=("queryIntentActivities","PackageManager.GET_SIGNING_CERTIFICATES","getApkContentsSigners","getLaunchIntentForPackage","Settings.ACTION_APPLICATION_DETAILS_SETTINGS","AppCatalogPolicy.sha256")
@@ -185,7 +213,7 @@ def _validate_swirroot(logic:str,activity:str,java_bundle:str)->None:
     if any(token not in java_bundle for token in ("class SwirRootService extends Service","WRITE_BACKEND_ENABLED = false","SUPPORTED_BUILD = false","RootPolicy.State.UNAVAILABLE","auditSnapshot()","reviewEnable","reviewUnroot")): raise AndroidAppSourceError("SwirRoot source stage must retain its non-exported fail-closed status/audit service.")
     if any(token in java_bundle for token in ("RecoverySystem.installPackage","/dev/block/","android.os.SystemProperties","bootctl","setprop","flash ","erase ")): raise AndroidAppSourceError("SwirRoot source stage must not contain a root/device mutation primitive.")
 
-_VALIDATORS={"phone":_validate_phone,"messages":_validate_messages,"calculator":_validate_calculator,"settings":_validate_settings,"files":_validate_files,"device_care":_validate_device_care,"update":_validate_update,"privacy":_validate_privacy,"clock":_validate_clock,"notes":_validate_notes,"calendar":_validate_calendar,"gallery":_validate_gallery,"recorder":_validate_recorder,"contacts":_validate_contacts,"apps":_validate_apps}
+_VALIDATORS={"phone":_validate_phone,"messages":_validate_messages,"camera":_validate_camera,"calculator":_validate_calculator,"settings":_validate_settings,"files":_validate_files,"browser":_validate_browser,"device_care":_validate_device_care,"update":_validate_update,"privacy":_validate_privacy,"clock":_validate_clock,"notes":_validate_notes,"calendar":_validate_calendar,"weather":_validate_weather,"gallery":_validate_gallery,"recorder":_validate_recorder,"contacts":_validate_contacts,"backup":_validate_backup,"apps":_validate_apps}
 
 
 def validate_android_app_sources(product_root:Path=Path("platform/aosp_product"),registry_path:Path=Path("system_apps/manifest.json"))->AndroidAppSourceSummary:

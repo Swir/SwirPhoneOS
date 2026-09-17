@@ -66,21 +66,17 @@ The transaction evidence layer binds exact target and rollback artifacts to one 
 
 ### Android application source
 
-Sixteen applications are **`ANDROID_SOURCE`** and included in the Cuttlefish product: Swir Phone, Swir Messages, SwirCalculator, SwirSettings, SwirFiles, SwirDeviceCare, SwirUpdate, SwirPrivacy, SwirClock, SwirNotes, SwirCalendar, SwirGallery, SwirRecorder, SwirContacts, Swir Apps and SwirRoot.
+All twenty essential applications are now **`ANDROID_SOURCE`** and included in the Cuttlefish product: Swir Phone, Swir Contacts, Swir Messages, Swir Camera, Swir Gallery, Swir Files, Swir Settings, Swir Browser, Swir Clock, Swir Calculator, Swir Notes, Swir Recorder, Swir Calendar, Swir Weather, Swir Update, Swir Backup, Swir Privacy, Swir Device Care, Swir Apps and SwirRoot. No essential app remains `HOST_CONTRACT`; all twenty still remain below `ANDROID_RUNTIME`.
 
-The source validator uses exact least-privilege permission allowlists. Permission-free applications fail if they gain any permission. SwirContacts is limited to `READ_CONTACTS`, SwirGallery to `READ_MEDIA_IMAGES` and `READ_MEDIA_VIDEO`, and SwirRecorder to `RECORD_AUDIO`; Swir Phone and Swir Messages remain permission-free. Phone hands a validated number to Android using `ACTION_DIAL`, while Messages hands a bounded recipient/body draft to Android using `ACTION_SENDTO` + `smsto:` rather than silently placing calls or sending SMS. Network, broad-storage and process-execution primitives remain globally rejected across production Java source. Every source-ready app has EN/PL/NB/DE/ES/FR/PT/AR resources with key/formatter/plural validation and RTL-aware application configuration.
+The validator uses exact least-privilege permission allowlists. Contacts is limited to `READ_CONTACTS`, Gallery to `READ_MEDIA_IMAGES` + `READ_MEDIA_VIDEO`, Recorder to `RECORD_AUDIO`, Browser and Weather to `INTERNET`; the remaining source apps are permission-free. Network primitives are rejected outside the reviewed Browser/Weather paths; broad storage and process execution remain rejected across production Java source. Every app has EN/PL/NB/DE/ES/FR/PT/AR resources with exact key/formatter/plural checks and RTL-aware application configuration.
 
-Swir Phone provides a real owner-visible keypad, fail-closed dial-string normalization and explicit system-dialer hand-off. It does not request `CALL_PHONE`, does not read call history, and does not claim default-dialer, in-call or recent-call behavior; `phone:in_call` and `phone:recent_calls` remain explicit gaps until the exact Android Telecom/telephony stack and reference hardware are exercised.
+Camera now provides real CameraManager capability inspection plus explicit owner-visible Android capture hand-offs, while direct Camera2 capture/photo/video claims remain open until exact hardware validation. Browser provides HTTPS-only browsing with conservative defaults and no download pipeline. Weather provides bounded HTTPS Open-Meteo forecast retrieval for owner-entered coordinates without location permission. Backup creates bounded owner-selected document archives with recovery metadata and safely inspects archives, but deliberately does not restore arbitrary entries or read private app data.
 
-Swir Messages provides a real local compose surface, app-private draft persistence, fail-closed recipient/body bounds and an explicit system-messaging hand-off. It does not request `SEND_SMS`, `READ_SMS` or `RECEIVE_SMS`, does not call `SmsManager`, and does not claim default-SMS role, carrier delivery, MMS or provider-backed history. `messages:mms` and `messages:conversation_history` remain explicit gaps until the exact Android telephony/provider stack and reference hardware are exercised.
+Phone still has `in_call` and `recent_calls` open; Messages still has `mms` and `conversation_history` open; Camera keeps `photo_capture` and `video_capture` open; Browser keeps `downloads` open; Calendar keeps `provider_bridge` open; Backup keeps `restore_orchestration` open; Apps keeps `update_status` open; SwirRoot keeps guided enable/unroot open. Source-summary schema v3 tracks these gaps per app.
 
-SwirContacts provides real provider-backed browse/search, delegates contact creation/editing to Android's authoritative contact UI, and supports explicit user-selected vCard import/export flows without requesting `WRITE_CONTACTS`. Swir Apps provides a permission-free local launcher catalog with package/version state and signing-certificate SHA-256 provenance plus launch and app-details navigation. It deliberately has no network installer or remote update catalog yet.
+SwirRoot remains a source-stage control surface only. Its mutation backend and supported-build switch are hard-disabled, it reports `UNAVAILABLE`, and it contains no `su`, process execution, boot-image mutation, partition write, unlock, flash or exploit path. `guided_enable` and `guided_unroot` require an exact physically verified backend plus rollback/recovery evidence.
 
-Source-summary schema v3 tracks missing capabilities by app, not only by capability name. This prevents a shared label from obscuring unfinished work: Contacts can truthfully implement its `provider_bridge` while `calendar:provider_bridge` stays open; `apps:update_status`, `messages:mms` and `messages:conversation_history` also stay open.
-
-SwirRoot remains a source-stage control surface only. Its mutation backend and supported-build switch are hard-disabled, it reports `UNAVAILABLE`, and it contains no `su`, process execution, boot-image mutation, partition write, unlock, flash or exploit path. `guided_enable` and `guided_unroot` remain future capabilities requiring an exact physically verified backend plus rollback/recovery evidence.
-
-All sixteen remain below `ANDROID_RUNTIME`. Source-only work therefore receives **no weighted gate credit**. Current intentional gaps include Phone in-call/recent-call integration, Messages MMS/conversation-history/default-role integration, Calculator scientific math, Gallery albums, Update staged/recovery state, Privacy live indicators/access history, Calendar provider bridging, Swir Apps remote update status and SwirRoot guided enable/unroot.
+All twenty remain below `ANDROID_RUNTIME`. Source-only work therefore receives **no weighted gate credit** and the global percentage remains 2%.
 
 ### Desktop and SwirRoot
 
@@ -92,19 +88,18 @@ Read-only ADB/Fastboot/FastbootD diagnostics, multilingual SwirPhoneStudio and W
 
 - [ ] Shared SwirPhoneOS design system, icon rules, package naming, localization and permission conventions integrated into the built Android image.
 - [ ] Settings, Files, Update, Privacy and Device Care usable with real runtime/platform state.
-- [ ] Phone keypad/handoff, Messages compose/handoff, Clock, Calculator, Notes, Calendar, Gallery, Recorder, Contacts, Swir Apps and SwirRoot built and exercised inside SwirPhoneOS Cuttlefish.
-- [ ] Runtime permission UX, accessibility, RTL and locale-switch review for all source-ready apps.
+- [ ] All twenty essential source-ready apps built and exercised inside SwirPhoneOS Cuttlefish.
+- [ ] Runtime permission UX, accessibility, RTL and locale-switch review for every bundled app.
 
-> Source progress: sixteen apps contain meaningful Android source and host-tested policy/logic, but the checkboxes stay open until they are built and exercised in the SwirPhoneOS image. The global percentage therefore remains 2%.
+> Source progress: all twenty essential apps contain meaningful Android source and host-tested policy/logic where appropriate, but the checkboxes stay open until the image builds and the apps are exercised. The global percentage therefore remains 2%.
 
 ### Reference-hardware phase
 
 - [ ] Swir Phone in-call/default-dialer/recent-call behavior and Swir Messages default-role/provider/MMS/carrier behavior validated against the exact reference telephony stack; Contacts runtime/provider behavior validated on that same build.
-- [ ] Swir Camera validated against the exact reference camera/media stack.
-- [ ] Swir Gallery scoped MediaStore behavior validated on the supported build and expanded with reviewed album behavior.
-- [ ] Swir Recorder capture/playback/export validated against the reference microphone/audio stack.
-- [ ] Swir Backup/restore aligned with exact encryption/storage/recovery behavior.
-- [ ] Calendar provider bridge, Browser, Weather and Swir Apps update integration brought to beta-appropriate quality.
+- [ ] Swir Camera direct capture validated against the exact reference camera/media stack before photo/video capabilities are promoted.
+- [ ] Swir Gallery scoped MediaStore behavior and Swir Recorder capture/playback/export validated on the supported build.
+- [ ] Swir Backup/restore aligned with exact encryption/storage/recovery behavior and tested restore evidence.
+- [ ] Calendar provider bridge plus Browser downloads, Weather runtime networking and Swir Apps update integration brought to beta-appropriate quality.
 
 ### SwirRoot phase
 
@@ -118,11 +113,11 @@ Read-only ADB/Fastboot/FastbootD diagnostics, multilingual SwirPhoneStudio and W
 
 ## Next engineering work
 
-1. Provision or attach a capable dedicated Linux x86-64 runner labeled `swir-aosp-builder`, set `SWIR_AOSP_WORKSPACE`, ensure Cuttlefish host prerequisites plus the trusted absolute `adb` path exist, and run the manual `AOSP build evidence` workflow with runtime collection enabled. It must initialize/sync exact `android-17.0.0_r1`, preserve `repo manifest -r`, stage the bounded `vendor/swir/` bundle and compile `swirphoneos_cf_x86_64-aosp_current-userdebug` with all sixteen source-ready apps.
+1. Provision or attach a capable dedicated Linux x86-64 runner labeled `swir-aosp-builder`, set `SWIR_AOSP_WORKSPACE`, ensure Cuttlefish host prerequisites plus the trusted absolute `adb` path exist, and run the manual `AOSP build evidence` workflow with runtime collection enabled. It must initialize/sync exact `android-17.0.0_r1`, preserve `repo manifest -r`, stage the bounded `vendor/swir/` bundle and compile `swirphoneos_cf_x86_64-aosp_current-userdebug` with all twenty source-ready apps.
 2. Preserve `builder-preflight.json`, `aosp-plan.json`, `resolved-manifest.json`, `stage-report.json`, `post-build-stage-evidence.json`, `build-evidence.json`, `runtime-evidence.json`, `app-smoke-evidence.json`, `evidence-bundle.json` and `aosp-run-evidence.json`. The final run report must be `BUILD_AND_RUNTIME`, bound to the workflow source commit and exact build fingerprint, before any runtime promotion review.
 3. Fix any real Repo/Kati/Soong/AAPT/Cuttlefish regressions first. Do not weaken pinned build identity, staged-source integrity, exact permission allowlists, package-set or fingerprint continuity merely to obtain a green build.
-4. Perform focused interactive checks launch-smoke cannot prove: core Settings/Files/Update/Privacy/DeviceCare flows; Swir Phone keypad normalization and owner-visible `ACTION_DIAL` hand-off; Swir Messages draft persistence, recipient normalization and owner-visible `ACTION_SENDTO` hand-off; Notes/Calendar persistence/export; Clock timer/alarm hand-off; Gallery permission/search/open/share/delete; Recorder runtime permission/capture/playback/export; Contacts permission/search/create/edit/import/export; Swir Apps search/provenance/launch/details; SwirRoot's fail-closed UI; accessibility, text expansion, locale switching and Arabic RTL. Only then review any `ANDROID_RUNTIME` promotion.
-5. On the owner-controlled `avicii`, capture read-only ADB and Fastboot/FastbootD observations and correlate them with `hardware-evidence`. Review the exact firmware fingerprint, slots and bounded partition hints while keeping the result below hardware verification and the profile `PLANNED_NOT_SUPPORTED`.
+4. Perform focused interactive checks launch-smoke cannot prove: core Settings/Files/Update/Privacy/DeviceCare flows; Phone and Messages hand-offs; Camera capability report and capture hand-offs; Browser HTTPS/privacy behavior; Weather network/error/unit behavior; Backup selection/archive/inspection; Notes/Calendar persistence/export; Clock timer/alarm; Gallery; Recorder; Contacts; Swir Apps; SwirRoot; accessibility, text expansion, locale switching and Arabic RTL. Only then review any `ANDROID_RUNTIME` promotion.
+5. On the owner-controlled `avicii`, capture read-only ADB and Fastboot/FastbootD observations and correlate them with `hardware-evidence`. Review exact firmware fingerprint, slots and bounded partition hints while keeping the result below hardware verification and the profile `PLANNED_NOT_SUPPORTED`.
 6. Only after physical observations are reviewed should a device-specific transaction plan be authored. Bind it with `transaction-device-check`, verify target+rollback bytes and create a recovery journal. Physical restore evidence and a verified partition map remain mandatory before any write-capable implementation.
 7. Continue SwirPhoneStudio hardening; the next desktop gate evidence is actual Windows USB read-only ADB + Fastboot/FastbootD smoke on an owner-controlled device.
 8. After emulator/GSI and recovery evidence, design a legitimate exact-build SwirRoot backend only for explicitly supported unlocked/owner-controlled device paths. Never bypass locked bootloaders, OEM protections or verification controls through exploits.

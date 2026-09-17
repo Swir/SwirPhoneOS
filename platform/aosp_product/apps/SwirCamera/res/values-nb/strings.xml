@@ -1,0 +1,14 @@
+<resources>
+    <string name="app_name">Swir Camera</string>
+    <string name="title">Swir Camera</string>
+    <string name="subtitle">Inspeksjon av kamerafunksjoner og sikker overlevering til opptak</string>
+    <string name="source_stage_notice">Direkte Camera2-opptak hevdes ikke ennå. Dette kildestadiet viser reelle kamerafunksjoner og åpner Androids synlige opptaksflate.</string>
+    <string name="refresh">Oppdater</string>
+    <string name="photo_handoff">Bilde</string>
+    <string name="video_handoff">Video</string>
+    <string name="capability_empty">Ingen data om kamerafunksjoner er tilgjengelig.</string>
+    <string name="camera_row">Kamera %1$s · %2$s</string>
+    <string name="size_row">Største JPEG: %1$d × %2$d · %3$s MP</string>
+    <string name="handoff_unavailable">Ingen kompatibel opptaksapp er tilgjengelig.</string>
+    <string name="capability_error">Kontroll av kamerafunksjoner mislyktes.</string>
+</resources>

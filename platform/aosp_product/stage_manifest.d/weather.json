@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "files": [
+    {"source":"apps/SwirWeather/Android.bp","destination":"vendor/swir/apps/SwirWeather/Android.bp"},
+    {"source":"apps/SwirWeather/AndroidManifest.xml","destination":"vendor/swir/apps/SwirWeather/AndroidManifest.xml"},
+    {"source":"apps/SwirWeather/src/org/swir/phoneos/weather/WeatherPolicy.java","destination":"vendor/swir/apps/SwirWeather/src/org/swir/phoneos/weather/WeatherPolicy.java"},
+    {"source":"apps/SwirWeather/src/org/swir/phoneos/weather/MainActivity.java","destination":"vendor/swir/apps/SwirWeather/src/org/swir/phoneos/weather/MainActivity.java"},
+    {"source":"apps/SwirWeather/res/drawable/ic_weather.xml","destination":"vendor/swir/apps/SwirWeather/res/drawable/ic_weather.xml"},
+    {"source":"apps/SwirWeather/res/values/strings.xml","destination":"vendor/swir/apps/SwirWeather/res/values/strings.xml"},
+    {"source":"apps/SwirWeather/res/values-pl/strings.xml","destination":"vendor/swir/apps/SwirWeather/res/values-pl/strings.xml"},
+    {"source":"apps/SwirWeather/res/values-nb/strings.xml","destination":"vendor/swir/apps/SwirWeather/res/values-nb/strings.xml"},
+    {"source":"apps/SwirWeather/res/values-de/strings.xml","destination":"vendor/swir/apps/SwirWeather/res/values-de/strings.xml"},
+    {"source":"apps/SwirWeather/res/values-es/strings.xml","destination":"vendor/swir/apps/SwirWeather/res/values-es/strings.xml"},
+    {"source":"apps/SwirWeather/res/values-fr/strings.xml","destination":"vendor/swir/apps/SwirWeather/res/values-fr/strings.xml"},
+    {"source":"apps/SwirWeather/res/values-pt/strings.xml","destination":"vendor/swir/apps/SwirWeather/res/values-pt/strings.xml"},
+    {"source":"apps/SwirWeather/res/values-ar/strings.xml","destination":"vendor/swir/apps/SwirWeather/res/values-ar/strings.xml"}
+  ]
+}

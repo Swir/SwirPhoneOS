@@ -54,6 +54,12 @@ jobs:
           mkdir -p _messages-java-test
           javac -d _messages-java-test platform/aosp_product/apps/SwirMessages/src/org/swir/phoneos/messages/MessagePolicy.java platform/aosp_product/apps/SwirMessages/hosttest/MessagePolicyHostTest.java
           java -cp _messages-java-test org.swir.phoneos.messages.MessagePolicyHostTest
+      - name: Host-test SwirCamera capability policy
+        if: runner.os == 'Linux' && matrix.python == '3.14'
+        run: |
+          mkdir -p _camera-java-test
+          javac -d _camera-java-test platform/aosp_product/apps/SwirCamera/src/org/swir/phoneos/camera/CameraPolicy.java platform/aosp_product/apps/SwirCamera/hosttest/CameraPolicyHostTest.java
+          java -cp _camera-java-test org.swir.phoneos.camera.CameraPolicyHostTest
       - name: Host-test SwirCalculator pure Java engine
         if: runner.os == 'Linux' && matrix.python == '3.14'
         run: |
@@ -72,6 +78,12 @@ jobs:
           mkdir -p _files-java-test
           javac -d _files-java-test platform/aosp_product/apps/SwirFiles/src/org/swir/phoneos/files/FilePolicy.java platform/aosp_product/apps/SwirFiles/hosttest/FilePolicyHostTest.java
           java -cp _files-java-test org.swir.phoneos.files.FilePolicyHostTest
+      - name: Host-test SwirBrowser URL policy
+        if: runner.os == 'Linux' && matrix.python == '3.14'
+        run: |
+          mkdir -p _browser-java-test
+          javac -d _browser-java-test platform/aosp_product/apps/SwirBrowser/src/org/swir/phoneos/browser/BrowserPolicy.java platform/aosp_product/apps/SwirBrowser/hosttest/BrowserPolicyHostTest.java
+          java -cp _browser-java-test org.swir.phoneos.browser.BrowserPolicyHostTest
       - name: Host-test SwirDeviceCare health model
         if: runner.os == 'Linux' && matrix.python == '3.14'
         run: |
@@ -108,6 +120,12 @@ jobs:
           mkdir -p _calendar-java-test
           javac -d _calendar-java-test platform/aosp_product/apps/SwirCalendar/src/org/swir/phoneos/calendar/EventPolicy.java platform/aosp_product/apps/SwirCalendar/hosttest/EventPolicyHostTest.java
           java -cp _calendar-java-test org.swir.phoneos.calendar.EventPolicyHostTest
+      - name: Host-test SwirWeather forecast policy
+        if: runner.os == 'Linux' && matrix.python == '3.14'
+        run: |
+          mkdir -p _weather-java-test
+          javac -d _weather-java-test platform/aosp_product/apps/SwirWeather/src/org/swir/phoneos/weather/WeatherPolicy.java platform/aosp_product/apps/SwirWeather/hosttest/WeatherPolicyHostTest.java
+          java -cp _weather-java-test org.swir.phoneos.weather.WeatherPolicyHostTest
       - name: Host-test SwirGallery media policy
         if: runner.os == 'Linux' && matrix.python == '3.14'
         run: |
@@ -126,6 +144,12 @@ jobs:
           mkdir -p _contacts-java-test
           javac -d _contacts-java-test platform/aosp_product/apps/SwirContacts/src/org/swir/phoneos/contacts/ContactPolicy.java platform/aosp_product/apps/SwirContacts/hosttest/ContactPolicyHostTest.java
           java -cp _contacts-java-test org.swir.phoneos.contacts.ContactPolicyHostTest
+      - name: Host-test SwirBackup archive policy
+        if: runner.os == 'Linux' && matrix.python == '3.14'
+        run: |
+          mkdir -p _backup-java-test
+          javac -d _backup-java-test platform/aosp_product/apps/SwirBackup/src/org/swir/phoneos/backup/BackupPolicy.java platform/aosp_product/apps/SwirBackup/hosttest/BackupPolicyHostTest.java
+          java -cp _backup-java-test org.swir.phoneos.backup.BackupPolicyHostTest
       - name: Host-test SwirApps catalog policy
         if: runner.os == 'Linux' && matrix.python == '3.14'
         run: |

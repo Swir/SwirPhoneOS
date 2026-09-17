@@ -1,0 +1,14 @@
+<resources>
+    <string name="app_name">Swir Camera</string>
+    <string name="title">Swir Camera</string>
+    <string name="subtitle">Inspektor możliwości aparatu i bezpieczne przekazanie przechwytywania</string>
+    <string name="source_stage_notice">Bezpośrednie przechwytywanie Camera2 nie jest jeszcze deklarowane. Ten etap źródłowy pokazuje rzeczywiste możliwości aparatu i otwiera widoczny ekran przechwytywania Androida.</string>
+    <string name="refresh">Odśwież</string>
+    <string name="photo_handoff">Zdjęcie</string>
+    <string name="video_handoff">Wideo</string>
+    <string name="capability_empty">Brak danych o możliwościach aparatu.</string>
+    <string name="camera_row">Aparat %1$s · %2$s</string>
+    <string name="size_row">Największy JPEG: %1$d × %2$d · %3$s MP</string>
+    <string name="handoff_unavailable">Brak zgodnej aplikacji do przechwytywania.</string>
+    <string name="capability_error">Sprawdzanie możliwości aparatu nie powiodło się.</string>
+</resources>
