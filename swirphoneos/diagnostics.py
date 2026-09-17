@@ -73,7 +73,7 @@ def summarize(properties: dict[str, str]) -> dict[str, object]:
     locked = values["ro.boot.flash.locked"]
     treble = values["ro.treble.enabled"]
     return {
-        "schema_version": 2,
+        "schema_version": 1,
         "source": "adb_reported_properties_not_hardware_verification",
         "manufacturer": values["ro.product.manufacturer"],
         "model": values["ro.product.model"],
