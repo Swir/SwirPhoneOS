@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "files": [
+    {"source":"apps/SwirMessages/Android.bp","destination":"vendor/swir/apps/SwirMessages/Android.bp"},
+    {"source":"apps/SwirMessages/AndroidManifest.xml","destination":"vendor/swir/apps/SwirMessages/AndroidManifest.xml"},
+    {"source":"apps/SwirMessages/src/org/swir/phoneos/messages/MessagePolicy.java","destination":"vendor/swir/apps/SwirMessages/src/org/swir/phoneos/messages/MessagePolicy.java"},
+    {"source":"apps/SwirMessages/src/org/swir/phoneos/messages/MainActivity.java","destination":"vendor/swir/apps/SwirMessages/src/org/swir/phoneos/messages/MainActivity.java"},
+    {"source":"apps/SwirMessages/res/drawable/ic_messages.xml","destination":"vendor/swir/apps/SwirMessages/res/drawable/ic_messages.xml"},
+    {"source":"apps/SwirMessages/res/values/strings.xml","destination":"vendor/swir/apps/SwirMessages/res/values/strings.xml"},
+    {"source":"apps/SwirMessages/res/values-pl/strings.xml","destination":"vendor/swir/apps/SwirMessages/res/values-pl/strings.xml"},
+    {"source":"apps/SwirMessages/res/values-nb/strings.xml","destination":"vendor/swir/apps/SwirMessages/res/values-nb/strings.xml"},
+    {"source":"apps/SwirMessages/res/values-de/strings.xml","destination":"vendor/swir/apps/SwirMessages/res/values-de/strings.xml"},
+    {"source":"apps/SwirMessages/res/values-es/strings.xml","destination":"vendor/swir/apps/SwirMessages/res/values-es/strings.xml"},
+    {"source":"apps/SwirMessages/res/values-fr/strings.xml","destination":"vendor/swir/apps/SwirMessages/res/values-fr/strings.xml"},
+    {"source":"apps/SwirMessages/res/values-pt/strings.xml","destination":"vendor/swir/apps/SwirMessages/res/values-pt/strings.xml"},
+    {"source":"apps/SwirMessages/res/values-ar/strings.xml","destination":"vendor/swir/apps/SwirMessages/res/values-ar/strings.xml"}
+  ]
+}
