@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="320" viewBox="0 0 1200 320" role="img" aria-labelledby="title desc">
+  <title id="title">SwirPhoneOS</title>
+  <desc id="desc">Dark electric-cyan SwirPhoneOS banner showing the phone lightning emblem and safety-first Android-compatible OS identity.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#050912"/>
+      <stop offset="0.55" stop-color="#09182a"/>
+      <stop offset="1" stop-color="#07111f"/>
+    </linearGradient>
+    <linearGradient id="cyan" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#6af1ff"/>
+      <stop offset="0.5" stop-color="#20c8ff"/>
+      <stop offset="1" stop-color="#4f6dff"/>
+    </linearGradient>
+    <filter id="glow" x="-80%" y="-80%" width="260%" height="260%">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <pattern id="grid" width="34" height="34" patternUnits="userSpaceOnUse">
+      <path d="M34 0H0V34" fill="none" stroke="#1c6680" stroke-opacity=".15" stroke-width="1"/>
+    </pattern>
+  </defs>
+  <rect width="1200" height="320" rx="28" fill="url(#bg)"/>
+  <rect x="1" y="1" width="1198" height="318" rx="27" fill="none" stroke="#32d9ff" stroke-opacity=".42" stroke-width="2"/>
+  <rect width="1200" height="320" rx="28" fill="url(#grid)"/>
+  <circle cx="105" cy="55" r="3" fill="#63ecff"/><circle cx="1130" cy="78" r="2" fill="#63ecff"/>
+  <circle cx="1080" cy="250" r="3" fill="#4f7dff"/><circle cx="515" cy="42" r="2" fill="#63ecff"/>
+  <g transform="translate(76 41)" filter="url(#glow)">
+    <rect x="35" y="7" width="142" height="224" rx="31" fill="#0b1727" stroke="url(#cyan)" stroke-width="7"/>
+    <path d="M85 24h42M91 213h30" stroke="#66edff" stroke-width="7" stroke-linecap="round"/>
+    <path d="M147 57H86L54 121h55l-34 63h25l65-86h-58l27-21h13z" fill="url(#cyan)"/>
+    <path d="M3 103h18m171 35h18M11 138h10m171-35h10" stroke="#5eeaff" stroke-width="6" stroke-linecap="round"/>
+  </g>
+  <g font-family="Segoe UI, Inter, Arial, sans-serif">
+    <text x="345" y="124" font-size="58" font-weight="800" letter-spacing="2" fill="#effbff">SWIRPHONE<tspan fill="#55e7ff">OS</tspan></text>
+    <text x="348" y="166" font-size="20" font-weight="600" letter-spacing="3" fill="#78dff4">LINUX KERNEL  •  AOSP USERSPACE  •  OWN SWIR EXPERIENCE</text>
+    <text x="348" y="207" font-size="18" fill="#b9d8e5">Safety-first mobile OS engineering • device profiles • recovery evidence • SwirPhoneStudio • SwirRoot</text>
+    <rect x="348" y="236" width="160" height="34" rx="17" fill="#0a2334" stroke="#39dcff" stroke-opacity=".65"/>
+    <text x="428" y="258" text-anchor="middle" font-size="14" font-weight="700" fill="#70ecff">ANDROID 17 BASE</text>
+    <rect x="522" y="236" width="160" height="34" rx="17" fill="#0a2334" stroke="#39dcff" stroke-opacity=".65"/>
+    <text x="602" y="258" text-anchor="middle" font-size="14" font-weight="700" fill="#70ecff">20 SYSTEM APPS</text>
+    <rect x="696" y="236" width="190" height="34" rx="17" fill="#0a2334" stroke="#39dcff" stroke-opacity=".65"/>
+    <text x="791" y="258" text-anchor="middle" font-size="14" font-weight="700" fill="#70ecff">FAIL-CLOSED SAFETY</text>
+  </g>
+</svg>
