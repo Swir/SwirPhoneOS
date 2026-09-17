@@ -483,7 +483,7 @@ public final class MainActivity extends Activity {
                                 recordingStartedAt = System.currentTimeMillis();
                                 status.setText(R.string.status_recording);
                                 refreshControls();
-                            } catch (CameraAccessException | IllegalStateException | RuntimeException exc) {
+                            } catch (CameraAccessException | RuntimeException exc) {
                                 abortPendingVideo();
                                 status.setText(R.string.status_video_failed);
                                 startPreview();
@@ -499,7 +499,7 @@ public final class MainActivity extends Activity {
                         }
                     },
                     null);
-        } catch (CameraAccessException | IOException | IllegalStateException | RuntimeException exc) {
+        } catch (CameraAccessException | IOException | RuntimeException exc) {
             abortPendingVideo();
             status.setText(R.string.status_video_failed);
             startPreview();
