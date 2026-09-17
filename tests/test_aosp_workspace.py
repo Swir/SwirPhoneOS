@@ -171,6 +171,22 @@ class AospWorkspaceTests(unittest.TestCase):
                 stage_product_tree(product, workspace, execute=True)
             self.assertTrue(stale.is_file())
 
+    @unittest.skipIf(os.name == "nt", "hard-link creation is not reliably available on Windows CI")
+    def test_execute_rejects_hard_linked_expected_destination(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            product = self._legacy_product(root)
+            workspace = self._fake_checkout(root)
+            target = workspace / "vendor/swir/products/AndroidProducts.mk"
+            target.parent.mkdir(parents=True)
+            outside = root / "outside.mk"
+            outside.write_text("old\n", encoding="utf-8")
+            os.link(outside, target)
+            self.assertGreater(target.stat().st_nlink, 1)
+            with self.assertRaises(AospWorkspaceError):
+                stage_product_tree(product, workspace, execute=True)
+            self.assertEqual(outside.read_text(encoding="utf-8"), "old\n")
+
     def test_stage_bundle_digest_changes_when_source_changes(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
