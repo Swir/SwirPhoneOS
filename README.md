@@ -29,6 +29,8 @@
 
 **2% — 1/10 weighted engineering milestones completed. Beta readiness: 0/9 gates passed.**
 
+<img width="100%" src="assets/readme/progress-card.svg" alt="SwirPhoneOS verified weighted engineering progress: 2%, 1 of 10 milestones complete, beta gates 0 of 9" />
+
 `[--------------------] 2%`
 
 The authoritative progress ledger is [`project.json`](project.json). Host CI, source-ready apps, Windows packaging, local recovery preparation and read-only hardware correlation do **not** substitute for Android build/boot or physical validation.
