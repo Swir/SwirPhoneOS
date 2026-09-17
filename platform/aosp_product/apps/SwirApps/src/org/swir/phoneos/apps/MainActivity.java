@@ -1,0 +1,37 @@
+package org.swir.phoneos.apps;
+
+import android.app.Activity;
+import android.content.Intent;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
+import android.content.pm.Signature;
+import android.graphics.Color;
+import android.net.Uri;
+import android.os.Bundle;
+import android.provider.Settings;
+import android.widget.ArrayAdapter;
+import android.widget.EditText;
+import android.widget.LinearLayout;
+import android.widget.ListView;
+import android.widget.TextView;
+import android.widget.Toast;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
+public final class MainActivity extends Activity {
+    private final List<AppRow> all=new ArrayList<>(); private final List<AppRow> shown=new ArrayList<>(); private ArrayAdapter<String> adapter; private EditText search;
+    @Override public void onCreate(Bundle state) { super.onCreate(state); setTitle(R.string.app_name); LinearLayout root=new LinearLayout(this); root.setOrientation(LinearLayout.VERTICAL); root.setPadding(28,28,28,28); root.setBackgroundColor(Color.rgb(7,18,34)); root.addView(text(R.string.title,28)); root.addView(text(R.string.subtitle,15)); search=new EditText(this); search.setHint(R.string.search_hint); search.setSingleLine(true); search.setTextColor(Color.WHITE); search.setHintTextColor(Color.rgb(130,170,190)); root.addView(search); ListView list=new ListView(this); adapter=new ArrayAdapter<>(this,android.R.layout.simple_list_item_1,new ArrayList<>()); list.setAdapter(adapter); root.addView(list,new LinearLayout.LayoutParams(-1,0,1)); setContentView(root); search.addTextChangedListener(new SimpleTextWatcher(this::filter)); list.setOnItemClickListener((p,v,pos,id)->launch(shown.get(pos))); list.setOnItemLongClickListener((p,v,pos,id)->{details(shown.get(pos)); return true;}); loadApps(); }
+    private TextView text(int id,int sp) { TextView v=new TextView(this); v.setText(id); v.setTextSize(sp); v.setTextColor(Color.WHITE); v.setPadding(0,6,0,10); return v; }
+    private void loadApps() { PackageManager pm=getPackageManager(); Intent launcher=new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER); List<ResolveInfo> results=pm.queryIntentActivities(launcher,0); Map<String,AppRow> unique=new LinkedHashMap<>(); for(ResolveInfo info:results){ if(info.activityInfo==null||info.activityInfo.applicationInfo==null) continue; String packageName=info.activityInfo.packageName; if(!AppCatalogPolicy.validPackageName(packageName)||unique.containsKey(packageName)) continue; ApplicationInfo app=info.activityInfo.applicationInfo; String label=String.valueOf(pm.getApplicationLabel(app)); unique.put(packageName,inspect(pm,label,packageName)); } all.clear(); all.addAll(unique.values()); all.sort(Comparator.comparing(a->a.label.toLowerCase(java.util.Locale.ROOT))); filter(); }
+    private AppRow inspect(PackageManager pm,String label,String packageName) { String version=""; String signature=""; try { PackageInfo info=pm.getPackageInfo(packageName,PackageManager.GET_SIGNING_CERTIFICATES); version=info.versionName==null?Long.toString(info.getLongVersionCode()):info.versionName; if(info.signingInfo!=null){ Signature[] signers=info.signingInfo.getApkContentsSigners(); if(signers!=null&&signers.length>0) signature=AppCatalogPolicy.shortDigest(AppCatalogPolicy.sha256(signers[0].toByteArray())); } } catch(PackageManager.NameNotFoundException ignored){} return new AppRow(label,packageName,version,signature); }
+    private void filter() { String q=search==null?"":search.getText().toString(); shown.clear(); ArrayList<String> labels=new ArrayList<>(); for(AppRow row:all) if(AppCatalogPolicy.matches(row.label,row.packageName,q)){ shown.add(row); String sig=row.signature.isEmpty()?getString(R.string.signature_unavailable):row.signature; labels.add(row.label+"\n"+row.packageName+"\n"+getString(R.string.version_format,row.version)+"\n"+getString(R.string.signature_format,sig)); } if(labels.isEmpty()) labels.add(getString(R.string.no_apps)); adapter.clear(); adapter.addAll(labels); adapter.notifyDataSetChanged(); }
+    private void launch(AppRow row) { Intent intent=getPackageManager().getLaunchIntentForPackage(row.packageName); if(intent!=null) startActivity(intent); else Toast.makeText(this,R.string.no_launch_activity,Toast.LENGTH_LONG).show(); }
+    private void details(AppRow row) { Intent intent=new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,Uri.parse("package:"+row.packageName)); if(intent.resolveActivity(getPackageManager())!=null) startActivity(intent); }
+    private record AppRow(String label,String packageName,String version,String signature) {}
+    private static final class SimpleTextWatcher implements android.text.TextWatcher { private final Runnable action; SimpleTextWatcher(Runnable action){this.action=action;} public void beforeTextChanged(CharSequence s,int st,int c,int a){} public void onTextChanged(CharSequence s,int st,int b,int c){action.run();} public void afterTextChanged(android.text.Editable e){} }
+}
