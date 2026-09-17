@@ -4,7 +4,7 @@ SwirPhoneOS carries a source-stage Android resource library named `SwirDesign`. 
 
 ## Scope
 
-All twenty current first-party system applications now statically link the same `SwirDesign` Android resource library and declare the same `Theme.SwirPhoneOS` application theme:
+All twenty current first-party system applications statically link the same `SwirDesign` Android resource library and declare the same `Theme.SwirPhoneOS` application theme:
 
 - Swir Phone
 - Swir Messages
@@ -29,17 +29,21 @@ All twenty current first-party system applications now statically link the same 
 
 This is meaningful source integration, but it is not proof that the final AOSP image builds, that the shared theme renders correctly on Cuttlefish, or that accessibility and visual review are complete. `all_system_apps_integrated=true` therefore describes source-stage theme integration only; `android_build_verified`, `runtime_visual_review_verified` and `accessibility_review_verified` remain false until real evidence exists.
 
-## Token-migration pilot
+## Direct token-migration cohort
 
-Theme inheritance alone is not enough to produce a coherent product if individual activities continue to hardcode their own palettes and touch geometry. The first direct token-migration cohort is therefore:
+Theme inheritance alone is not enough to produce a coherent product if individual activities continue to hardcode their own palettes and touch geometry. The current direct token-migration cohort is:
 
 - Swir Phone
 - Swir Messages
 - Swir Camera
+- Swir Settings
+- Swir Update
+- Swir Privacy
+- Swir Device Care
 
-These activities now use shared Swir background/text/accent resources and the common 48 dp minimum touch-target token instead of direct `android.graphics.Color` literals for their primary UI surfaces. Their existing functional and safety behavior is unchanged: Phone still performs explicit `ACTION_DIAL`, Messages still performs explicit `ACTION_SENDTO`, and Camera still provides capability inspection plus owner-visible capture hand-offs.
+These activities now use shared Swir background/text/accent/surface resources and the common 48 dp minimum touch-target token instead of direct `android.graphics.Color` literals for their primary UI surfaces. Their existing functional and safety behavior remains unchanged: Phone still performs explicit `ACTION_DIAL`, Messages still performs explicit `ACTION_SENDTO`, Camera keeps its existing source-stage capability/capture behavior, Settings and Privacy still route only to reviewed Android settings actions, Update remains read-only with package installation disabled, and Device Care remains a permission-free framework diagnostics surface.
 
-The remaining applications are themed through `Theme.SwirPhoneOS`, but their internal view-level styling is not yet claimed as fully tokenized. The contract tracks the pilot separately so source integration cannot be confused with complete visual migration.
+Four of the five beta-critical core applications are now directly tokenized: Settings, Update, Privacy and Device Care. Swir Files already inherits the shared theme but still contains legacy view-level color literals, so `all_core_apps_tokenized=false` remains truthful until that larger activity is migrated and reviewed. The remaining applications also stay theme-integrated but are not claimed as fully tokenized.
 
 ## Visual tokens
 
@@ -64,7 +68,7 @@ The six reviewed design-source files are included in `stage_manifest.d/design.js
 
 ## Fail-closed host contract
 
-`swirphoneos.design_contract.validate_design_contract()` now uses design contract v2 and verifies:
+`swirphoneos.design_contract.validate_design_contract()` now uses design contract v3 and verifies:
 
 1. the exact SwirDesign module identity and build properties;
 2. day/night token parity;
@@ -72,10 +76,11 @@ The six reviewed design-source files are included in `stage_manifest.d/design.js
 4. the shared theme/style inventory;
 5. static-library linkage from all twenty system applications;
 6. exact `Theme.SwirPhoneOS` manifest usage for all twenty applications;
-7. direct shared-token usage and no `android.graphics.Color` literals in the Phone/Messages/Camera pilot;
-8. exact staging-file and destination inventory with duplicate-key rejection.
+7. direct shared-token usage and no `android.graphics.Color` literals across the seven-app tokenized cohort;
+8. explicit accounting of tokenized beta-core applications, so Files cannot be silently counted as migrated;
+9. exact staging-file and destination inventory with duplicate-key rejection.
 
-Its public summary explicitly separates complete source-stage theme integration from the three-app direct-token pilot and keeps Android build, runtime visual review, accessibility review and device-write authorization false.
+Its public summary separates complete source-stage theme integration, the seven-app direct-token cohort and beta-core token coverage. Android build, runtime visual review, accessibility review and device-write authorization remain false.
 
 ## Runtime review still required
 
