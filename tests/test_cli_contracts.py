@@ -20,7 +20,7 @@ class CliContractTests(unittest.TestCase):
         self.assertEqual(code, 0)
         self.assertEqual(json.loads(output.getvalue())["schema_version"], 1)
 
-    def test_transaction_plan_and_evidence_cli_are_read_only(self) -> None:
+    def test_transaction_plan_evidence_and_journal_cli_are_read_only(self) -> None:
         target = b"target"
         rollback = b"rollback"
         with tempfile.TemporaryDirectory() as temporary:
@@ -72,6 +72,21 @@ class CliContractTests(unittest.TestCase):
             self.assertTrue(evidence_result["rollback_ready"])
             self.assertFalse(evidence_result["write_allowed"])
             self.assertFalse(evidence_result["owner_confirmation_recorded"])
+
+            journal_path = root / "journal.json"
+            create_output = StringIO()
+            with redirect_stdout(create_output), redirect_stderr(StringIO()):
+                self.assertEqual(main(["transaction-evidence", "--plan", str(plan_path), "--artifacts", str(root), "--journal", str(journal_path)]), 0)
+            self.assertTrue(journal_path.is_file())
+            self.assertFalse(json.loads(create_output.getvalue())["write_allowed"])
+
+            journal_output = StringIO()
+            with redirect_stdout(journal_output), redirect_stderr(StringIO()):
+                self.assertEqual(main(["transaction-journal", "--file", str(journal_path)]), 0)
+            journal_result = json.loads(journal_output.getvalue())
+            self.assertEqual(journal_result["state"], "ARTIFACTS_VERIFIED_READ_ONLY")
+            self.assertFalse(journal_result["write_allowed"])
+            self.assertFalse(journal_result["owner_confirmation_recorded"])
 
 
 if __name__ == "__main__":
