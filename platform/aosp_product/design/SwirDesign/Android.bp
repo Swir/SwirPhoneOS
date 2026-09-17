@@ -1,0 +1,7 @@
+android_library {
+    name: "SwirDesign",
+    resource_dirs: ["res"],
+    sdk_version: "current",
+    min_sdk_version: "35",
+    product_specific: true,
+}

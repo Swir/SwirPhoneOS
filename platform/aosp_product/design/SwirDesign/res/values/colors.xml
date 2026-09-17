@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="swir_background">#F4FAFF</color>
+    <color name="swir_surface">#FFFFFF</color>
+    <color name="swir_surface_alt">#EAF7FC</color>
+    <color name="swir_accent">#0066CC</color>
+    <color name="swir_accent_cyan">#007A99</color>
+    <color name="swir_text_primary">#07111C</color>
+    <color name="swir_text_secondary">#365064</color>
+    <color name="swir_outline">#B8D4E2</color>
+    <color name="swir_error">#B3261E</color>
+    <color name="swir_success">#126E49</color>
+</resources>
