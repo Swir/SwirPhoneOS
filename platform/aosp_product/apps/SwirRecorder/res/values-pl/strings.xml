@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Swir Recorder</string>
+    <string name="title">Swir Recorder</string>
+    <string name="subtitle">Prywatne lokalne nagrywanie głosu z jawnym eksportem.</string>
+    <string name="status_idle">Mikrofon gotowy</string>
+    <string name="status_recording">Nagrywanie</string>
+    <string name="status_ready">Nagranie zapisane lokalnie</string>
+    <string name="status_playing">Odtwarzanie nagrania</string>
+    <string name="duration_zero">00:00:00</string>
+    <string name="duration_value">Czas: %1$s</string>
+    <string name="start_recording">Rozpocznij nagrywanie</string>
+    <string name="stop_recording">Zatrzymaj nagrywanie</string>
+    <string name="play">Odtwórz</string>
+    <string name="stop_playback">Zatrzymaj</string>
+    <string name="export">Eksportuj</string>
+    <string name="delete">Usuń</string>
+    <string name="privacy_note">Nagrania pozostają w prywatnej pamięci aplikacji, dopóki ich jawnie nie wyeksportujesz.</string>
+    <string name="recording_failed">Nie udało się zapisać nagrania. Spróbuj ponownie po krótkiej chwili.</string>
+    <string name="saved">Nagranie zapisane lokalnie</string>
+    <string name="no_recording">Nie ma jeszcze zapisanego nagrania.</string>
+    <string name="playback_failed">Nie udało się odtworzyć nagrania.</string>
+    <string name="export_success">Nagranie wyeksportowane</string>
+    <string name="export_failed">Nie udało się wyeksportować nagrania.</string>
+    <string name="delete_title">Usunąć nagranie?</string>
+    <string name="delete_message">To usunie prywatne lokalne nagranie ze Swir Recorder.</string>
+    <string name="delete_confirm">Usuń</string>
+    <string name="cancel">Anuluj</string>
+    <string name="microphone_permission_denied">Uprawnienie do mikrofonu jest wymagane do nagrywania dźwięku.</string>
+</resources>
