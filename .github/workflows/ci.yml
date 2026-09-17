@@ -96,6 +96,18 @@ jobs:
           mkdir -p _calendar-java-test
           javac -d _calendar-java-test platform/aosp_product/apps/SwirCalendar/src/org/swir/phoneos/calendar/EventPolicy.java platform/aosp_product/apps/SwirCalendar/hosttest/EventPolicyHostTest.java
           java -cp _calendar-java-test org.swir.phoneos.calendar.EventPolicyHostTest
+      - name: Host-test SwirGallery media policy
+        if: runner.os == 'Linux' && matrix.python == '3.14'
+        run: |
+          mkdir -p _gallery-java-test
+          javac -d _gallery-java-test platform/aosp_product/apps/SwirGallery/src/org/swir/phoneos/gallery/MediaPolicy.java platform/aosp_product/apps/SwirGallery/hosttest/MediaPolicyHostTest.java
+          java -cp _gallery-java-test org.swir.phoneos.gallery.MediaPolicyHostTest
+      - name: Host-test SwirRecorder recording policy
+        if: runner.os == 'Linux' && matrix.python == '3.14'
+        run: |
+          mkdir -p _recorder-java-test
+          javac -d _recorder-java-test platform/aosp_product/apps/SwirRecorder/src/org/swir/phoneos/recorder/RecorderPolicy.java platform/aosp_product/apps/SwirRecorder/hosttest/RecorderPolicyHostTest.java
+          java -cp _recorder-java-test org.swir.phoneos.recorder.RecorderPolicyHostTest
       - name: Host-test SwirRoot fail-closed transition policy
         if: runner.os == 'Linux' && matrix.python == '3.14'
         run: |

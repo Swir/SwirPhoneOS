@@ -34,6 +34,7 @@ class _AppSpec:
     host_test: str
     icon_file: str
     implemented_capabilities: tuple[str, ...]
+    allowed_permissions: tuple[str, ...] = ()
 
 
 _LOCALES = ("en", "pl", "nb", "de", "es", "fr", "pt", "ar")
@@ -52,6 +53,8 @@ _SPECS = {
     "clock": _AppSpec("clock","SwirClock","SwirClock","org.swir.phoneos.clock","src/org/swir/phoneos/clock/ClockCore.java","src/org/swir/phoneos/clock/MainActivity.java","hosttest/ClockCoreHostTest.java","res/drawable/ic_clock.xml",("alarms","timers","stopwatch","world_clock")),
     "notes": _AppSpec("notes","SwirNotes","SwirNotes","org.swir.phoneos.notes","src/org/swir/phoneos/notes/NotePolicy.java","src/org/swir/phoneos/notes/MainActivity.java","hosttest/NotePolicyHostTest.java","res/drawable/ic_notes.xml",("offline_notes","export","share")),
     "calendar": _AppSpec("calendar","SwirCalendar","SwirCalendar","org.swir.phoneos.calendar","src/org/swir/phoneos/calendar/EventPolicy.java","src/org/swir/phoneos/calendar/MainActivity.java","hosttest/EventPolicyHostTest.java","res/drawable/ic_calendar.xml",("local_calendar",)),
+    "gallery": _AppSpec("gallery","SwirGallery","SwirGallery","org.swir.phoneos.gallery","src/org/swir/phoneos/gallery/MediaPolicy.java","src/org/swir/phoneos/gallery/MainActivity.java","hosttest/MediaPolicyHostTest.java","res/drawable/ic_gallery.xml",("local_media","share","safe_delete"),("android.permission.READ_MEDIA_IMAGES","android.permission.READ_MEDIA_VIDEO")),
+    "recorder": _AppSpec("recorder","SwirRecorder","SwirRecorder","org.swir.phoneos.recorder","src/org/swir/phoneos/recorder/RecorderPolicy.java","src/org/swir/phoneos/recorder/MainActivity.java","hosttest/RecorderPolicyHostTest.java","res/drawable/ic_recorder.xml",("audio_recording","microphone_state","file_export"),("android.permission.RECORD_AUDIO",)),
     "swirroot": _AppSpec("swirroot","SwirRoot","SwirRoot","org.swir.phoneos.swirroot","src/org/swir/phoneos/swirroot/RootPolicy.java","src/org/swir/phoneos/swirroot/MainActivity.java","hosttest/RootPolicyHostTest.java","res/drawable/ic_swirroot.xml",("root_state","authorization_audit")),
 }
 _SETTINGS_ACTIONS = frozenset({"android.settings.WIFI_SETTINGS","android.settings.BLUETOOTH_SETTINGS","android.settings.DISPLAY_SETTINGS","android.settings.SOUND_SETTINGS","android.settings.SECURITY_SETTINGS","android.settings.PRIVACY_SETTINGS","android.settings.ACCESSIBILITY_SETTINGS","android.settings.LOCALE_SETTINGS","android.settings.INTERNAL_STORAGE_SETTINGS","android.settings.APPLICATION_SETTINGS"})
@@ -119,9 +122,15 @@ def _validate_common(product_root: Path, product_mk: str, app, spec: _AppSpec, s
         raise AndroidAppSourceError(f"{spec.module} package identity does not match the registry.")
     if app.package != spec.java_package:
         raise AndroidAppSourceError(f"{spec.module} registry package drifted from its source contract.")
-    if manifest.findall("uses-permission"):
-        raise AndroidAppSourceError(f"{spec.module} source slice must not request Android permissions.")
     ns = "{http://schemas.android.com/apk/res/android}"
+    permission_nodes = manifest.findall("uses-permission")
+    permission_names = [(node.get(ns + "name") or "").strip() for node in permission_nodes]
+    if any(not name for name in permission_names) or len(permission_names) != len(set(permission_names)):
+        raise AndroidAppSourceError(f"{spec.module} manifest permissions must be unique and named.")
+    if any(set(node.attrib) != {ns + "name"} for node in permission_nodes):
+        raise AndroidAppSourceError(f"{spec.module} permission declarations must not carry unreviewed attributes.")
+    if frozenset(permission_names) != frozenset(spec.allowed_permissions):
+        raise AndroidAppSourceError(f"{spec.module} manifest permissions do not match the reviewed least-privilege allowlist.")
     application = manifest.find("application")
     if application is None or application.get(ns + "supportsRtl") != "true" or application.get(ns + "allowBackup") != "false":
         raise AndroidAppSourceError(f"{spec.module} manifest must be RTL-aware and backup-disabled.")
@@ -196,6 +205,18 @@ def _validate_calendar(logic, activity):
     if any(x not in activity for x in required) or "CalendarContract" in activity: raise AndroidAppSourceError("SwirCalendar must remain local-first until provider integration is reviewed.")
 
 
+def _validate_gallery(logic, activity):
+    if any(x not in logic for x in ("supportedMime","matches","isVideo","safeEpochSeconds")): raise AndroidAppSourceError("SwirGallery host-tested media policy drifted.")
+    required = ("Manifest.permission.READ_MEDIA_IMAGES","Manifest.permission.READ_MEDIA_VIDEO","MediaStore.Files.getContentUri","MediaStore.createDeleteRequest","startIntentSenderForResult","Intent.ACTION_VIEW","Intent.ACTION_SEND","MediaPolicy.matches")
+    if any(x not in activity for x in required): raise AndroidAppSourceError("SwirGallery must retain scoped MediaStore browse/share and owner-confirmed delete flows.")
+
+
+def _validate_recorder(logic, activity):
+    if any(x not in logic for x in ("recordingFileName","isRecordingFile","canExport","canRecord","MAX_EXPORT_BYTES")): raise AndroidAppSourceError("SwirRecorder host-tested recording policy drifted.")
+    required = ("Manifest.permission.RECORD_AUDIO","requestPermissions","MediaRecorder.AudioSource.MIC","MediaRecorder.OutputFormat.MPEG_4","MediaRecorder.AudioEncoder.AAC","recorder.pause()","recorder.resume()","getFilesDir()","AudioManager","isMicrophoneMute","Intent.ACTION_CREATE_DOCUMENT","openOutputStream","AlertDialog.Builder","stopRecording(false)")
+    if any(x not in activity for x in required): raise AndroidAppSourceError("SwirRecorder must retain foreground-only recording, microphone state, private storage and explicit export/delete flows.")
+
+
 def _validate_swirroot(logic: str, activity: str, java_bundle: str) -> None:
     policy_required = ("State.UNAVAILABLE","exactBuildMatch","verifiedDeviceProfile","ownerConfirmed","rollbackMaterialVerified","journalAvailable","updateStateSafe","expectedNonRootStateKnown","writeBackendEnabled","supportedBuild","evaluateEnable","evaluateUnroot")
     if any(token not in logic for token in policy_required): raise AndroidAppSourceError("SwirRoot must retain the complete fail-closed enable/unroot gate model.")
@@ -207,7 +228,7 @@ def _validate_swirroot(logic: str, activity: str, java_bundle: str) -> None:
     if any(token in java_bundle for token in dangerous): raise AndroidAppSourceError("SwirRoot source stage must not contain a root/device mutation primitive.")
 
 
-_VALIDATORS = {"calculator":_validate_calculator,"settings":_validate_settings,"files":_validate_files,"device_care":_validate_device_care,"update":_validate_update,"privacy":_validate_privacy,"clock":_validate_clock,"notes":_validate_notes,"calendar":_validate_calendar}
+_VALIDATORS = {"calculator":_validate_calculator,"settings":_validate_settings,"files":_validate_files,"device_care":_validate_device_care,"update":_validate_update,"privacy":_validate_privacy,"clock":_validate_clock,"notes":_validate_notes,"calendar":_validate_calendar,"gallery":_validate_gallery,"recorder":_validate_recorder}
 
 
 def validate_android_app_sources(product_root: Path = Path("platform/aosp_product"), registry_path: Path = Path("system_apps/manifest.json")) -> AndroidAppSourceSummary:

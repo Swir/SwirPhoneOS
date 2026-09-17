@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Swir Gallery</string>
+    <string name="subtitle">Dine lokale bilder og videoer med avgrenset tilgang og eierbekreftet sletting.</string>
+    <string name="media_permission_title">Medietilgang</string>
+    <string name="media_permission_body">Tillat bilde- og videotilgang for å bla i lokale medier. Swir Gallery ber ikke om bred lagringstilgang.</string>
+    <string name="permission_granted">Medietilgang er tilgjengelig. Bare innvilgede bilde- og videosamlinger vises.</string>
+    <string name="grant_access">Gi tilgang</string>
+    <string name="refresh">Oppdater</string>
+    <string name="search_hint">Søk i bilder og videoer</string>
+    <string name="empty">Ingen samsvarende medier er tilgjengelige.</string>
+    <string name="image">Bilde</string>
+    <string name="video">Video</string>
+    <string name="item_meta">%1$s · %2$s</string>
+    <string name="unnamed">Medium uten navn</string>
+    <string name="open">Åpne</string>
+    <string name="share">Del</string>
+    <string name="delete">Slett</string>
+    <string name="share_title">Del medium</string>
+    <string name="open_unavailable">Ingen app kan åpne dette mediet.</string>
+    <string name="share_unavailable">Ingen app kan dele dette mediet.</string>
+    <string name="delete_unavailable">Android kunne ikke åpne den eierbekreftede sletteforespørselen.</string>
+    <string name="permission_denied">Medietilgang ble ikke gitt.</string>
+    <string name="media_load_failed">Lokale medier kunne ikke leses.</string>
+    <string name="delete_complete">Sletting av medium ble bekreftet.</string>
+    <string name="delete_cancelled">Sletting av medium ble avbrutt.</string>
+    <string name="footer">by Swir · GitHub</string>
+</resources>

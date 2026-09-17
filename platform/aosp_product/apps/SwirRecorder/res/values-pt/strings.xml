@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Swir Recorder</string>
+    <string name="subtitle">Gravação de voz apenas em primeiro plano, com armazenamento local privado e exportação explícita.</string>
+    <string name="microphone_title">Microfone</string>
+    <string name="microphone_permission_body">A permissão do microfone é necessária apenas enquanto grava deliberadamente.</string>
+    <string name="grant_microphone">Permitir microfone</string>
+    <string name="microphone_status">%1$s · %2$s</string>
+    <string name="permission_granted">Permissão concedida</string>
+    <string name="permission_missing">Permissão em falta</string>
+    <string name="permission_denied">A permissão do microfone não foi concedida.</string>
+    <string name="mic_muted">Microfone silenciado</string>
+    <string name="mic_available">Microfone disponível</string>
+    <string name="microphone_muted_block">A gravação fica bloqueada enquanto o microfone estiver silenciado.</string>
+    <string name="recording_controls">Controlos de gravação</string>
+    <string name="state_idle">Pronto</string>
+    <string name="state_recording">A gravar</string>
+    <string name="state_paused">Em pausa</string>
+    <string name="start_recording">Gravar</string>
+    <string name="pause">Pausa</string>
+    <string name="resume">Retomar</string>
+    <string name="stop">Parar</string>
+    <string name="recordings">Gravações locais</string>
+    <string name="empty">Ainda não existem gravações locais.</string>
+    <string name="recording_meta">%1$s · %2$s</string>
+    <string name="play">Reproduzir</string>
+    <string name="export">Exportar</string>
+    <string name="delete">Eliminar</string>
+    <string name="delete_title">Eliminar gravação?</string>
+    <string name="delete_body">Isto remove do dispositivo a gravação privada da aplicação.</string>
+    <string name="cancel">Cancelar</string>
+    <string name="delete_confirm">Eliminar</string>
+    <string name="delete_failed">Não foi possível eliminar a gravação.</string>
+    <string name="recording_started">Gravação iniciada.</string>
+    <string name="recording_stopped">Gravação guardada localmente.</string>
+    <string name="recording_failed">Não foi possível concluir a gravação em segurança.</string>
+    <string name="playback_failed">Não foi possível reproduzir a gravação.</string>
+    <string name="export_complete">Gravação exportada.</string>
+    <string name="export_failed">A exportação da gravação falhou.</string>
+    <string name="invalid_recording">A gravação está vazia ou excede o limite seguro de exportação.</string>
+    <string name="footer">by Swir · GitHub</string>
+</resources>

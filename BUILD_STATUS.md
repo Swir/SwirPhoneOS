@@ -18,7 +18,7 @@ Version: **0.0.2.dev0 + unreleased Android-source/platform hardening**. Updated:
 | AOSP run evidence | `aosp-run-evidence` rejects cross-run mixing across preflight, plan, resolved manifest, pre/post-build staging and build evidence; runtime/smoke/bundle are accepted only as one exact optional group; produces SHA-256-bound `BUILD_ONLY` or `BUILD_AND_RUNTIME` evidence without status promotion |
 | Cuttlefish runtime evidence | Read-only exact product/device/manufacturer/API/build-type/fingerprint/package/launcher collector plus build/runtime fingerprint binding implemented; not yet run against a built SwirPhoneOS image |
 | Cuttlefish app launch smoke | Exact-identity local-emulator gate + package-local `am start -W` + resumed-activity confirmation implemented for all source-ready apps; not yet run against a built SwirPhoneOS image |
-| Cuttlefish product | `PRODUCT_PACKAGES` includes Calculator, Settings, Files, DeviceCare, Update, Privacy, Clock, Notes, Calendar and SwirRoot; **not built or booted** |
+| Cuttlefish product | `PRODUCT_PACKAGES` includes Calculator, Settings, Files, DeviceCare, Update, Privacy, Clock, Notes, Calendar, Gallery, Recorder and SwirRoot; **not built or booted** |
 | SwirCalculator | `ANDROID_SOURCE`; basic math host-tested; Android runtime not verified |
 | SwirSettings | `ANDROID_SOURCE`; reviewed settings routes/search/device state; Android runtime not verified |
 | SwirFiles | `ANDROID_SOURCE`; user-granted SAF file operations; Android runtime not verified |
@@ -28,9 +28,11 @@ Version: **0.0.2.dev0 + unreleased Android-source/platform hardening**. Updated:
 | SwirClock | `ANDROID_SOURCE`; time/stopwatch/timer/user-visible alarm hand-off |
 | SwirNotes | `ANDROID_SOURCE`; local SQLite CRUD/search/share/Markdown export, 8 locales |
 | SwirCalendar | `ANDROID_SOURCE`; local SQLite agenda/date-time editing/share/ICS export, 8 locales; provider bridge not implemented |
+| SwirGallery | `ANDROID_SOURCE`; scoped photo/video MediaStore browse/search/open/share plus Android owner-confirmed deletion; albums not implemented; runtime not verified |
+| SwirRecorder | `ANDROID_SOURCE`; foreground-only microphone recording to app-private AAC/MPEG-4 files, pause/resume/stop, playback, explicit document export and confirmed local deletion; exact device audio behavior not verified |
 | SwirRoot | `ANDROID_SOURCE`; original localized owner UI + non-exported status/diagnostic service + bounded private review audit + host-tested gate policy; mutation backend hard-disabled, supported builds = 0, state = `UNAVAILABLE`; guided enable/unroot not implemented |
-| Android source safety | Validator checks all production Java files for forbidden execution/network/storage primitives; SwirRoot additionally requires disabled mutation support and exact-build/profile/rollback/journal/owner gates |
-| System apps | 20-app registry: **10 `ANDROID_SOURCE`, 10 `HOST_CONTRACT`, 0 `ANDROID_RUNTIME`, 0 hardware-verified** |
+| Android source safety | Validator scans all production Java for forbidden execution/network/broad-storage primitives and now requires an exact per-app permission allowlist; Gallery is limited to `READ_MEDIA_IMAGES`/`READ_MEDIA_VIDEO`, Recorder to `RECORD_AUDIO`, permission-free apps remain permission-free, and SwirRoot additionally requires disabled mutation support plus exact-build/profile/rollback/journal/owner gates |
+| System apps | 20-app registry: **12 `ANDROID_SOURCE`, 8 `HOST_CONTRACT`, 0 `ANDROID_RUNTIME`, 0 hardware-verified** |
 | SwirRoot host policy | `write_operations_enabled=false`; supported root builds = 0; exploit/bypass methods forbidden |
 | Resolved full AOSP source manifest | Not captured from a real synchronized workspace |
 | Android/GSI image | Not built |
@@ -41,4 +43,4 @@ Version: **0.0.2.dev0 + unreleased Android-source/platform hardening**. Updated:
 | Project ledger | **2%**, 1/10 weighted milestones; **Beta 0/9** |
 | Beta Release | Blocked; no release published |
 
-Host CI can verify Python contracts, provenance/run-chain/bundle/failure-evidence rejection logic, desktop startup/packaging, staging safety, read-only hardware correlation, local transaction artifact/journal safety, Cuttlefish smoke allowlist/parsing logic, source-wide Android safety rules and pure-Java logic/policies for the ten source-ready apps. It cannot establish Android runtime compatibility, working root, recovery safety or hardware support. AOSP/platform credit remains blocked until the pinned source synchronizes and builds; emulator credit remains blocked until the resulting exact image boots and reviewed runtime plus app-smoke evidence is recorded. Failure evidence improves first-build debugging but grants no milestone credit. Install/restore credit remains blocked until an exact physically verified device/profile has a tested write and rollback/stock-restore path.
+Host CI can verify Python contracts, provenance/run-chain/bundle/failure-evidence rejection logic, desktop startup/packaging, staging safety, read-only hardware correlation, local transaction artifact/journal safety, Cuttlefish smoke allowlist/parsing logic, exact Android permission allowlists, source-wide Android safety rules and pure-Java logic/policies for the twelve source-ready apps. It cannot establish Android runtime compatibility, working root, recovery safety or hardware support. AOSP/platform credit remains blocked until the pinned source synchronizes and builds; emulator credit remains blocked until the resulting exact image boots and reviewed runtime plus app-smoke evidence is recorded. Failure evidence improves first-build debugging but grants no milestone credit. Recorder audio behavior and all physical install/restore claims remain blocked until exact-device evidence exists.

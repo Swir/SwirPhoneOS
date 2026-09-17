@@ -20,4 +20,6 @@ PRODUCT_PACKAGES += \
     SwirClock \
     SwirNotes \
     SwirCalendar \
+    SwirGallery \
+    SwirRecorder \
     SwirRoot

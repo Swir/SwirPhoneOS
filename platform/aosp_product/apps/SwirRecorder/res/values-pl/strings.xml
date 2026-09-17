@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Swir Recorder</string>
+    <string name="subtitle">Nagrywanie głosu tylko na pierwszym planie, z prywatnym zapisem lokalnym i jawnym eksportem.</string>
+    <string name="microphone_title">Mikrofon</string>
+    <string name="microphone_permission_body">Uprawnienie mikrofonu jest wymagane tylko podczas świadomego nagrywania.</string>
+    <string name="grant_microphone">Zezwól na mikrofon</string>
+    <string name="microphone_status">%1$s · %2$s</string>
+    <string name="permission_granted">Uprawnienie przyznane</string>
+    <string name="permission_missing">Brak uprawnienia</string>
+    <string name="permission_denied">Uprawnienie mikrofonu nie zostało przyznane.</string>
+    <string name="mic_muted">Mikrofon wyciszony</string>
+    <string name="mic_available">Mikrofon dostępny</string>
+    <string name="microphone_muted_block">Nagrywanie jest zablokowane, gdy mikrofon jest wyciszony.</string>
+    <string name="recording_controls">Sterowanie nagrywaniem</string>
+    <string name="state_idle">Gotowy</string>
+    <string name="state_recording">Nagrywanie</string>
+    <string name="state_paused">Wstrzymane</string>
+    <string name="start_recording">Nagraj</string>
+    <string name="pause">Wstrzymaj</string>
+    <string name="resume">Wznów</string>
+    <string name="stop">Zatrzymaj</string>
+    <string name="recordings">Lokalne nagrania</string>
+    <string name="empty">Brak lokalnych nagrań.</string>
+    <string name="recording_meta">%1$s · %2$s</string>
+    <string name="play">Odtwórz</string>
+    <string name="export">Eksportuj</string>
+    <string name="delete">Usuń</string>
+    <string name="delete_title">Usunąć nagranie?</string>
+    <string name="delete_body">To usunie prywatne nagranie aplikacji z tego urządzenia.</string>
+    <string name="cancel">Anuluj</string>
+    <string name="delete_confirm">Usuń</string>
+    <string name="delete_failed">Nie udało się usunąć nagrania.</string>
+    <string name="recording_started">Nagrywanie rozpoczęte.</string>
+    <string name="recording_stopped">Nagranie zapisano lokalnie.</string>
+    <string name="recording_failed">Nie udało się bezpiecznie zakończyć nagrywania.</string>
+    <string name="playback_failed">Nie udało się odtworzyć nagrania.</string>
+    <string name="export_complete">Nagranie wyeksportowane.</string>
+    <string name="export_failed">Eksport nagrania nie powiódł się.</string>
+    <string name="invalid_recording">Nagranie jest puste lub przekracza limit bezpieczeństwa eksportu.</string>
+    <string name="footer">by Swir · GitHub</string>
+</resources>

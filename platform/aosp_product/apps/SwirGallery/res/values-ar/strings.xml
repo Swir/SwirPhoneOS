@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Swir Gallery</string>
+    <string name="subtitle">صورك ومقاطع الفيديو المحلية مع وصول محدود وحذف يؤكده المالك.</string>
+    <string name="media_permission_title">الوصول إلى الوسائط</string>
+    <string name="media_permission_body">اسمح بالوصول إلى الصور والفيديو لتصفح الوسائط المحلية. لا يطلب Swir Gallery وصولاً واسعاً إلى التخزين.</string>
+    <string name="permission_granted">الوصول إلى الوسائط متاح. يتم عرض مجموعات الصور والفيديو المسموح بها فقط.</string>
+    <string name="grant_access">السماح بالوصول</string>
+    <string name="refresh">تحديث</string>
+    <string name="search_hint">البحث في الصور والفيديو</string>
+    <string name="empty">لا توجد وسائط مطابقة متاحة.</string>
+    <string name="image">صورة</string>
+    <string name="video">فيديو</string>
+    <string name="item_meta">%1$s · %2$s</string>
+    <string name="unnamed">وسائط بلا اسم</string>
+    <string name="open">فتح</string>
+    <string name="share">مشاركة</string>
+    <string name="delete">حذف</string>
+    <string name="share_title">مشاركة الوسائط</string>
+    <string name="open_unavailable">لا يوجد تطبيق يمكنه فتح هذا العنصر.</string>
+    <string name="share_unavailable">لا يوجد تطبيق يمكنه مشاركة هذا العنصر.</string>
+    <string name="delete_unavailable">تعذر على Android فتح طلب الحذف المؤكد من المالك.</string>
+    <string name="permission_denied">لم يتم منح الوصول إلى الوسائط.</string>
+    <string name="media_load_failed">تعذرت قراءة الوسائط المحلية.</string>
+    <string name="delete_complete">تم تأكيد حذف الوسائط.</string>
+    <string name="delete_cancelled">تم إلغاء حذف الوسائط.</string>
+    <string name="footer">by Swir · GitHub</string>
+</resources>

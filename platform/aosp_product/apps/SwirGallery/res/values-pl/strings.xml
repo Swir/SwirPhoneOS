@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Swir Gallery</string>
+    <string name="subtitle">Twoje lokalne zdjęcia i filmy z ograniczonym dostępem i usuwaniem potwierdzanym przez właściciela.</string>
+    <string name="media_permission_title">Dostęp do multimediów</string>
+    <string name="media_permission_body">Zezwól na dostęp do zdjęć i filmów, aby przeglądać lokalne multimedia. Swir Gallery nie żąda szerokiego dostępu do pamięci.</string>
+    <string name="permission_granted">Dostęp do multimediów jest dostępny. Wyświetlane są tylko przyznane kolekcje zdjęć i filmów.</string>
+    <string name="grant_access">Zezwól</string>
+    <string name="refresh">Odśwież</string>
+    <string name="search_hint">Szukaj zdjęć i filmów</string>
+    <string name="empty">Brak pasujących multimediów.</string>
+    <string name="image">Zdjęcie</string>
+    <string name="video">Film</string>
+    <string name="item_meta">%1$s · %2$s</string>
+    <string name="unnamed">Multimedia bez nazwy</string>
+    <string name="open">Otwórz</string>
+    <string name="share">Udostępnij</string>
+    <string name="delete">Usuń</string>
+    <string name="share_title">Udostępnij multimedia</string>
+    <string name="open_unavailable">Brak aplikacji, która może otworzyć ten element.</string>
+    <string name="share_unavailable">Brak aplikacji, która może udostępnić ten element.</string>
+    <string name="delete_unavailable">Android nie mógł otworzyć żądania usunięcia z potwierdzeniem właściciela.</string>
+    <string name="permission_denied">Dostęp do multimediów nie został przyznany.</string>
+    <string name="media_load_failed">Nie udało się odczytać lokalnych multimediów.</string>
+    <string name="delete_complete">Usunięcie multimediów zostało potwierdzone.</string>
+    <string name="delete_cancelled">Usuwanie multimediów anulowano.</string>
+    <string name="footer">by Swir · GitHub</string>
+</resources>

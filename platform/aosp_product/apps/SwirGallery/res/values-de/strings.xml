@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Swir Gallery</string>
+    <string name="subtitle">Lokale Fotos und Videos mit begrenztem Zugriff und vom Eigentümer bestätigtem Löschen.</string>
+    <string name="media_permission_title">Medienzugriff</string>
+    <string name="media_permission_body">Erlaube Foto- und Videozugriff, um lokale Medien anzuzeigen. Swir Gallery fordert keinen breiten Speicherzugriff an.</string>
+    <string name="permission_granted">Medienzugriff ist verfügbar. Es werden nur freigegebene Foto- und Videosammlungen angezeigt.</string>
+    <string name="grant_access">Zugriff erlauben</string>
+    <string name="refresh">Aktualisieren</string>
+    <string name="search_hint">Fotos und Videos suchen</string>
+    <string name="empty">Keine passenden Medien verfügbar.</string>
+    <string name="image">Foto</string>
+    <string name="video">Video</string>
+    <string name="item_meta">%1$s · %2$s</string>
+    <string name="unnamed">Unbenanntes Medium</string>
+    <string name="open">Öffnen</string>
+    <string name="share">Teilen</string>
+    <string name="delete">Löschen</string>
+    <string name="share_title">Medium teilen</string>
+    <string name="open_unavailable">Keine App kann dieses Medium öffnen.</string>
+    <string name="share_unavailable">Keine App kann dieses Medium teilen.</string>
+    <string name="delete_unavailable">Android konnte die bestätigungspflichtige Löschanfrage nicht öffnen.</string>
+    <string name="permission_denied">Medienzugriff wurde nicht gewährt.</string>
+    <string name="media_load_failed">Lokale Medien konnten nicht gelesen werden.</string>
+    <string name="delete_complete">Löschen des Mediums wurde bestätigt.</string>
+    <string name="delete_cancelled">Löschen des Mediums wurde abgebrochen.</string>
+    <string name="footer">by Swir · GitHub</string>
+</resources>

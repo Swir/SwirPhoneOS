@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Swir Recorder</string>
+    <string name="subtitle">Sprachaufnahme nur im Vordergrund mit privater lokaler Speicherung und explizitem Export.</string>
+    <string name="microphone_title">Mikrofon</string>
+    <string name="microphone_permission_body">Die Mikrofonberechtigung wird nur während einer bewusst gestarteten Aufnahme benötigt.</string>
+    <string name="grant_microphone">Mikrofon erlauben</string>
+    <string name="microphone_status">%1$s · %2$s</string>
+    <string name="permission_granted">Berechtigung erteilt</string>
+    <string name="permission_missing">Berechtigung fehlt</string>
+    <string name="permission_denied">Die Mikrofonberechtigung wurde nicht erteilt.</string>
+    <string name="mic_muted">Mikrofon stummgeschaltet</string>
+    <string name="mic_available">Mikrofon verfügbar</string>
+    <string name="microphone_muted_block">Aufnahme ist blockiert, solange das Mikrofon stummgeschaltet ist.</string>
+    <string name="recording_controls">Aufnahmesteuerung</string>
+    <string name="state_idle">Bereit</string>
+    <string name="state_recording">Aufnahme läuft</string>
+    <string name="state_paused">Pausiert</string>
+    <string name="start_recording">Aufnehmen</string>
+    <string name="pause">Pause</string>
+    <string name="resume">Fortsetzen</string>
+    <string name="stop">Stopp</string>
+    <string name="recordings">Lokale Aufnahmen</string>
+    <string name="empty">Noch keine lokalen Aufnahmen.</string>
+    <string name="recording_meta">%1$s · %2$s</string>
+    <string name="play">Abspielen</string>
+    <string name="export">Exportieren</string>
+    <string name="delete">Löschen</string>
+    <string name="delete_title">Aufnahme löschen?</string>
+    <string name="delete_body">Dadurch wird die private Aufnahme dieser App vom Gerät entfernt.</string>
+    <string name="cancel">Abbrechen</string>
+    <string name="delete_confirm">Löschen</string>
+    <string name="delete_failed">Die Aufnahme konnte nicht gelöscht werden.</string>
+    <string name="recording_started">Aufnahme gestartet.</string>
+    <string name="recording_stopped">Aufnahme lokal gespeichert.</string>
+    <string name="recording_failed">Die Aufnahme konnte nicht sicher abgeschlossen werden.</string>
+    <string name="playback_failed">Die Aufnahme konnte nicht abgespielt werden.</string>
+    <string name="export_complete">Aufnahme exportiert.</string>
+    <string name="export_failed">Export der Aufnahme fehlgeschlagen.</string>
+    <string name="invalid_recording">Die Aufnahme ist leer oder überschreitet das sichere Exportlimit.</string>
+    <string name="footer">by Swir · GitHub</string>
+</resources>

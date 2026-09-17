@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Swir Recorder</string>
+    <string name="subtitle">Stemmeopptak bare i forgrunnen, med privat lokal lagring og eksplisitt eksport.</string>
+    <string name="microphone_title">Mikrofon</string>
+    <string name="microphone_permission_body">Mikrofontillatelse kreves bare mens du bevisst tar opp.</string>
+    <string name="grant_microphone">Gi mikrofontilgang</string>
+    <string name="microphone_status">%1$s · %2$s</string>
+    <string name="permission_granted">Tillatelse gitt</string>
+    <string name="permission_missing">Tillatelse mangler</string>
+    <string name="permission_denied">Mikrofontillatelse ble ikke gitt.</string>
+    <string name="mic_muted">Mikrofon dempet</string>
+    <string name="mic_available">Mikrofon tilgjengelig</string>
+    <string name="microphone_muted_block">Opptak er blokkert mens mikrofonen er dempet.</string>
+    <string name="recording_controls">Opptakskontroller</string>
+    <string name="state_idle">Klar</string>
+    <string name="state_recording">Tar opp</string>
+    <string name="state_paused">Pauset</string>
+    <string name="start_recording">Ta opp</string>
+    <string name="pause">Pause</string>
+    <string name="resume">Fortsett</string>
+    <string name="stop">Stopp</string>
+    <string name="recordings">Lokale opptak</string>
+    <string name="empty">Ingen lokale opptak ennå.</string>
+    <string name="recording_meta">%1$s · %2$s</string>
+    <string name="play">Spill av</string>
+    <string name="export">Eksporter</string>
+    <string name="delete">Slett</string>
+    <string name="delete_title">Slette opptaket?</string>
+    <string name="delete_body">Dette fjerner det app-private opptaket fra enheten.</string>
+    <string name="cancel">Avbryt</string>
+    <string name="delete_confirm">Slett</string>
+    <string name="delete_failed">Opptaket kunne ikke slettes.</string>
+    <string name="recording_started">Opptaket startet.</string>
+    <string name="recording_stopped">Opptaket ble lagret lokalt.</string>
+    <string name="recording_failed">Opptaket kunne ikke fullføres sikkert.</string>
+    <string name="playback_failed">Opptaket kunne ikke spilles av.</string>
+    <string name="export_complete">Opptaket ble eksportert.</string>
+    <string name="export_failed">Eksport av opptaket mislyktes.</string>
+    <string name="invalid_recording">Opptaket er tomt eller utenfor sikkerhetsgrensen for eksport.</string>
+    <string name="footer">by Swir · GitHub</string>
+</resources>

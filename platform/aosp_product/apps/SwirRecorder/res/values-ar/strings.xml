@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Swir Recorder</string>
+    <string name="subtitle">تسجيل صوتي في الواجهة فقط، مع تخزين محلي خاص وتصدير صريح.</string>
+    <string name="microphone_title">الميكروفون</string>
+    <string name="microphone_permission_body">إذن الميكروفون مطلوب فقط أثناء تسجيل تبدأه أنت عمداً.</string>
+    <string name="grant_microphone">السماح بالميكروفون</string>
+    <string name="microphone_status">%1$s · %2$s</string>
+    <string name="permission_granted">تم منح الإذن</string>
+    <string name="permission_missing">الإذن غير موجود</string>
+    <string name="permission_denied">لم يتم منح إذن الميكروفون.</string>
+    <string name="mic_muted">الميكروفون مكتوم</string>
+    <string name="mic_available">الميكروفون متاح</string>
+    <string name="microphone_muted_block">يتم حظر التسجيل أثناء كتم الميكروفون.</string>
+    <string name="recording_controls">عناصر التحكم في التسجيل</string>
+    <string name="state_idle">جاهز</string>
+    <string name="state_recording">جارٍ التسجيل</string>
+    <string name="state_paused">متوقف مؤقتاً</string>
+    <string name="start_recording">تسجيل</string>
+    <string name="pause">إيقاف مؤقت</string>
+    <string name="resume">متابعة</string>
+    <string name="stop">إيقاف</string>
+    <string name="recordings">التسجيلات المحلية</string>
+    <string name="empty">لا توجد تسجيلات محلية بعد.</string>
+    <string name="recording_meta">%1$s · %2$s</string>
+    <string name="play">تشغيل</string>
+    <string name="export">تصدير</string>
+    <string name="delete">حذف</string>
+    <string name="delete_title">حذف التسجيل؟</string>
+    <string name="delete_body">سيؤدي ذلك إلى إزالة التسجيل الخاص بالتطبيق من هذا الجهاز.</string>
+    <string name="cancel">إلغاء</string>
+    <string name="delete_confirm">حذف</string>
+    <string name="delete_failed">تعذر حذف التسجيل.</string>
+    <string name="recording_started">بدأ التسجيل.</string>
+    <string name="recording_stopped">تم حفظ التسجيل محلياً.</string>
+    <string name="recording_failed">تعذر إكمال التسجيل بأمان.</string>
+    <string name="playback_failed">تعذر تشغيل التسجيل.</string>
+    <string name="export_complete">تم تصدير التسجيل.</string>
+    <string name="export_failed">فشل تصدير التسجيل.</string>
+    <string name="invalid_recording">التسجيل فارغ أو يتجاوز حد أمان التصدير.</string>
+    <string name="footer">by Swir · GitHub</string>
+</resources>
