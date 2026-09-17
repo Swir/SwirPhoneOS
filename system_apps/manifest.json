@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "namespace": "org.swir.phoneos",
-  "design_contract": "swirphoneos-design-v1",
+  "design_contract": "swirphoneos-design-v4",
   "source_language": "en",
   "apps": [
     {"id":"phone","package":"org.swir.phoneos.phone","display_name":"Swir Phone","phase":"reference_hardware","status":"ANDROID_SOURCE","hardware_dependent":true,"critical_for_beta":false,"capabilities":["dialer","in_call","recent_calls"]},
