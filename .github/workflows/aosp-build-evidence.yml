@@ -116,15 +116,22 @@ jobs:
 
           report = json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"))
           digest = str(report.get("staged_content_sha256", ""))
-          if report.get("schema_version") != 4:
+          if report.get("schema_version") != 5:
               raise SystemExit("Unexpected stage evidence schema.")
           if report.get("executed") is not True or report.get("copy_verified") is not True:
               raise SystemExit("Staged source bytes were not fully copy-verified.")
+          if report.get("destination_tree_closed") is not True:
+              raise SystemExit("Staged vendor/swir tree is not closed to the reviewed manifest.")
           if re.fullmatch(r"[0-9a-f]{64}", digest) is None:
               raise SystemExit("Stage bundle digest is missing or malformed.")
           files = report.get("files")
-          if not isinstance(files, list) or not files or any(item.get("copy_verified") is not True for item in files):
+          if not isinstance(files, list) or not files or any(not isinstance(item, dict) or item.get("copy_verified") is not True for item in files):
               raise SystemExit("One or more staged files lack copy verification.")
+          if report.get("file_count") != len(files) or report.get("destination_file_count") != len(files):
+              raise SystemExit("Staged vendor/swir file inventory is not exact.")
+          preexisting = report.get("preexisting_destination_file_count")
+          if not isinstance(preexisting, int) or isinstance(preexisting, bool) or not 0 <= preexisting <= len(files):
+              raise SystemExit("Pre-existing vendor/swir file count is invalid.")
           PY
       - name: Build SwirPhoneOS Cuttlefish product
         shell: bash
