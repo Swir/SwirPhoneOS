@@ -57,8 +57,14 @@ jobs:
           import sys
           report = json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"))
           checks = report.get("checks", [])
-          failed = [item.get("id", "unknown") for item in checks if not isinstance(item, dict) or item.get("passed") is not True]
-          if not isinstance(checks, list) or not checks or report.get("ready_for_full_build") is not True or failed:
+          if not isinstance(checks, list) or not checks:
+              raise SystemExit("Dedicated AOSP builder preflight has no valid check inventory.")
+          failed = [
+              item.get("id", "unknown") if isinstance(item, dict) else "invalid-check-record"
+              for item in checks
+              if not isinstance(item, dict) or item.get("passed") is not True
+          ]
+          if report.get("ready_for_full_build") is not True or failed:
               raise SystemExit("Dedicated AOSP builder preflight rejected host: " + ", ".join(failed))
           PY
           python -m swirphoneos gsi-plan --workspace "$SWIR_AOSP_WORKSPACE" --jobs "${{ inputs.jobs }}" > "$GITHUB_WORKSPACE/gsi-plan.json"
