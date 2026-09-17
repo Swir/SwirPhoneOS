@@ -21,7 +21,8 @@ class StudioEvidenceError(ValueError):
     """Raised when a local evidence file is unsafe, malformed or unsupported."""
 
 
-_MAX_EVIDENCE_BYTES = 2 * 1024 * 1024
+_MAX_ROOT_EVIDENCE_BYTES = 262_144
+_MAX_PHYSICAL_EVIDENCE_BYTES = 2 * 1024 * 1024
 _ROOT_SUMMARY_KEYS = {
     "schema_version",
     "source",
@@ -61,7 +62,7 @@ def _strict_object(pairs: list[tuple[str, object]]) -> dict[str, object]:
     return result
 
 
-def _load_local_json(path: Path) -> dict[str, object]:
+def _load_local_json(path: Path, *, maximum_bytes: int) -> dict[str, object]:
     if not path.is_absolute():
         raise StudioEvidenceError("Evidence path must be absolute.")
     if path.suffix.lower() != ".json":
@@ -69,8 +70,9 @@ def _load_local_json(path: Path) -> dict[str, object]:
     if not path.is_file() or path.is_symlink():
         raise StudioEvidenceError("Evidence must be an existing regular file, not a symlink.")
     try:
-        if path.stat().st_size > _MAX_EVIDENCE_BYTES:
-            raise StudioEvidenceError("Evidence file is oversized.")
+        size = path.stat().st_size
+        if size <= 0 or size > maximum_bytes:
+            raise StudioEvidenceError("Evidence file has an invalid size.")
         document = json.loads(path.read_text(encoding="utf-8"), object_pairs_hook=_strict_object)
     except StudioEvidenceError:
         raise
@@ -83,7 +85,7 @@ def _load_local_json(path: Path) -> dict[str, object]:
 
 def load_swirroot_readiness(path: Path) -> dict[str, object]:
     """Load one regular local SwirRoot readiness JSON and validate it fail-closed."""
-    document = _load_local_json(path)
+    document = _load_local_json(path, maximum_bytes=_MAX_ROOT_EVIDENCE_BYTES)
     try:
         return validate_swirroot_readiness(document)
     except SwirRootReadinessError as exc:
@@ -125,7 +127,7 @@ def load_public_swirroot_readiness_summary(path: Path) -> dict[str, object]:
 
 def load_device_physical_validation(path: Path) -> dict[str, object]:
     """Load one generated physical-validation bundle for local review only."""
-    document = _load_local_json(path)
+    document = _load_local_json(path, maximum_bytes=_MAX_PHYSICAL_EVIDENCE_BYTES)
     try:
         return validate_physical_validation_report(document)
     except DevicePhysicalValidationError as exc:
