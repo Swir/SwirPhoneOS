@@ -49,10 +49,14 @@ class AospRunEvidenceTests(unittest.TestCase):
             "boot_verified": False,
         }
         stage = {
-            "schema_version": 4,
+            "schema_version": 5,
             "workspace": self.WORKSPACE,
             "executed": True,
             "copy_verified": True,
+            "destination_tree_closed": True,
+            "file_count": 1,
+            "preexisting_destination_file_count": 0,
+            "destination_file_count": 1,
             "device_write_allowed": False,
             "staged_content_sha256": stage_sha,
             "files": [{
@@ -65,9 +69,11 @@ class AospRunEvidenceTests(unittest.TestCase):
         post_stage = {
             "schema_version": 1,
             "workspace": self.WORKSPACE,
-            "stage_report_schema": 4,
+            "stage_report_schema": 5,
             "staged_content_sha256": stage_sha,
             "file_count": 1,
+            "destination_file_count": 1,
+            "destination_tree_closed": True,
             "post_build_verified": True,
             "verification_sha256": "d" * 64,
             "device_write_allowed": False,
@@ -215,6 +221,22 @@ class AospRunEvidenceTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             reports = self._reports()
             reports["post_stage"]["staged_content_sha256"] = "9" * 64
+            paths = self._write(Path(temporary), reports)
+            with self.assertRaises(AospRunEvidenceError):
+                self._collect(paths, runtime=False)
+
+    def test_rejects_stage_without_exact_tree_closure(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            reports = self._reports()
+            reports["stage"]["destination_tree_closed"] = False
+            paths = self._write(Path(temporary), reports)
+            with self.assertRaises(AospRunEvidenceError):
+                self._collect(paths, runtime=False)
+
+    def test_rejects_post_build_tree_closure_drift(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            reports = self._reports()
+            reports["post_stage"]["destination_file_count"] = 2
             paths = self._write(Path(temporary), reports)
             with self.assertRaises(AospRunEvidenceError):
                 self._collect(paths, runtime=False)

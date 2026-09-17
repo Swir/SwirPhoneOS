@@ -38,10 +38,13 @@ class StageEvidenceTests(unittest.TestCase):
                 }
             )
         report = {
-            "schema_version": 4,
+            "schema_version": 5,
             "workspace": str(workspace.resolve()),
             "destination_root": str((workspace / "vendor/swir").resolve()),
             "file_count": 2,
+            "preexisting_destination_file_count": 0,
+            "destination_file_count": 2,
+            "destination_tree_closed": True,
             "files": records,
             "staged_content_sha256": "a" * 64,
             "copy_verified": True,
@@ -52,14 +55,17 @@ class StageEvidenceTests(unittest.TestCase):
         report_path.write_text(json.dumps(report), encoding="utf-8")
         return workspace, report_path
 
-    def test_exact_post_build_bytes_are_verified(self):
+    def test_exact_post_build_bytes_and_tree_are_verified(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
             workspace, report = self._fixture(root)
             result = verify_post_build_stage(report, workspace)
             self.assertTrue(result["post_build_verified"])
+            self.assertTrue(result["destination_tree_closed"])
             self.assertFalse(result["device_write_allowed"])
             self.assertEqual(result["file_count"], 2)
+            self.assertEqual(result["destination_file_count"], 2)
+            self.assertEqual(result["stage_report_schema"], 5)
             self.assertEqual(result["staged_content_sha256"], "a" * 64)
             self.assertEqual(len(result["verification_sha256"]), 64)
 
@@ -69,6 +75,16 @@ class StageEvidenceTests(unittest.TestCase):
             workspace, report = self._fixture(root)
             target = workspace / "vendor/swir/products/AndroidProducts.mk"
             target.write_bytes(b"tampered\n")
+            with self.assertRaises(StageEvidenceError):
+                verify_post_build_stage(report, workspace)
+
+    def test_unreviewed_post_build_file_is_rejected(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            workspace, report = self._fixture(root)
+            extra = workspace / "vendor/swir/apps/Generated/Android.bp"
+            extra.parent.mkdir(parents=True)
+            extra.write_text("android_app {}\n", encoding="utf-8")
             with self.assertRaises(StageEvidenceError):
                 verify_post_build_stage(report, workspace)
 
@@ -87,7 +103,7 @@ class StageEvidenceTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
             workspace, report = self._fixture(root)
-            report.write_text('{"schema_version":4,"schema_version":4}', encoding="utf-8")
+            report.write_text('{"schema_version":5,"schema_version":5}', encoding="utf-8")
             with self.assertRaises(StageEvidenceError):
                 verify_post_build_stage(report, workspace)
 
@@ -101,6 +117,26 @@ class StageEvidenceTests(unittest.TestCase):
             with self.assertRaises(StageEvidenceError):
                 verify_post_build_stage(report, workspace)
 
+    def test_tree_closure_claim_cannot_be_removed(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            workspace, report = self._fixture(root)
+            value = json.loads(report.read_text(encoding="utf-8"))
+            value["destination_tree_closed"] = False
+            report.write_text(json.dumps(value), encoding="utf-8")
+            with self.assertRaises(StageEvidenceError):
+                verify_post_build_stage(report, workspace)
+
+    def test_destination_count_mismatch_is_rejected(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            workspace, report = self._fixture(root)
+            value = json.loads(report.read_text(encoding="utf-8"))
+            value["destination_file_count"] = 1
+            report.write_text(json.dumps(value), encoding="utf-8")
+            with self.assertRaises(StageEvidenceError):
+                verify_post_build_stage(report, workspace)
+
     def test_noncanonical_destination_is_rejected(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
@@ -108,6 +144,18 @@ class StageEvidenceTests(unittest.TestCase):
             value = json.loads(report.read_text(encoding="utf-8"))
             value["files"][0]["destination_relative"] = "vendor/swir/products/../products/AndroidProducts.mk"
             report.write_text(json.dumps(value), encoding="utf-8")
+            with self.assertRaises(StageEvidenceError):
+                verify_post_build_stage(report, workspace)
+
+    @unittest.skipIf(os.name == "nt", "hard-link creation is not reliably available on Windows CI")
+    def test_hard_linked_staged_file_is_rejected(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            workspace, report = self._fixture(root)
+            target = workspace / "vendor/swir/products/AndroidProducts.mk"
+            alias = root / "outside-hardlink.mk"
+            os.link(target, alias)
+            self.assertGreater(target.stat().st_nlink, 1)
             with self.assertRaises(StageEvidenceError):
                 verify_post_build_stage(report, workspace)
 

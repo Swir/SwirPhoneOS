@@ -119,15 +119,18 @@ class AospWorkspaceTests(unittest.TestCase):
         (product / "swirphoneos_cf_x86_64.mk").write_text("beta\n", encoding="utf-8")
         return product
 
-    def test_staging_records_hashes_and_verifies_copied_bytes(self):
+    def test_staging_records_hashes_verifies_bytes_and_closes_tree(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
             product = self._legacy_product(root)
             workspace = root / "aosp"
             dry = stage_product_tree(product, workspace)
-            self.assertEqual(dry["schema_version"], 4)
+            self.assertEqual(dry["schema_version"], 5)
             self.assertFalse(dry["executed"])
             self.assertFalse(dry["copy_verified"])
+            self.assertFalse(dry["destination_tree_closed"])
+            self.assertIsNone(dry["preexisting_destination_file_count"])
+            self.assertIsNone(dry["destination_file_count"])
             self.assertEqual(dry["file_count"], 2)
             self.assertEqual(len(dry["staged_content_sha256"]), 64)
             source_bytes = (product / "AndroidProducts.mk").read_bytes()
@@ -143,10 +146,46 @@ class AospWorkspaceTests(unittest.TestCase):
             executed = stage_product_tree(product, workspace, execute=True)
             self.assertTrue(executed["executed"])
             self.assertTrue(executed["copy_verified"])
+            self.assertTrue(executed["destination_tree_closed"])
+            self.assertEqual(executed["preexisting_destination_file_count"], 0)
+            self.assertEqual(executed["destination_file_count"], 2)
             self.assertEqual(executed["staged_content_sha256"], dry["staged_content_sha256"])
             self.assertTrue(all(item["copy_verified"] for item in executed["files"]))
             copied = workspace / "vendor/swir/products/AndroidProducts.mk"
             self.assertEqual(copied.read_bytes(), source_bytes)
+
+            repeated = stage_product_tree(product, workspace, execute=True)
+            self.assertEqual(repeated["preexisting_destination_file_count"], 2)
+            self.assertEqual(repeated["destination_file_count"], 2)
+            self.assertTrue(repeated["destination_tree_closed"])
+
+    def test_execute_rejects_stale_or_unreviewed_vendor_swir_file(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            product = self._legacy_product(root)
+            workspace = self._fake_checkout(root)
+            stale = workspace / "vendor/swir/apps/RemovedApp/Android.bp"
+            stale.parent.mkdir(parents=True)
+            stale.write_text("android_app {}\n", encoding="utf-8")
+            with self.assertRaises(AospWorkspaceError):
+                stage_product_tree(product, workspace, execute=True)
+            self.assertTrue(stale.is_file())
+
+    @unittest.skipIf(os.name == "nt", "hard-link creation is not reliably available on Windows CI")
+    def test_execute_rejects_hard_linked_expected_destination(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            product = self._legacy_product(root)
+            workspace = self._fake_checkout(root)
+            target = workspace / "vendor/swir/products/AndroidProducts.mk"
+            target.parent.mkdir(parents=True)
+            outside = root / "outside.mk"
+            outside.write_text("old\n", encoding="utf-8")
+            os.link(outside, target)
+            self.assertGreater(target.stat().st_nlink, 1)
+            with self.assertRaises(AospWorkspaceError):
+                stage_product_tree(product, workspace, execute=True)
+            self.assertEqual(outside.read_text(encoding="utf-8"), "old\n")
 
     def test_stage_bundle_digest_changes_when_source_changes(self):
         with tempfile.TemporaryDirectory() as temp:
@@ -177,6 +216,8 @@ class AospWorkspaceTests(unittest.TestCase):
             workspace = self._fake_checkout(root)
             result = stage_product_tree(product, workspace, execute=True)
             self.assertEqual(result["file_count"], 3)
+            self.assertEqual(result["destination_file_count"], 3)
+            self.assertTrue(result["destination_tree_closed"])
             self.assertTrue(result["copy_verified"])
             self.assertTrue((workspace / "vendor/swir/apps/Test/Android.bp").is_file())
 

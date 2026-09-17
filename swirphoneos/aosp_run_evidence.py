@@ -172,7 +172,12 @@ def _validate_build_chain(
     ):
         raise AospRunEvidenceError("Resolved Repo manifest project/path counts are invalid.")
 
-    if stage.get("schema_version") != 4 or stage.get("executed") is not True or stage.get("copy_verified") is not True:
+    if (
+        stage.get("schema_version") != 5
+        or stage.get("executed") is not True
+        or stage.get("copy_verified") is not True
+        or stage.get("destination_tree_closed") is not True
+    ):
         raise AospRunEvidenceError("Pre-build source staging evidence is incomplete.")
     _require_no_write(stage)
     if stage.get("workspace") != workspace:
@@ -181,6 +186,11 @@ def _validate_build_chain(
     files = stage.get("files")
     if not isinstance(files, list) or not files:
         raise AospRunEvidenceError("Stage evidence has no file inventory.")
+    if stage.get("file_count") != len(files) or stage.get("destination_file_count") != len(files):
+        raise AospRunEvidenceError("Stage evidence does not prove an exact destination file count.")
+    preexisting = stage.get("preexisting_destination_file_count")
+    if not isinstance(preexisting, int) or isinstance(preexisting, bool) or not 0 <= preexisting <= len(files):
+        raise AospRunEvidenceError("Stage evidence pre-existing destination count is invalid.")
     destinations: set[str] = set()
     for item in files:
         if not isinstance(item, dict) or item.get("copy_verified") is not True:
@@ -196,14 +206,15 @@ def _validate_build_chain(
 
     if (
         post_stage.get("schema_version") != 1
-        or post_stage.get("stage_report_schema") != 4
+        or post_stage.get("stage_report_schema") != 5
         or post_stage.get("post_build_verified") is not True
+        or post_stage.get("destination_tree_closed") is not True
     ):
         raise AospRunEvidenceError("Post-build source re-verification evidence is incomplete.")
     _require_no_write(post_stage)
     if post_stage.get("workspace") != workspace or post_stage.get("staged_content_sha256") != stage_digest:
         raise AospRunEvidenceError("Post-build source evidence does not match the staged source bundle.")
-    if post_stage.get("file_count") != len(files):
+    if post_stage.get("file_count") != len(files) or post_stage.get("destination_file_count") != len(files):
         raise AospRunEvidenceError("Post-build source evidence file count does not match staging.")
     _require_hex64(post_stage.get("verification_sha256"), "post-build stage verification sha256")
 

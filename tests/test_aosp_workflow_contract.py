@@ -24,14 +24,19 @@ class AospWorkflowContractTests(unittest.TestCase):
         self.assertIn("preflight report has no checks", self.text)
         self.assertIn("preflight is internally inconsistent", self.text)
 
-    def test_staged_source_copy_verification_is_required_before_build(self):
+    def test_staged_source_copy_and_tree_closure_are_required_before_build(self):
         stage = self.text.index("stage-report.json")
         verified = self.text.index('report.get("copy_verified") is not True')
+        closed = self.text.index('report.get("destination_tree_closed") is not True')
         build = self.text.index("m -j")
         self.assertLess(stage, verified)
         self.assertLess(verified, build)
-        self.assertIn('report.get("schema_version") != 4', self.text)
+        self.assertLess(closed, build)
+        self.assertIn('report.get("schema_version") != 5', self.text)
         self.assertIn("staged_content_sha256", self.text)
+        self.assertIn('report.get("destination_file_count") != len(files)', self.text)
+        self.assertIn('report.get("file_count") != len(files)', self.text)
+        self.assertIn("preexisting_destination_file_count", self.text)
 
     def test_post_build_stage_reverification_precedes_build_provenance(self):
         build = self.text.index("m -j")
