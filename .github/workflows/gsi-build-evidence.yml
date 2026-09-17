@@ -1,0 +1,151 @@
+name: ARM64 GSI build evidence
+
+on:
+  workflow_dispatch:
+    inputs:
+      jobs:
+        description: Parallel AOSP build jobs
+        required: true
+        default: '16'
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: swir-aosp-builder
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Pinned Android 17 ARM64 GSI evidence
+    runs-on: [self-hosted, linux, x64, swir-aosp-builder]
+    timeout-minutes: 720
+    steps:
+      - name: Initialize bounded run context
+        shell: bash
+        env:
+          SWIR_REQUESTED_JOBS: ${{ inputs.jobs }}
+        run: |
+          set -euo pipefail
+          {
+            printf 'source_commit=%s\n' "$GITHUB_SHA"
+            printf 'requested_jobs=%s\n' "$SWIR_REQUESTED_JOBS"
+            printf 'target=%s\n' 'swirphoneos_gsi_arm64-aosp_current-userdebug'
+            printf 'write_allowed=false\n'
+          } > "$GITHUB_WORKSPACE/gsi-run-context.txt"
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: tools
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.14'
+      - name: Validate dedicated builder and source contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          : "${SWIR_AOSP_WORKSPACE:?Set SWIR_AOSP_WORKSPACE on the dedicated self-hosted runner}"
+          test "${{ inputs.jobs }}" -ge 1
+          test "${{ inputs.jobs }}" -le 256
+          cd tools
+          python -m swirphoneos gsi-contract > "$GITHUB_WORKSPACE/gsi-contract.json"
+          python -m swirphoneos build-preflight --workspace "$SWIR_AOSP_WORKSPACE" > "$GITHUB_WORKSPACE/builder-preflight.json"
+          python - "$GITHUB_WORKSPACE/builder-preflight.json" <<'PY'
+          import json
+          import pathlib
+          import sys
+          report = json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"))
+          checks = report.get("checks", [])
+          failed = [item.get("id", "unknown") for item in checks if not isinstance(item, dict) or item.get("passed") is not True]
+          if not isinstance(checks, list) or not checks or report.get("ready_for_full_build") is not True or failed:
+              raise SystemExit("Dedicated AOSP builder preflight rejected host: " + ", ".join(failed))
+          PY
+          python -m swirphoneos gsi-plan --workspace "$SWIR_AOSP_WORKSPACE" --jobs "${{ inputs.jobs }}" > "$GITHUB_WORKSPACE/gsi-plan.json"
+      - name: Synchronize exact Android 17 source and capture resolved manifest
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$SWIR_AOSP_WORKSPACE"
+          repo init -u https://android.googlesource.com/platform/manifest -b android-17.0.0_r1
+          repo sync -c --no-tags --optimized-fetch --prune -j"${{ inputs.jobs }}"
+          repo manifest -r -o swirphoneos-gsi-pinned-manifest.xml
+          PYTHONPATH="$GITHUB_WORKSPACE/tools" python -m swirphoneos aosp-manifest --file swirphoneos-gsi-pinned-manifest.xml > "$GITHUB_WORKSPACE/resolved-manifest.json"
+      - name: Stage exact reviewed SwirPhoneOS product and app source
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH="$GITHUB_WORKSPACE/tools" python -m swirphoneos stage-product --workspace "$SWIR_AOSP_WORKSPACE" --product-root "$GITHUB_WORKSPACE/tools/platform/aosp_product" --execute > "$GITHUB_WORKSPACE/stage-report.json"
+          python - "$GITHUB_WORKSPACE/stage-report.json" <<'PY'
+          import json
+          import pathlib
+          import re
+          import sys
+          report = json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"))
+          files = report.get("files")
+          digest = str(report.get("staged_content_sha256", ""))
+          if report.get("schema_version") != 5 or report.get("executed") is not True or report.get("copy_verified") is not True:
+              raise SystemExit("Exact GSI source staging was not fully verified.")
+          if report.get("destination_tree_closed") is not True or not isinstance(files, list) or not files:
+              raise SystemExit("Staged vendor/swir tree is not exactly closed.")
+          if report.get("file_count") != len(files) or report.get("destination_file_count") != len(files):
+              raise SystemExit("Staged GSI file inventory is inconsistent.")
+          if re.fullmatch(r"[0-9a-f]{64}", digest) is None:
+              raise SystemExit("Staged GSI source digest is malformed.")
+          PY
+      - name: Build SwirPhoneOS ARM64 GSI system image
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$SWIR_AOSP_WORKSPACE"
+          source build/envsetup.sh
+          lunch swirphoneos_gsi_arm64-aosp_current-userdebug
+          BUILD_LOG="$GITHUB_WORKSPACE/gsi-build-full.log"
+          rm -f "$BUILD_LOG" "$GITHUB_WORKSPACE/gsi-build-tail.log"
+          if ! m -j"${{ inputs.jobs }}" systemimage 2>&1 | tee "$BUILD_LOG"; then
+            tail -c 262144 "$BUILD_LOG" > "$GITHUB_WORKSPACE/gsi-build-tail.log" || true
+            rm -f "$BUILD_LOG"
+            exit 1
+          fi
+          rm -f "$BUILD_LOG" "$GITHUB_WORKSPACE/gsi-build-tail.log"
+      - name: Re-verify exact staged source after GSI build
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH="$GITHUB_WORKSPACE/tools" python -m swirphoneos.stage_evidence --report "$GITHUB_WORKSPACE/stage-report.json" --workspace "$SWIR_AOSP_WORKSPACE" > "$GITHUB_WORKSPACE/post-build-stage-evidence.json"
+      - name: Capture ARM64 GSI build evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH="$GITHUB_WORKSPACE/tools" python -m swirphoneos gsi-build-evidence \
+            --workspace "$SWIR_AOSP_WORKSPACE" \
+            --manifest "$SWIR_AOSP_WORKSPACE/swirphoneos-gsi-pinned-manifest.xml" \
+            --baseline "$GITHUB_WORKSPACE/tools/platform/aosp_baseline.json" \
+            > "$GITHUB_WORKSPACE/gsi-build-evidence.json"
+      - name: Preserve bounded failed-build tail
+        if: ${{ failure() }}
+        shell: bash
+        run: |
+          set +e
+          if test -f "$GITHUB_WORKSPACE/gsi-build-full.log"; then
+            tail -c 262144 "$GITHUB_WORKSPACE/gsi-build-full.log" > "$GITHUB_WORKSPACE/gsi-build-tail.log" || true
+            rm -f "$GITHUB_WORKSPACE/gsi-build-full.log"
+          fi
+          exit 0
+      - name: Upload immutable GSI evidence files
+        if: ${{ always() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: swirphoneos-gsi-evidence-${{ github.sha }}
+          if-no-files-found: error
+          retention-days: 30
+          path: |
+            gsi-run-context.txt
+            gsi-contract.json
+            builder-preflight.json
+            gsi-plan.json
+            resolved-manifest.json
+            stage-report.json
+            post-build-stage-evidence.json
+            gsi-build-evidence.json
+            gsi-build-tail.log
