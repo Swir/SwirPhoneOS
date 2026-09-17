@@ -10,6 +10,7 @@ APP_ID = re.compile(r"[a-z][a-z0-9_]{1,31}\Z")
 PACKAGE = re.compile(r"org\.swir\.phoneos\.[a-z][a-z0-9_.]{1,63}\Z")
 ALLOWED_PHASES = {"emulator_core", "reference_hardware", "beta_integration"}
 ALLOWED_STATUS = {"PLANNED", "HOST_CONTRACT", "ANDROID_SOURCE", "ANDROID_RUNTIME", "HARDWARE_VERIFIED"}
+EXPECTED_DESIGN_CONTRACT = "swirphoneos-design-v4"
 REQUIRED_APP_IDS = frozenset({"phone","contacts","messages","camera","gallery","files","settings","browser","clock","calculator","notes","recorder","calendar","weather","update","backup","privacy","device_care","apps","swirroot"})
 REQUIRED_KEYS = {"id","package","display_name","phase","status","hardware_dependent","critical_for_beta","capabilities"}
 
@@ -88,6 +89,10 @@ def validate_registry(data: object) -> SystemAppRegistry:
     namespace = _safe_text(data["namespace"], "namespace", 80)
     if namespace != "org.swir.phoneos": raise SystemAppRegistryError("Unexpected application namespace.")
     design_contract = _safe_text(data["design_contract"], "design_contract", 80)
+    if design_contract != EXPECTED_DESIGN_CONTRACT:
+        raise SystemAppRegistryError(
+            f"System-app manifest design contract must be {EXPECTED_DESIGN_CONTRACT}."
+        )
     source_language = _safe_text(data["source_language"], "source_language", 16)
     if source_language != "en": raise SystemAppRegistryError("English must remain the canonical fallback language.")
     raw_apps = data["apps"]
