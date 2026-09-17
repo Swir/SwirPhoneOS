@@ -27,7 +27,7 @@ class AndroidLocalizationTests(unittest.TestCase):
         self.assertEqual(summary["status"], "SOURCE_LINT_ONLY_NOT_RUNTIME_VERIFIED")
         self.assertEqual(summary["source_locale"], "en")
         self.assertEqual(summary["locale_count"], 8)
-        self.assertEqual(summary["source_ready_app_count"], 16)
+        self.assertEqual(summary["source_ready_app_count"], 20)
         self.assertIn("ar", summary["locales"])
         self.assertGreater(summary["source_string_entries"], 0)
         self.assertGreater(summary["production_java_files_scanned"], 0)
@@ -47,8 +47,7 @@ class AndroidLocalizationTests(unittest.TestCase):
             source = strings.read_text(encoding="utf-8")
             self.assertIn("%1$d%%", source)
             strings.write_text(source.replace("%1$d%%", "%1$s%%", 1), encoding="utf-8")
-            with self.assertRaises(AndroidLocalizationError):
-                validate_android_localization(product, registry)
+            with self.assertRaises(AndroidLocalizationError): validate_android_localization(product, registry)
 
     def test_android_format_placeholder_index_drift_is_rejected(self):
         temp, product, registry = self._copy_fixture()
@@ -57,8 +56,7 @@ class AndroidLocalizationTests(unittest.TestCase):
             source = strings.read_text(encoding="utf-8")
             self.assertIn("%1$s %2$s", source)
             strings.write_text(source.replace("%1$s %2$s", "%2$s %2$s", 1), encoding="utf-8")
-            with self.assertRaises(AndroidLocalizationError):
-                validate_android_localization(product, registry)
+            with self.assertRaises(AndroidLocalizationError): validate_android_localization(product, registry)
 
     def test_direct_java_ui_literal_is_rejected(self):
         temp, product, registry = self._copy_fixture()
@@ -66,8 +64,7 @@ class AndroidLocalizationTests(unittest.TestCase):
             activity = product / "apps/SwirSettings/src/org/swir/phoneos/settings/MainActivity.java"
             source = activity.read_text(encoding="utf-8")
             activity.write_text(source + '\nclass LocalizationRegression { void bind(android.widget.TextView view) { view.setText("Hardcoded status"); } }\n', encoding="utf-8")
-            with self.assertRaises(AndroidLocalizationError):
-                validate_android_localization(product, registry)
+            with self.assertRaises(AndroidLocalizationError): validate_android_localization(product, registry)
 
     def test_ui_literal_inside_comment_is_ignored(self):
         temp, product, registry = self._copy_fixture()
@@ -87,8 +84,7 @@ class AndroidLocalizationTests(unittest.TestCase):
             start = source.index(marker)
             end = source.index("</string>", start) + len("</string>")
             strings.write_text(source[:start] + source[end:], encoding="utf-8")
-            with self.assertRaises(AndroidLocalizationError):
-                validate_android_localization(product, registry)
+            with self.assertRaises(AndroidLocalizationError): validate_android_localization(product, registry)
 
     def test_plural_translation_may_use_locale_specific_quantities_but_must_preserve_arguments(self):
         temp, product, registry = self._copy_fixture()
@@ -103,11 +99,9 @@ class AndroidLocalizationTests(unittest.TestCase):
                 plural = source_plural if directory == "values" else arabic_plural if directory == "values-ar" else generic_plural
                 path.write_text(text.replace("</resources>", plural + "\n</resources>"), encoding="utf-8")
             validate_android_localization(product, registry)
-
             arabic = app / "values-ar/strings.xml"
             arabic.write_text(arabic.read_text(encoding="utf-8").replace("%1$d items", "%1$s items", 1), encoding="utf-8")
-            with self.assertRaises(AndroidLocalizationError):
-                validate_android_localization(product, registry)
+            with self.assertRaises(AndroidLocalizationError): validate_android_localization(product, registry)
 
     def test_plural_without_other_is_rejected(self):
         temp, product, registry = self._copy_fixture()
@@ -116,8 +110,7 @@ class AndroidLocalizationTests(unittest.TestCase):
             source = strings.read_text(encoding="utf-8")
             plural = '<plurals name="history_count"><item quantity="one">%1$d item</item></plurals>'
             strings.write_text(source.replace("</resources>", plural + "\n</resources>"), encoding="utf-8")
-            with self.assertRaises(AndroidLocalizationError):
-                validate_android_localization(product, registry)
+            with self.assertRaises(AndroidLocalizationError): validate_android_localization(product, registry)
 
     def test_clock_display_skeletons_are_nontranslatable_resources(self):
         activity = Path("platform/aosp_product/apps/SwirClock/src/org/swir/phoneos/clock/MainActivity.java").read_text(encoding="utf-8")
@@ -131,5 +124,4 @@ class AndroidLocalizationTests(unittest.TestCase):
         self.assertIn('name="clock_placeholder" translatable="false"', invariants)
 
 
-if __name__ == "__main__":
-    unittest.main()
+if __name__ == "__main__": unittest.main()
