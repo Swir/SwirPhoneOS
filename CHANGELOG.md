@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+### Scoped Swir Gallery and foreground Swir Recorder Android sources
+
+Added `SwirGallery` as meaningful Android source using the least-privilege `READ_MEDIA_IMAGES` and `READ_MEDIA_VIDEO` permissions. It browses granted local photos/videos through MediaStore, supports local search, opens and shares URI-granted media, and delegates deletion to Android's owner-confirmed `MediaStore.createDeleteRequest` flow. It does not request broad storage access or direct media-write privileges. Album grouping remains an explicit future capability.
+
+Added `SwirRecorder` as meaningful foreground-only Android source using exactly `RECORD_AUDIO`. It records AAC audio in an MPEG-4 container to app-private storage, supports pause/resume/stop and local playback, exposes framework microphone mute state, requires confirmation for local deletion and exports only through a user-selected `ACTION_CREATE_DOCUMENT` destination. Active recording is deliberately stopped when the activity leaves the foreground; no background recording service exists in this source stage. Exact-device microphone/audio behavior remains unverified.
+
+Refactored Android source validation from a blanket zero-permission rule to exact per-app permission allowlists while retaining global rejection of network, broad-storage and process-execution primitives. Permission-free apps remain permission-free. Gallery and Recorder gained pure-Java policy host tests, original SwirPhoneOS icons, EN/PL/NB/DE/ES/FR/PT/AR resources with RTL, AOSP product/staging integration and CI compilation. The registry is now **12 `ANDROID_SOURCE`, 8 `HOST_CONTRACT`, 0 `ANDROID_RUNTIME`, 0 hardware-verified**. No AOSP build/boot or physical audio/media verification is claimed, so weighted progress remains **2%** and Beta remains **0/9**.
+
 ### Complete AOSP run evidence chain and exact builder gate
 
 Fixed a real fail-closed orchestration defect in the manual self-hosted AOSP workflow: `build-preflight` emits mandatory checks as `checks[].id` / `checks[].passed`, while the workflow had been reading non-existent `name` / `ok` fields. The builder gate now consumes the actual schema, rejects missing check inventories and also rejects an internally inconsistent report before `repo init` / `repo sync`.
@@ -30,7 +38,7 @@ Added `SwirRoot` as the tenth meaningful first-party Android source application.
 
 Added a dependency-free pure-Java `RootPolicy` and host test for the exact-build/profile/owner/rollback/journal/update-state/expected-non-root gates. The Android service remains deliberately fail-closed: `WRITE_BACKEND_ENABLED=false`, `SUPPORTED_BUILD=false`, current state is `UNAVAILABLE`, and no process execution, `su`, boot-image mutation, partition write, unlock, flash or exploit/bypass path exists. `root_state` and `authorization_audit` are source-implemented; `guided_enable` and `guided_unroot` remain future capabilities requiring a legitimate exact-build backend plus physical rollback/unroot/recovery evidence.
 
-Strengthened Android source validation so forbidden process/network/storage primitives are checked across **all production Java files**, not only the primary activity and policy files. SwirRoot receives additional checks for hard-disabled mutation support and the mandatory safety gate model. Host CI now compiles and executes the pure-Java SwirRoot transition-policy test. The registry is **10 `ANDROID_SOURCE`, 10 `HOST_CONTRACT`, 0 `ANDROID_RUNTIME`, 0 hardware-verified**. No AOSP build/boot or physical root claim is made, so weighted progress remains **2%** and Beta remains **0/9**.
+Strengthened Android source validation so forbidden process/network/storage primitives are checked across **all production Java files**, not only the primary activity and policy files. SwirRoot receives additional checks for hard-disabled mutation support and the mandatory safety gate model. Host CI now compiles and executes the pure-Java SwirRoot transition-policy test. At that point the registry was **10 `ANDROID_SOURCE`, 10 `HOST_CONTRACT`, 0 `ANDROID_RUNTIME`, 0 hardware-verified`**. No AOSP build/boot or physical root claim was made.
 
 ### Exact-build Cuttlefish launch and emulator-only app smoke
 
