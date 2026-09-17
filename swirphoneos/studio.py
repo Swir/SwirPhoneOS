@@ -191,12 +191,17 @@ class Studio:
 
     def render_readiness(self, summary: dict[str, object]) -> str:
         missing = summary["missing_requirements"]
-        missing_text = ", ".join(str(item) for item in missing) if missing else self.tr("none")
+        missing_text = (
+            ", ".join(self.tr(f"readiness_gate_{item}") for item in missing)
+            if missing
+            else self.tr("none")
+        )
+        action = self.tr(f"readiness_action_{summary['action']}")
         yes = self.tr("yes")
         no = self.tr("no")
         return self.tr(
             "readiness_summary",
-            action=summary["action"],
+            action=action,
             profile=summary["profile_id"],
             build=summary["exact_build"],
             transaction=summary["transaction_id"],
