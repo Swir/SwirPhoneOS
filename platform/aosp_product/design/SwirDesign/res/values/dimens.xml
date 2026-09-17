@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="swir_space_xs">4dp</dimen>
+    <dimen name="swir_space_sm">8dp</dimen>
+    <dimen name="swir_space_md">16dp</dimen>
+    <dimen name="swir_space_lg">24dp</dimen>
+    <dimen name="swir_space_xl">32dp</dimen>
+    <dimen name="swir_corner_sm">10dp</dimen>
+    <dimen name="swir_corner_md">16dp</dimen>
+    <dimen name="swir_corner_lg">24dp</dimen>
+    <dimen name="swir_touch_min">48dp</dimen>
+</resources>

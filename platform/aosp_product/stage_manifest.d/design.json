@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "files": [
+    {"source":"design/SwirDesign/Android.bp","destination":"vendor/swir/design/SwirDesign/Android.bp"},
+    {"source":"design/SwirDesign/res/values/colors.xml","destination":"vendor/swir/design/SwirDesign/res/values/colors.xml"},
+    {"source":"design/SwirDesign/res/values/dimens.xml","destination":"vendor/swir/design/SwirDesign/res/values/dimens.xml"},
+    {"source":"design/SwirDesign/res/values/styles.xml","destination":"vendor/swir/design/SwirDesign/res/values/styles.xml"},
+    {"source":"design/SwirDesign/res/values-night/colors.xml","destination":"vendor/swir/design/SwirDesign/res/values-night/colors.xml"},
+    {"source":"design/SwirDesign/res/values-night/styles.xml","destination":"vendor/swir/design/SwirDesign/res/values-night/styles.xml"}
+  ]
+}
