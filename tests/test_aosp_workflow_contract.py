@@ -48,6 +48,7 @@ class AospWorkflowContractTests(unittest.TestCase):
         self.assertLess(build_evidence, run_evidence)
         self.assertLess(run_evidence, upload)
         self.assertIn('--source-commit "$GITHUB_SHA"', self.text)
+        self.assertIn('--app-manifest "$GITHUB_WORKSPACE/tools/system_apps/manifest.json"', self.text)
         self.assertIn("--post-stage", self.text)
         self.assertIn("--runtime", self.text)
         self.assertIn("--smoke", self.text)
