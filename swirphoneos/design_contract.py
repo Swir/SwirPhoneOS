@@ -14,6 +14,28 @@ CORE_APPS = {
     "privacy": "SwirPrivacy",
     "device_care": "SwirDeviceCare",
 }
+SYSTEM_APPS = {
+    "phone": "SwirPhone",
+    "messages": "SwirMessages",
+    "camera": "SwirCamera",
+    "calculator": "SwirCalculator",
+    "settings": "SwirSettings",
+    "files": "SwirFiles",
+    "browser": "SwirBrowser",
+    "device_care": "SwirDeviceCare",
+    "update": "SwirUpdate",
+    "privacy": "SwirPrivacy",
+    "clock": "SwirClock",
+    "notes": "SwirNotes",
+    "calendar": "SwirCalendar",
+    "weather": "SwirWeather",
+    "gallery": "SwirGallery",
+    "recorder": "SwirRecorder",
+    "contacts": "SwirContacts",
+    "backup": "SwirBackup",
+    "apps": "SwirApps",
+    "swirroot": "SwirRoot",
+}
 REQUIRED_COLORS = {
     "swir_background",
     "swir_surface",
@@ -138,8 +160,8 @@ def validate_design_contract(product_root: Path | str = Path("platform/aosp_prod
     if day_styles != REQUIRED_STYLES or night_styles != REQUIRED_STYLES:
         raise DesignContractError("SwirDesign day/night style sets must match exactly")
 
-    integrated = []
-    for app_id, module in CORE_APPS.items():
+    integrated_system = []
+    for app_id, module in SYSTEM_APPS.items():
         app = product / "apps" / module
         app_bp = _read_regular_text(app / "Android.bp")
         if f'static_libs: ["{DESIGN_MODULE}"]' not in app_bp:
@@ -147,7 +169,9 @@ def validate_design_contract(product_root: Path | str = Path("platform/aosp_prod
         theme = _application_theme(app / "AndroidManifest.xml")
         if theme != DESIGN_THEME:
             raise DesignContractError(f"{module} must use {DESIGN_THEME}, got {theme!r}")
-        integrated.append(app_id)
+        integrated_system.append(app_id)
+
+    integrated_core = [app_id for app_id in CORE_APPS if app_id in integrated_system]
 
     stage_path = product / "stage_manifest.d" / "design.json"
     stage = _strict_json(stage_path)
@@ -175,13 +199,16 @@ def validate_design_contract(product_root: Path | str = Path("platform/aosp_prod
 
     return {
         "status": "SOURCE_CONTRACT_READY_NOT_BUILT",
-        "design_contract": "swirphoneos-design-v1",
+        "design_contract": "swirphoneos-design-v2",
         "module": DESIGN_MODULE,
-        "integrated_core_apps": integrated,
-        "integrated_core_app_count": len(integrated),
+        "integrated_core_apps": integrated_core,
+        "integrated_core_app_count": len(integrated_core),
+        "integrated_system_apps": integrated_system,
+        "integrated_system_app_count": len(integrated_system),
+        "expected_system_app_count": len(SYSTEM_APPS),
         "day_night_tokens_declared": True,
         "minimum_touch_target_token_dp": 48,
-        "all_system_apps_integrated": False,
+        "all_system_apps_integrated": len(integrated_system) == len(SYSTEM_APPS),
         "android_build_verified": False,
         "runtime_visual_review_verified": False,
         "accessibility_review_verified": False,
