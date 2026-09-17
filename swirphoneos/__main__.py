@@ -20,6 +20,7 @@ from .profiles import ProfileError, discover_profiles, public_profile_summary
 from .readiness import evaluate, load_ledger
 from .swirroot import SwirRootPolicyError, load_policy, public_policy_summary
 from .system_apps import SystemAppRegistryError, load_registry, public_registry_summary
+from .transaction_evidence import TransactionEvidenceError, create_journal, load_plan, public_plan_summary, verify_artifacts
 
 def main(argv: list[str] | None = None) -> int:
     parser=argparse.ArgumentParser(description="SwirPhoneOS read-only developer tooling — by Swir"); parser.add_argument("--version",action="version",version=__version__); sub=parser.add_subparsers(dest="command",required=True)
@@ -37,6 +38,8 @@ def main(argv: list[str] | None = None) -> int:
     evidence_bundle=sub.add_parser("evidence-bundle",help="Bind completed build evidence to completed Cuttlefish runtime evidence"); evidence_bundle.add_argument("--build",type=Path,required=True); evidence_bundle.add_argument("--runtime",type=Path,required=True)
     stage_product=sub.add_parser("stage-product",help="Plan or explicitly stage manifest-whitelisted Swir AOSP product/app source"); stage_product.add_argument("--workspace",type=Path,required=True); stage_product.add_argument("--product-root",type=Path,default=Path("platform/aosp_product")); stage_product.add_argument("--execute",action="store_true")
     cuttlefish=sub.add_parser("cuttlefish-evidence",help="Capture strict read-only runtime evidence from one local Cuttlefish/emulator"); cuttlefish.add_argument("--adb",required=True,type=Path,help="Absolute path to a trusted Android SDK adb executable"); cuttlefish.add_argument("--manifest",type=Path,default=Path("system_apps/manifest.json"))
+    transaction_plan=sub.add_parser("transaction-plan",help="Validate a local preparation-only install/rollback plan; never performs device writes"); transaction_plan.add_argument("--file",required=True,type=Path)
+    transaction_evidence=sub.add_parser("transaction-evidence",help="Verify local plan artifacts and optionally create a read-only recovery journal"); transaction_evidence.add_argument("--plan",required=True,type=Path); transaction_evidence.add_argument("--artifacts",required=True,type=Path); transaction_evidence.add_argument("--journal",type=Path,default=None,help="Optional absolute create-only .json journal path")
     sub.add_parser("i18n",help="Validate shared localization catalogs and show translation coverage")
     apps=sub.add_parser("apps",help="Validate the essential first-party system-app registry"); apps.add_argument("--manifest",type=Path,default=Path("system_apps/manifest.json"))
     android_apps=sub.add_parser("android-apps",help="Validate checked-in first-party Android app source without claiming build/runtime"); android_apps.add_argument("--product-root",type=Path,default=Path("platform/aosp_product")); android_apps.add_argument("--manifest",type=Path,default=Path("system_apps/manifest.json"))
@@ -50,7 +53,7 @@ def main(argv: list[str] | None = None) -> int:
         elif args.command=="profiles":
             registry=discover_profiles(args.root); result={"schema_version":1,"profile_count":len(registry),"profiles":[public_profile_summary(p) for p in registry],"flash_allowed":False}
         elif args.command=="baseline": result=public_baseline_summary(load_baseline(args.file))
-        elif args.command=="product-contract": result=public_product_summary(validate_product_contract(args.root))
+        elif args.command=="product-contract": result=public_product_summary(validate_product_contract(args.product_root))
         elif args.command=="build-preflight": result=evaluate_preflight(capture_host(args.workspace.resolve()))
         elif args.command=="aosp-plan": result=public_workspace_plan(make_workspace_plan(load_baseline(args.baseline),validate_product_contract(args.product_root),args.workspace,jobs=args.jobs))
         elif args.command=="aosp-manifest": result=public_manifest_evidence(validate_resolved_manifest(args.file))
@@ -58,12 +61,15 @@ def main(argv: list[str] | None = None) -> int:
         elif args.command=="evidence-bundle": result=create_evidence_bundle(load_json_report(args.build),load_json_report(args.runtime))
         elif args.command=="stage-product": validate_product_contract(args.product_root); result=stage_product_tree(args.product_root,args.workspace,execute=args.execute)
         elif args.command=="cuttlefish-evidence": result=CuttlefishEvidenceCollector(args.adb).inspect(load_registry(args.manifest))
+        elif args.command=="transaction-plan": result=public_plan_summary(load_plan(args.file))
+        elif args.command=="transaction-evidence":
+            plan=load_plan(args.plan); evidence=verify_artifacts(plan,args.artifacts); result=create_journal(args.journal,plan,evidence) if args.journal is not None else evidence
         elif args.command=="i18n": result=catalog_summary()
         elif args.command=="apps": result=public_registry_summary(load_registry(args.manifest))
         elif args.command=="android-apps": result=public_android_app_source_summary(validate_android_app_sources(args.product_root,args.manifest))
         elif args.command=="root-policy": result=public_policy_summary(load_policy(args.policy))
         else: result=evaluate(load_ledger(args.ledger))
         print(json.dumps(result,indent=2,ensure_ascii=True)); return 2 if args.command=="gate" and not result["beta_release_allowed"] else 0
-    except (AndroidAppSourceError,AospWorkspaceError,BuildEvidenceError,BuildPreflightError,CuttlefishEvidenceError,DiagnosticError,FastbootDiagnosticError,IdentityAssessmentError,LocalizationError,PlatformBaselineError,ProductContractError,ProfileError,SwirRootPolicyError,SystemAppRegistryError,OSError,ValueError):
-        print("Operation failed: check project metadata or the trusted Android SDK tool path, USB mode, AOSP workspace/evidence/app source, host workspace and single-device connection. Raw errors are withheld for privacy.",file=sys.stderr); return 1
+    except (AndroidAppSourceError,AospWorkspaceError,BuildEvidenceError,BuildPreflightError,CuttlefishEvidenceError,DiagnosticError,FastbootDiagnosticError,IdentityAssessmentError,LocalizationError,PlatformBaselineError,ProductContractError,ProfileError,SwirRootPolicyError,SystemAppRegistryError,TransactionEvidenceError,OSError,ValueError):
+        print("Operation failed: check project metadata or the trusted Android SDK tool path, USB mode, AOSP workspace/evidence/app source, local transaction evidence, host workspace and single-device connection. Raw errors are withheld for privacy.",file=sys.stderr); return 1
 if __name__=="__main__": raise SystemExit(main())
