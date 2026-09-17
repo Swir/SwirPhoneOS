@@ -1,8 +1,10 @@
 """Shared localization runtime for SwirPhoneOS host tools.
 
 The canonical English catalog and all translated catalogs live in
-``swirphoneos/locales/catalogs.json`` so languages can be added without
-changing Python logic. Missing translated strings fall back to English.
+``swirphoneos/locales/catalogs.json`` plus strict data-only fragments under
+``swirphoneos/locales/catalogs.d``. Missing translated strings fall back to
+English, while checked-in fragments must be complete for every registered
+locale so new Studio surfaces do not silently regress translation coverage.
 """
 from __future__ import annotations
 
@@ -19,6 +21,9 @@ from typing import Mapping
 _LOCALE_RE = re.compile(r"[A-Za-z]{2,3}(?:-[A-Za-z]{4})?(?:-[A-Za-z]{2}|\-[0-9]{3})?\Z")
 _ALLOWED_DIRECTIONS = {"ltr", "rtl"}
 _ALIAS = {"no": "nb", "iw": "he", "in": "id", "ji": "yi"}
+_MAX_CATALOG_BYTES = 1_000_000
+_MAX_FRAGMENT_BYTES = 262_144
+_MAX_FRAGMENTS = 64
 
 
 class LocalizationError(ValueError):
@@ -53,18 +58,88 @@ def _placeholders(text: str) -> frozenset[str]:
     return frozenset(names)
 
 
-def _read_catalog_document() -> dict[str, object]:
-    path = resources.files("swirphoneos").joinpath("locales", "catalogs.json")
+def _read_json_resource(path: object, *, max_bytes: int) -> object:
     try:
-        text = path.read_text(encoding="utf-8")
+        text = path.read_text(encoding="utf-8")  # type: ignore[attr-defined]
     except (OSError, UnicodeError) as exc:
-        raise LocalizationError("Localization catalog cannot be read.") from exc
-    if len(text) > 1_000_000:
-        raise LocalizationError("Localization catalog is oversized.")
+        raise LocalizationError("Localization data cannot be read.") from exc
+    if len(text.encode("utf-8")) > max_bytes:
+        raise LocalizationError("Localization data is oversized.")
     try:
         return json.loads(text, object_pairs_hook=_pairs_unique)
+    except LocalizationError:
+        raise
     except json.JSONDecodeError as exc:
-        raise LocalizationError("Localization catalog is invalid JSON.") from exc
+        raise LocalizationError("Localization data is invalid JSON.") from exc
+
+
+def _merge_catalog_fragment(document: object, fragment: object) -> dict[str, object]:
+    """Merge one complete-locale string fragment without allowing key drift."""
+    if not isinstance(document, dict):
+        raise LocalizationError("Localization base document must be an object.")
+    if not isinstance(fragment, dict) or set(fragment) != {"schema_version", "source_locale", "strings"}:
+        raise LocalizationError("Localization fragment must match schema v1 exactly.")
+    if fragment["schema_version"] != 1 or document.get("schema_version") != 1:
+        raise LocalizationError("Unsupported localization fragment schema.")
+    source_locale = document.get("source_locale")
+    if not isinstance(source_locale, str) or fragment["source_locale"] != source_locale:
+        raise LocalizationError("Localization fragment source locale does not match the base catalog.")
+    locales = document.get("locales")
+    strings = fragment["strings"]
+    if not isinstance(locales, dict) or not locales or not isinstance(strings, dict):
+        raise LocalizationError("Localization fragment/base locale map is invalid.")
+    if set(strings) != set(locales):
+        raise LocalizationError("Localization fragment must cover every registered locale exactly.")
+    source_patch = strings.get(source_locale)
+    if not isinstance(source_patch, dict) or not source_patch:
+        raise LocalizationError("Localization fragment source strings are missing.")
+    fragment_keys = set(source_patch)
+    if len(fragment_keys) > 512:
+        raise LocalizationError("Localization fragment contains too many keys.")
+
+    for code, patch in strings.items():
+        if not isinstance(code, str) or not isinstance(patch, dict) or set(patch) != fragment_keys:
+            raise LocalizationError("Localization fragment key coverage differs between locales.")
+        locale_entry = locales.get(code)
+        if not isinstance(locale_entry, dict):
+            raise LocalizationError("Localization base locale entry is invalid.")
+        base_strings = locale_entry.get("strings")
+        if not isinstance(base_strings, dict):
+            raise LocalizationError("Localization base strings are invalid.")
+        overlap = set(base_strings) & fragment_keys
+        if overlap:
+            raise LocalizationError("Localization fragment attempts to replace an existing key.")
+        for key, value in patch.items():
+            if not isinstance(key, str) or not key or len(key) > 96 or not key.isascii():
+                raise LocalizationError("Localization fragment contains an invalid string key.")
+            if not isinstance(value, str) or not value.strip() or len(value) > 4096:
+                raise LocalizationError("Localization fragment contains an invalid translation.")
+            base_strings[key] = value
+    return document
+
+
+def _read_catalog_document() -> dict[str, object]:
+    root = resources.files("swirphoneos").joinpath("locales")
+    document = _read_json_resource(root.joinpath("catalogs.json"), max_bytes=_MAX_CATALOG_BYTES)
+    if not isinstance(document, dict):
+        raise LocalizationError("Localization catalog root must be an object.")
+
+    fragments_root = root.joinpath("catalogs.d")
+    try:
+        fragments = sorted(
+            (entry for entry in fragments_root.iterdir() if entry.name.endswith(".json")),
+            key=lambda entry: entry.name,
+        )
+    except (FileNotFoundError, NotADirectoryError):
+        fragments = []
+    except OSError as exc:
+        raise LocalizationError("Localization fragment directory cannot be read.") from exc
+    if len(fragments) > _MAX_FRAGMENTS:
+        raise LocalizationError("Too many localization fragments are registered.")
+    for fragment_path in fragments:
+        fragment = _read_json_resource(fragment_path, max_bytes=_MAX_FRAGMENT_BYTES)
+        document = _merge_catalog_fragment(document, fragment)
+    return document
 
 
 def _validate_catalog_document(document: object) -> tuple[str, dict[str, LocaleInfo]]:
