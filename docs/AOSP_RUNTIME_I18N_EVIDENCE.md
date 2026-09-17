@@ -4,6 +4,12 @@ SwirPhoneOS treats localization as a runtime property, not only a source-file pr
 
 This evidence path is deliberately Cuttlefish-only and fail-closed. It must never be reused as physical-device compatibility evidence.
 
+## Source LocaleConfig gate
+
+Every source-ready first-party app now declares `android:localeConfig="@xml/locales_config"` and ships a package-local `res/xml/locales_config.xml` containing exactly the shared EN/PL/NB/DE/ES/FR/PT/AR catalog. `python -m swirphoneos.android_locale_config` validates the manifest declaration, exact locale set/order, `supportsRtl=true`, and exact AOSP staging coverage for every source-ready package. This is source evidence only.
+
+Android's per-app language surface depends on an application LocaleConfig. Keeping that metadata data-driven and staged with the app prevents the runtime locale test from relying on an undeclared or stale supported-language list.
+
 ## Runtime locale matrix
 
 After the exact pinned SwirPhoneOS Cuttlefish product has passed `cuttlefish-evidence` and the ordinary package launch smoke, run:
