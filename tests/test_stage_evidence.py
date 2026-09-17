@@ -101,6 +101,16 @@ class StageEvidenceTests(unittest.TestCase):
             with self.assertRaises(StageEvidenceError):
                 verify_post_build_stage(report, workspace)
 
+    def test_noncanonical_destination_is_rejected(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            workspace, report = self._fixture(root)
+            value = json.loads(report.read_text(encoding="utf-8"))
+            value["files"][0]["destination_relative"] = "vendor/swir/products/../products/AndroidProducts.mk"
+            report.write_text(json.dumps(value), encoding="utf-8")
+            with self.assertRaises(StageEvidenceError):
+                verify_post_build_stage(report, workspace)
+
     @unittest.skipIf(os.name == "nt", "symlink creation is not reliably available on Windows CI")
     def test_symlinked_staged_file_is_rejected(self):
         with tempfile.TemporaryDirectory() as temp:
@@ -111,6 +121,18 @@ class StageEvidenceTests(unittest.TestCase):
             outside = root / "outside.mk"
             outside.write_bytes(b"products\n")
             target.symlink_to(outside)
+            with self.assertRaises(StageEvidenceError):
+                verify_post_build_stage(report, workspace)
+
+    @unittest.skipIf(os.name == "nt", "symlink creation is not reliably available on Windows CI")
+    def test_symlinked_vendor_swir_parent_is_rejected(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            workspace, report = self._fixture(root)
+            swir = workspace / "vendor/swir"
+            outside = root / "outside-tree"
+            swir.rename(outside)
+            swir.symlink_to(outside, target_is_directory=True)
             with self.assertRaises(StageEvidenceError):
                 verify_post_build_stage(report, workspace)
 

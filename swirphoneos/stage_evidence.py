@@ -4,7 +4,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 import re
 from typing import Any
 
@@ -52,6 +52,28 @@ def _sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
+def _safe_destination(root: Path, relative_text: str) -> Path:
+    posix = PurePosixPath(relative_text)
+    if posix.is_absolute() or posix.as_posix() != relative_text:
+        raise StageEvidenceError("Stage destination is not a canonical relative POSIX path.")
+    if len(posix.parts) < 3 or posix.parts[:2] != ("vendor", "swir"):
+        raise StageEvidenceError("Stage destination is outside vendor/swir.")
+    if any(part in ("", ".", "..") for part in posix.parts):
+        raise StageEvidenceError("Stage destination contains an unsafe path component.")
+
+    current = root
+    for index, part in enumerate(posix.parts):
+        current = current / part
+        if current.is_symlink():
+            raise StageEvidenceError("Stage destination traverses a symlink.")
+        if index < len(posix.parts) - 1:
+            if not current.is_dir():
+                raise StageEvidenceError("Stage destination parent is missing or not a directory.")
+        elif not current.is_file():
+            raise StageEvidenceError("A staged source path is missing or not a regular file.")
+    return current
+
+
 def verify_post_build_stage(report_path: Path, workspace: Path) -> dict[str, object]:
     root = workspace.expanduser().resolve()
     if root == Path(root.anchor) or not (root / ".repo").is_dir() or not (root / "build" / "envsetup.sh").is_file():
@@ -76,7 +98,11 @@ def verify_post_build_stage(report_path: Path, workspace: Path) -> dict[str, obj
     if not isinstance(files, list) or not files or len(files) > _MAX_FILES:
         raise StageEvidenceError("Stage report file inventory is invalid.")
 
-    vendor_root = (root / "vendor" / "swir").resolve()
+    vendor = root / "vendor"
+    swir_root = vendor / "swir"
+    if vendor.is_symlink() or swir_root.is_symlink() or not vendor.is_dir() or not swir_root.is_dir():
+        raise StageEvidenceError("vendor/swir must remain a real directory tree after the build.")
+
     verified: list[dict[str, object]] = []
     seen: set[str] = set()
     total = 0
@@ -84,23 +110,13 @@ def verify_post_build_stage(report_path: Path, workspace: Path) -> dict[str, obj
         if not isinstance(item, dict) or item.get("copy_verified") is not True:
             raise StageEvidenceError("Stage report contains an unverified file record.")
         relative = item.get("destination_relative")
-        if not isinstance(relative, str) or not relative.startswith("vendor/swir/"):
-            raise StageEvidenceError("Stage destination is outside vendor/swir.")
+        if not isinstance(relative, str):
+            raise StageEvidenceError("Stage destination is invalid.")
         if relative in seen:
             raise StageEvidenceError("Stage report contains a duplicate destination.")
         seen.add(relative)
-        parts = Path(relative).parts
-        if any(part in ("", ".", "..") for part in parts):
-            raise StageEvidenceError("Stage destination contains an unsafe path component.")
-        target = root.joinpath(*parts)
-        if target.is_symlink() or not target.is_file():
-            raise StageEvidenceError("A staged source path is missing or not a regular file.")
-        resolved = target.resolve()
-        try:
-            resolved.relative_to(vendor_root)
-        except ValueError as exc:
-            raise StageEvidenceError("A staged source path escapes vendor/swir.") from exc
-        size = resolved.stat().st_size
+        target = _safe_destination(root, relative)
+        size = target.stat().st_size
         expected_size = item.get("size")
         expected_hash = item.get("sha256")
         if not isinstance(expected_size, int) or isinstance(expected_size, bool) or expected_size <= 0:
@@ -109,7 +125,7 @@ def verify_post_build_stage(report_path: Path, workspace: Path) -> dict[str, obj
             raise StageEvidenceError("Staged source byte size changed after staging.")
         if not isinstance(expected_hash, str) or _HEX64.fullmatch(expected_hash) is None:
             raise StageEvidenceError("Stage record SHA-256 is invalid.")
-        current_hash = _sha256_file(resolved)
+        current_hash = _sha256_file(target)
         if current_hash != expected_hash:
             raise StageEvidenceError("Staged source SHA-256 changed after staging.")
         total += size
