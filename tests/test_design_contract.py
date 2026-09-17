@@ -18,16 +18,23 @@ class DesignContractTests(unittest.TestCase):
     def test_repository_design_contract_covers_every_system_app_but_is_source_ready_only(self):
         summary = validate_design_contract()
         self.assertEqual(summary["status"], "SOURCE_CONTRACT_READY_NOT_BUILT")
-        self.assertEqual(summary["design_contract"], "swirphoneos-design-v2")
+        self.assertEqual(summary["design_contract"], "swirphoneos-design-v3")
         self.assertEqual(summary["integrated_core_apps"], ["settings", "files", "update", "privacy", "device_care"])
         self.assertEqual(summary["integrated_core_app_count"], 5)
         self.assertEqual(summary["integrated_system_apps"], list(SYSTEM_APPS))
         self.assertEqual(summary["integrated_system_app_count"], 20)
         self.assertEqual(summary["expected_system_app_count"], 20)
         self.assertTrue(summary["all_system_apps_integrated"])
-        self.assertEqual(summary["tokenized_apps"], ["phone", "messages", "camera"])
-        self.assertEqual(summary["tokenized_app_count"], 3)
-        self.assertTrue(summary["hardcoded_color_free_pilot_verified"])
+        self.assertEqual(
+            summary["tokenized_apps"],
+            ["phone", "messages", "camera", "settings", "update", "privacy", "device_care"],
+        )
+        self.assertEqual(summary["tokenized_app_count"], 7)
+        self.assertEqual(summary["tokenized_core_apps"], ["settings", "update", "privacy", "device_care"])
+        self.assertEqual(summary["tokenized_core_app_count"], 4)
+        self.assertEqual(summary["expected_core_app_count"], 5)
+        self.assertTrue(summary["hardcoded_color_free_cohort_verified"])
+        self.assertFalse(summary["all_core_apps_tokenized"])
         self.assertTrue(summary["day_night_tokens_declared"])
         self.assertEqual(summary["minimum_touch_target_token_dp"], 48)
         self.assertFalse(summary["android_build_verified"])
@@ -67,7 +74,7 @@ class DesignContractTests(unittest.TestCase):
             with self.assertRaises(DesignContractError):
                 validate_design_contract(root)
 
-    def test_tokenized_pilot_rejects_direct_color_literals(self):
+    def test_tokenized_cohort_rejects_direct_color_literals_in_communication_app(self):
         temp, root = self._fixture()
         with temp:
             source = root / "apps/SwirPhone/src/org/swir/phoneos/phone/MainActivity.java"
@@ -75,10 +82,18 @@ class DesignContractTests(unittest.TestCase):
             with self.assertRaises(DesignContractError):
                 validate_design_contract(root)
 
-    def test_tokenized_pilot_requires_shared_touch_target_reference(self):
+    def test_tokenized_cohort_rejects_direct_color_literals_in_core_app(self):
         temp, root = self._fixture()
         with temp:
-            source = root / "apps/SwirMessages/src/org/swir/phoneos/messages/MainActivity.java"
+            source = root / "apps/SwirSettings/src/org/swir/phoneos/settings/MainActivity.java"
+            source.write_text(source.read_text(encoding="utf-8").replace("import android.os.Build;", "import android.graphics.Color;\nimport android.os.Build;", 1), encoding="utf-8")
+            with self.assertRaises(DesignContractError):
+                validate_design_contract(root)
+
+    def test_tokenized_cohort_requires_shared_touch_target_reference(self):
+        temp, root = self._fixture()
+        with temp:
+            source = root / "apps/SwirPrivacy/src/org/swir/phoneos/privacy/MainActivity.java"
             source.write_text(source.read_text(encoding="utf-8").replace("R.dimen.swir_touch_min", "R.dimen.swir_space_lg"), encoding="utf-8")
             with self.assertRaises(DesignContractError):
                 validate_design_contract(root)
