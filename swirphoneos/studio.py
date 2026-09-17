@@ -95,7 +95,7 @@ class Studio:
         # Two action rows prevent translated review labels from overlapping on
         # narrow Windows displays while keeping the scan/save controls primary.
         actions = ttk.Frame(outer)
-        actions.grid(row=3, column=0, sticky="ew", pady=8)
+        actions.grid(row=3, column=0, sticky="ew", pady=6)
         actions.columnconfigure(0, weight=1)
         actions.columnconfigure(1, weight=1)
         self.scan = self.button(actions, "scan", self.start_scan)
