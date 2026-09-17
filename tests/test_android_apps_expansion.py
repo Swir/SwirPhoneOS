@@ -16,19 +16,20 @@ class AndroidAppExpansionTests(unittest.TestCase):
         registry = root / "manifest.json"; shutil.copy2(Path("system_apps/manifest.json"), registry)
         return temp, product, registry
 
-    def test_expanded_apps_are_reviewed_source_not_runtime(self):
+    def test_all_essential_apps_are_reviewed_source_not_runtime(self):
         summary = public_android_app_source_summary(validate_android_app_sources())
-        self.assertEqual(summary["source_ready_count"], 16)
-        self.assertEqual(summary["localized_catalogs"], 128)
-        for app_id in ("phone", "messages", "notes", "calendar", "gallery", "recorder", "contacts", "apps", "swirroot"): self.assertIn(app_id, summary["source_ready_apps"])
-        for capability in ("dialer", "sms", "offline_notes", "local_calendar", "local_media", "audio_recording", "microphone_state", "file_export", "local_contacts", "import_export", "package_catalog", "signature_provenance", "root_state", "authorization_audit"): self.assertIn(capability, summary["implemented_capabilities"])
-        for capability in ("in_call", "recent_calls", "mms", "conversation_history", "albums", "provider_bridge", "update_status", "guided_enable", "guided_unroot"): self.assertIn(capability, summary["remaining_target_capabilities"])
-        self.assertIn("phone:in_call", summary["remaining_app_capabilities"])
-        self.assertIn("phone:recent_calls", summary["remaining_app_capabilities"])
-        self.assertIn("messages:mms", summary["remaining_app_capabilities"])
-        self.assertIn("messages:conversation_history", summary["remaining_app_capabilities"])
+        self.assertEqual(summary["source_ready_count"], 20)
+        self.assertEqual(summary["localized_catalogs"], 160)
+        for app_id in ("phone", "messages", "camera", "browser", "weather", "backup", "notes", "calendar", "gallery", "recorder", "contacts", "apps", "swirroot"):
+            self.assertIn(app_id, summary["source_ready_apps"])
+        for capability in ("dialer", "sms", "camera_capability_report", "web_browsing", "privacy_controls", "forecast", "provider_attribution", "unit_preferences", "supported_data_backup", "recovery_metadata", "offline_notes", "local_calendar", "local_media", "audio_recording", "microphone_state", "file_export", "local_contacts", "import_export", "package_catalog", "signature_provenance", "root_state", "authorization_audit"):
+            self.assertIn(capability, summary["implemented_capabilities"])
+        for capability in ("in_call", "recent_calls", "mms", "conversation_history", "photo_capture", "video_capture", "downloads", "restore_orchestration", "albums", "provider_bridge", "update_status", "guided_enable", "guided_unroot"):
+            self.assertIn(capability, summary["remaining_target_capabilities"])
+        self.assertIn("camera:photo_capture", summary["remaining_app_capabilities"])
+        self.assertIn("browser:downloads", summary["remaining_app_capabilities"])
+        self.assertIn("backup:restore_orchestration", summary["remaining_app_capabilities"])
         self.assertIn("calendar:provider_bridge", summary["remaining_app_capabilities"])
-        self.assertIn("apps:update_status", summary["remaining_app_capabilities"])
         self.assertFalse(summary["android_build_verified"]); self.assertFalse(summary["runtime_verified"])
 
     def test_notes_must_keep_explicit_document_export(self):
@@ -48,7 +49,7 @@ class AndroidAppExpansionTests(unittest.TestCase):
     def test_stage_fragment_duplicate_is_rejected_across_manifests(self):
         temp, product, registry = self._copy_fixture()
         with temp:
-            fragment = product / "stage_manifest.d/media-capture.json"; data = json.loads(fragment.read_text(encoding="utf-8")); data["files"][0]["destination"] = "vendor/swir/apps/SwirCalculator/Android.bp"
+            fragment = product / "stage_manifest.d/camera.json"; data = json.loads(fragment.read_text(encoding="utf-8")); data["files"][0]["destination"] = "vendor/swir/apps/SwirCalculator/Android.bp"
             fragment.write_text(json.dumps(data), encoding="utf-8")
             with self.assertRaises(AndroidAppSourceError): validate_android_app_sources(product, registry)
 
