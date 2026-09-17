@@ -1,0 +1,51 @@
+name: ARM64 GSI source checks
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'platform/aosp_product/**'
+      - 'swirphoneos/gsi_*.py'
+      - 'swirphoneos/stage_manifest.py'
+      - 'swirphoneos/__main__.py'
+      - 'tests/test_gsi_foundation.py'
+      - '.github/workflows/gsi-source.yml'
+  pull_request:
+    paths:
+      - 'platform/aosp_product/**'
+      - 'swirphoneos/gsi_*.py'
+      - 'swirphoneos/stage_manifest.py'
+      - 'swirphoneos/__main__.py'
+      - 'tests/test_gsi_foundation.py'
+      - '.github/workflows/gsi-source.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gsi-source-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  source-contract:
+    name: Python 3.14 source contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.14'
+      - name: Compile GSI tooling and tests
+        run: python -m compileall -q swirphoneos tests/test_gsi_foundation.py
+      - name: Validate checked-in ARM64 GSI contract
+        run: python -m swirphoneos gsi-contract
+      - name: Validate pinned ARM64 GSI workspace plan
+        run: python -m swirphoneos gsi-plan --workspace ./_aosp-gsi-contract --jobs 8
+      - name: Run fail-closed GSI unit coverage
+        run: python -m unittest tests.test_gsi_foundation -v
+      - name: Revalidate complete Android source/staging bundle
+        run: python -m swirphoneos android-apps
