@@ -51,7 +51,24 @@ jobs:
             test "$(basename "${{ inputs.adb_path }}")" = "adb"
           fi
           cd tools
-          python -m swirphoneos build-preflight --workspace "$SWIR_AOSP_WORKSPACE"
+          python -m swirphoneos build-preflight --workspace "$SWIR_AOSP_WORKSPACE" > "$GITHUB_WORKSPACE/builder-preflight.json"
+          python - "$GITHUB_WORKSPACE/builder-preflight.json" "${{ inputs.collect_runtime }}" <<'PY'
+          import json
+          import pathlib
+          import sys
+
+          path = pathlib.Path(sys.argv[1])
+          report = json.loads(path.read_text(encoding="utf-8"))
+          failed = [
+              item.get("name", "unknown")
+              for item in report.get("checks", [])
+              if item.get("ok") is not True
+          ]
+          if report.get("ready_for_full_build") is not True:
+              raise SystemExit("AOSP builder preflight rejected host; failed checks: " + ", ".join(failed))
+          if sys.argv[2].lower() == "true" and report.get("cuttlefish_kvm_available") is not True:
+              raise SystemExit("Runtime collection requires writable/readable KVM on the dedicated builder.")
+          PY
           python -m swirphoneos aosp-plan --workspace "$SWIR_AOSP_WORKSPACE" --jobs "${{ inputs.jobs }}" > "$GITHUB_WORKSPACE/aosp-plan.json"
       - name: Initialize and synchronize exact Android 17 tag
         shell: bash
@@ -67,6 +84,24 @@ jobs:
         run: |
           set -euo pipefail
           PYTHONPATH="$GITHUB_WORKSPACE/tools" python -m swirphoneos stage-product --workspace "$SWIR_AOSP_WORKSPACE" --product-root "$GITHUB_WORKSPACE/tools/platform/aosp_product" --execute > "$GITHUB_WORKSPACE/stage-report.json"
+          python - "$GITHUB_WORKSPACE/stage-report.json" <<'PY'
+          import json
+          import pathlib
+          import re
+          import sys
+
+          report = json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"))
+          digest = str(report.get("staged_content_sha256", ""))
+          if report.get("schema_version") != 4:
+              raise SystemExit("Unexpected stage evidence schema.")
+          if report.get("executed") is not True or report.get("copy_verified") is not True:
+              raise SystemExit("Staged source bytes were not fully copy-verified.")
+          if re.fullmatch(r"[0-9a-f]{64}", digest) is None:
+              raise SystemExit("Stage bundle digest is missing or malformed.")
+          files = report.get("files")
+          if not isinstance(files, list) or not files or any(item.get("copy_verified") is not True for item in files):
+              raise SystemExit("One or more staged files lack copy verification.")
+          PY
       - name: Build SwirPhoneOS Cuttlefish product
         shell: bash
         run: |
@@ -158,6 +193,7 @@ jobs:
           if-no-files-found: error
           retention-days: 30
           path: |
+            builder-preflight.json
             aosp-plan.json
             resolved-manifest.json
             stage-report.json
