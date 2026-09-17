@@ -130,7 +130,8 @@ class AospWorkspaceTests(unittest.TestCase):
             self.assertFalse(dry["copy_verified"])
             self.assertEqual(dry["file_count"], 2)
             self.assertEqual(len(dry["staged_content_sha256"]), 64)
-            expected = hashlib.sha256(b"alpha\n").hexdigest()
+            source_bytes = (product / "AndroidProducts.mk").read_bytes()
+            expected = hashlib.sha256(source_bytes).hexdigest()
             records = {item["source_relative"]: item for item in dry["files"]}
             self.assertEqual(records["AndroidProducts.mk"]["sha256"], expected)
             self.assertFalse((workspace / "vendor").exists())
@@ -145,7 +146,7 @@ class AospWorkspaceTests(unittest.TestCase):
             self.assertEqual(executed["staged_content_sha256"], dry["staged_content_sha256"])
             self.assertTrue(all(item["copy_verified"] for item in executed["files"]))
             copied = workspace / "vendor/swir/products/AndroidProducts.mk"
-            self.assertEqual(copied.read_bytes(), b"alpha\n")
+            self.assertEqual(copied.read_bytes(), source_bytes)
 
     def test_stage_bundle_digest_changes_when_source_changes(self):
         with tempfile.TemporaryDirectory() as temp:
