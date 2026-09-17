@@ -53,7 +53,7 @@ def main(argv: list[str] | None = None) -> int:
         elif args.command=="profiles":
             registry=discover_profiles(args.root); result={"schema_version":1,"profile_count":len(registry),"profiles":[public_profile_summary(p) for p in registry],"flash_allowed":False}
         elif args.command=="baseline": result=public_baseline_summary(load_baseline(args.file))
-        elif args.command=="product-contract": result=public_product_summary(validate_product_contract(args.product_root))
+        elif args.command=="product-contract": result=public_product_summary(validate_product_contract(args.root))
         elif args.command=="build-preflight": result=evaluate_preflight(capture_host(args.workspace.resolve()))
         elif args.command=="aosp-plan": result=public_workspace_plan(make_workspace_plan(load_baseline(args.baseline),validate_product_contract(args.product_root),args.workspace,jobs=args.jobs))
         elif args.command=="aosp-manifest": result=public_manifest_evidence(validate_resolved_manifest(args.file))
