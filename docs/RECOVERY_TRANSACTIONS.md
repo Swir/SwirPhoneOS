@@ -2,7 +2,7 @@
 
 SwirPhoneOS does not currently expose a write-capable installer. This document defines the **local preparation and evidence layer** that must exist before a future device-specific install/rollback implementation can be considered.
 
-The implementation is `swirphoneos.transaction_evidence`. It performs only local metadata validation, file hashing and create-only JSON journaling. It does **not** invoke ADB, Fastboot, a bootloader, recovery, an updater, SwirRoot, a shell, or any external-device command.
+The implementation is `swirphoneos.transaction_evidence` plus `swirphoneos.journal_evidence`. They perform only local metadata validation, file hashing, create-only JSON journaling and journal-integrity revalidation. They do **not** invoke ADB, Fastboot, a bootloader, recovery, an updater, SwirRoot, a shell, or any external-device command.
 
 ## Why this exists
 
@@ -46,7 +46,18 @@ python -m swirphoneos transaction-evidence \
   --journal /absolute/path/to/recovery-journal.json
 ```
 
-The journal path must not already exist. The writer uses exclusive creation, requests owner-only permissions on POSIX, flushes and fsyncs the file, and never overwrites a prior journal. The journal records the canonical plan SHA-256, exact artifact hashes, source/target build identities, `rollback_ready: true`, `owner_confirmation_recorded: false`, and `write_allowed: false`.
+Revalidate a persisted journal later, including its canonical evidence hash and immutable safety fields:
+
+```sh
+python -m swirphoneos transaction-journal \
+  --file /absolute/path/to/recovery-journal.json
+```
+
+The journal path must not already exist. The writer uses exclusive creation, requests owner-only permissions on POSIX, flushes and fsyncs the file, and never overwrites a prior journal. The journal records the canonical plan SHA-256, exact artifact hashes, source/target build identities, `rollback_ready: true`, `owner_confirmation_recorded: false`, and `write_allowed: false`. Revalidation rejects duplicate keys, changed build/artifact fields, changed safety booleans and any canonical evidence-hash mismatch.
+
+## SwirRoot integration boundary
+
+`journal_evidence.swirroot_gate_projection()` maps only what a validated local journal can truthfully prove into the SwirRoot gate vocabulary. It can prove that rollback material was reviewed and that a matching journal exists; it can also compare the journal's target build/profile to a requested exact build/profile. It deliberately keeps `verified_device_profile`, `owner_confirmation`, `update_state_safe`, `expected_nonroot_state_known` and `transition_allowed` false because those facts require independent physical/runtime evidence. Therefore a transaction journal can satisfy prerequisites without ever enabling SwirRoot by itself.
 
 ## Non-goals in schema v1
 
