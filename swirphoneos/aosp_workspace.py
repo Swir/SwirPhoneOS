@@ -4,6 +4,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 import hashlib
 import json
+import os
 from pathlib import Path, PurePosixPath
 import re
 import shutil
@@ -23,6 +24,7 @@ _MAX_MANIFEST_BYTES = 16 * 1024 * 1024
 _MAX_STAGE_FILE_BYTES = 2 * 1024 * 1024
 _MAX_STAGE_TOTAL_BYTES = 32 * 1024 * 1024
 _MAX_STAGE_FILES = 512
+_MAX_STAGE_TREE_ENTRIES = 4096
 _LEGACY_STAGE_FILES = ("AndroidProducts.mk", "swirphoneos_cf_x86_64.mk")
 
 
@@ -233,6 +235,64 @@ def _prepare_destination(target_root: Path, destination: PurePosixPath) -> Path:
     return destination_path
 
 
+def _inventory_stage_tree(target_root: Path) -> set[str]:
+    """Return the exact regular-file inventory under vendor/swir without following symlinks."""
+    vendor = target_root / "vendor"
+    stage_root = vendor / "swir"
+    if vendor.is_symlink():
+        raise AospWorkspaceError("AOSP vendor directory must not be a symlink.")
+    if vendor.exists() and not vendor.is_dir():
+        raise AospWorkspaceError("AOSP vendor path must be a directory.")
+    if stage_root.is_symlink():
+        raise AospWorkspaceError("AOSP vendor/swir destination must not be a symlink.")
+    if not stage_root.exists():
+        return set()
+    if not stage_root.is_dir():
+        raise AospWorkspaceError("AOSP vendor/swir destination must be a directory.")
+
+    files: set[str] = set()
+    entries_seen = 0
+    for current_text, dirnames, filenames in os.walk(stage_root, topdown=True, followlinks=False):
+        current = Path(current_text)
+        for name in dirnames:
+            entries_seen += 1
+            if entries_seen > _MAX_STAGE_TREE_ENTRIES:
+                raise AospWorkspaceError("AOSP vendor/swir destination tree is unexpectedly large.")
+            child = current / name
+            if child.is_symlink() or not child.is_dir():
+                raise AospWorkspaceError("AOSP vendor/swir contains an unsafe directory entry.")
+        for name in filenames:
+            entries_seen += 1
+            if entries_seen > _MAX_STAGE_TREE_ENTRIES:
+                raise AospWorkspaceError("AOSP vendor/swir destination tree is unexpectedly large.")
+            child = current / name
+            if child.is_symlink() or not child.is_file():
+                raise AospWorkspaceError("AOSP vendor/swir contains an unsafe file entry.")
+            relative = child.relative_to(target_root).as_posix()
+            if relative in files:
+                raise AospWorkspaceError("AOSP vendor/swir contains a duplicate file identity.")
+            files.add(relative)
+    return files
+
+
+def _assert_stage_tree_closure(
+    target_root: Path,
+    entries: tuple[StageEntry, ...],
+    *,
+    require_exact: bool,
+) -> int:
+    expected = {entry.destination.as_posix() for entry in entries}
+    actual = _inventory_stage_tree(target_root)
+    extras = actual - expected
+    if extras:
+        raise AospWorkspaceError(
+            "AOSP vendor/swir contains stale or unreviewed files outside the current stage manifest."
+        )
+    if require_exact and actual != expected:
+        raise AospWorkspaceError("AOSP vendor/swir does not exactly match the current stage manifest.")
+    return len(actual)
+
+
 def _stage_bundle_digest(records: list[dict[str, object]]) -> str:
     canonical = [
         {
@@ -274,6 +334,9 @@ def stage_product_tree(
             }
         )
 
+    preexisting_destination_file_count: int | None = None
+    destination_file_count: int | None = None
+    destination_tree_closed = False
     if execute:
         if (
             not (target_root / ".repo").is_dir()
@@ -282,6 +345,9 @@ def stage_product_tree(
             raise AospWorkspaceError(
                 "Refusing to stage into a directory that is not an initialized AOSP checkout."
             )
+        preexisting_destination_file_count = _assert_stage_tree_closure(
+            target_root, entries, require_exact=False
+        )
         for entry, record in zip(entries, records):
             src = source / Path(*entry.source.parts)
             dst = _prepare_destination(target_root, entry.destination)
@@ -291,20 +357,28 @@ def stage_product_tree(
             if dst.stat().st_size != record["size"] or _sha256_file(dst) != record["sha256"]:
                 raise AospWorkspaceError("Staged AOSP destination content verification failed.")
             record["copy_verified"] = True
+        destination_file_count = _assert_stage_tree_closure(
+            target_root, entries, require_exact=True
+        )
+        destination_tree_closed = destination_file_count == len(entries)
 
     return {
-        "schema_version": 4,
+        "schema_version": 5,
         "workspace": str(target_root),
         "destination_root": str(target_root / "vendor" / "swir"),
         "file_count": len(entries),
+        "preexisting_destination_file_count": preexisting_destination_file_count,
+        "destination_file_count": destination_file_count,
+        "destination_tree_closed": destination_tree_closed,
         "files": records,
         "staged_content_sha256": _stage_bundle_digest(records),
         "copy_verified": execute and all(bool(record["copy_verified"]) for record in records),
         "executed": execute,
         "device_write_allowed": False,
         "note": (
-            "Stages only manifest-whitelisted Swir AOSP product/app source, records exact "
-            "size/SHA-256 evidence and verifies copied bytes; it does not build Android or "
-            "write to a phone."
+            "Stages only manifest-whitelisted Swir AOSP product/app source, rejects stale or "
+            "unreviewed vendor/swir files, records exact size/SHA-256 evidence, verifies copied "
+            "bytes and proves exact destination-tree closure; it does not build Android or write "
+            "to a phone."
         ),
     }
