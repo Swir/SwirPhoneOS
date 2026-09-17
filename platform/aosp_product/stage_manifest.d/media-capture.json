@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "files": [
+    {"source":"apps/SwirGallery/Android.bp","destination":"vendor/swir/apps/SwirGallery/Android.bp"},
+    {"source":"apps/SwirGallery/AndroidManifest.xml","destination":"vendor/swir/apps/SwirGallery/AndroidManifest.xml"},
+    {"source":"apps/SwirGallery/src/org/swir/phoneos/gallery/MediaPolicy.java","destination":"vendor/swir/apps/SwirGallery/src/org/swir/phoneos/gallery/MediaPolicy.java"},
+    {"source":"apps/SwirGallery/src/org/swir/phoneos/gallery/MainActivity.java","destination":"vendor/swir/apps/SwirGallery/src/org/swir/phoneos/gallery/MainActivity.java"},
+    {"source":"apps/SwirGallery/res/drawable/ic_gallery.xml","destination":"vendor/swir/apps/SwirGallery/res/drawable/ic_gallery.xml"},
+    {"source":"apps/SwirGallery/res/values/strings.xml","destination":"vendor/swir/apps/SwirGallery/res/values/strings.xml"},
+    {"source":"apps/SwirGallery/res/values-pl/strings.xml","destination":"vendor/swir/apps/SwirGallery/res/values-pl/strings.xml"},
+    {"source":"apps/SwirGallery/res/values-nb/strings.xml","destination":"vendor/swir/apps/SwirGallery/res/values-nb/strings.xml"},
+    {"source":"apps/SwirGallery/res/values-de/strings.xml","destination":"vendor/swir/apps/SwirGallery/res/values-de/strings.xml"},
+    {"source":"apps/SwirGallery/res/values-es/strings.xml","destination":"vendor/swir/apps/SwirGallery/res/values-es/strings.xml"},
+    {"source":"apps/SwirGallery/res/values-fr/strings.xml","destination":"vendor/swir/apps/SwirGallery/res/values-fr/strings.xml"},
+    {"source":"apps/SwirGallery/res/values-pt/strings.xml","destination":"vendor/swir/apps/SwirGallery/res/values-pt/strings.xml"},
+    {"source":"apps/SwirGallery/res/values-ar/strings.xml","destination":"vendor/swir/apps/SwirGallery/res/values-ar/strings.xml"},
+    {"source":"apps/SwirRecorder/Android.bp","destination":"vendor/swir/apps/SwirRecorder/Android.bp"},
+    {"source":"apps/SwirRecorder/AndroidManifest.xml","destination":"vendor/swir/apps/SwirRecorder/AndroidManifest.xml"},
+    {"source":"apps/SwirRecorder/src/org/swir/phoneos/recorder/RecorderPolicy.java","destination":"vendor/swir/apps/SwirRecorder/src/org/swir/phoneos/recorder/RecorderPolicy.java"},
+    {"source":"apps/SwirRecorder/src/org/swir/phoneos/recorder/MainActivity.java","destination":"vendor/swir/apps/SwirRecorder/src/org/swir/phoneos/recorder/MainActivity.java"},
+    {"source":"apps/SwirRecorder/res/drawable/ic_recorder.xml","destination":"vendor/swir/apps/SwirRecorder/res/drawable/ic_recorder.xml"},
+    {"source":"apps/SwirRecorder/res/values/strings.xml","destination":"vendor/swir/apps/SwirRecorder/res/values/strings.xml"},
+    {"source":"apps/SwirRecorder/res/values-pl/strings.xml","destination":"vendor/swir/apps/SwirRecorder/res/values-pl/strings.xml"},
+    {"source":"apps/SwirRecorder/res/values-nb/strings.xml","destination":"vendor/swir/apps/SwirRecorder/res/values-nb/strings.xml"},
+    {"source":"apps/SwirRecorder/res/values-de/strings.xml","destination":"vendor/swir/apps/SwirRecorder/res/values-de/strings.xml"},
+    {"source":"apps/SwirRecorder/res/values-es/strings.xml","destination":"vendor/swir/apps/SwirRecorder/res/values-es/strings.xml"},
+    {"source":"apps/SwirRecorder/res/values-fr/strings.xml","destination":"vendor/swir/apps/SwirRecorder/res/values-fr/strings.xml"},
+    {"source":"apps/SwirRecorder/res/values-pt/strings.xml","destination":"vendor/swir/apps/SwirRecorder/res/values-pt/strings.xml"},
+    {"source":"apps/SwirRecorder/res/values-ar/strings.xml","destination":"vendor/swir/apps/SwirRecorder/res/values-ar/strings.xml"}
+  ]
+}

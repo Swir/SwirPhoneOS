@@ -13,12 +13,12 @@ class AndroidAppSourceTests(unittest.TestCase):
     def test_repository_source_apps_are_complete_but_not_runtime_claimed(self):
         summary = public_android_app_source_summary(validate_android_app_sources())
         self.assertEqual(summary["status"], "SOURCE_READY_NOT_BUILT")
-        self.assertEqual(set(summary["source_ready_apps"]), {"calculator","settings","files","device_care","update","privacy","clock","notes","calendar","swirroot"})
-        self.assertEqual(summary["source_ready_count"], 10)
-        self.assertEqual(summary["localized_catalogs"], 80)
-        for capability in ("basic_math","system_settings","search","device_status","browse","copy_move_rename","share","safe_delete","storage_status","battery_status","thermal_status","hardware_diagnostics","channel_status","signed_metadata","permission_review","alarms","timers","stopwatch","world_clock","offline_notes","export","local_calendar","root_state","authorization_audit"):
+        self.assertEqual(set(summary["source_ready_apps"]), {"calculator","settings","files","device_care","update","privacy","clock","notes","calendar","gallery","recorder","swirroot"})
+        self.assertEqual(summary["source_ready_count"], 12)
+        self.assertEqual(summary["localized_catalogs"], 96)
+        for capability in ("basic_math","system_settings","search","device_status","browse","copy_move_rename","share","safe_delete","storage_status","battery_status","thermal_status","hardware_diagnostics","channel_status","signed_metadata","permission_review","alarms","timers","stopwatch","world_clock","offline_notes","export","local_calendar","local_media","audio_recording","microphone_state","file_export","root_state","authorization_audit"):
             self.assertIn(capability, summary["implemented_capabilities"])
-        self.assertEqual(summary["remaining_target_capabilities"], ["access_history","guided_enable","guided_unroot","privacy_indicators","provider_bridge","recovery_handoff","scientific_math","staged_update_state"])
+        self.assertEqual(summary["remaining_target_capabilities"], ["access_history","albums","guided_enable","guided_unroot","privacy_indicators","provider_bridge","recovery_handoff","scientific_math","staged_update_state"])
         self.assertFalse(summary["android_build_verified"])
         self.assertFalse(summary["runtime_verified"])
         self.assertFalse(summary["device_write_allowed"])
@@ -29,10 +29,24 @@ class AndroidAppSourceTests(unittest.TestCase):
         registry = root / "manifest.json"; shutil.copy2(Path("system_apps/manifest.json"), registry)
         return temp, product, registry
 
-    def test_permission_request_is_rejected(self):
+    def test_permission_request_is_rejected_for_permission_free_app(self):
         temp, product, registry = self._copy_fixture()
         with temp:
             manifest = product / "apps/SwirSettings/AndroidManifest.xml"
+            manifest.write_text(manifest.read_text(encoding="utf-8").replace("<application", '<uses-permission android:name="android.permission.INTERNET" />\n    <application', 1), encoding="utf-8")
+            with self.assertRaises(AndroidAppSourceError): validate_android_app_sources(product, registry)
+
+    def test_gallery_permission_allowlist_is_exact(self):
+        temp, product, registry = self._copy_fixture()
+        with temp:
+            manifest = product / "apps/SwirGallery/AndroidManifest.xml"
+            manifest.write_text(manifest.read_text(encoding="utf-8").replace('    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />\n', "", 1), encoding="utf-8")
+            with self.assertRaises(AndroidAppSourceError): validate_android_app_sources(product, registry)
+
+    def test_recorder_cannot_gain_network_permission(self):
+        temp, product, registry = self._copy_fixture()
+        with temp:
+            manifest = product / "apps/SwirRecorder/AndroidManifest.xml"
             manifest.write_text(manifest.read_text(encoding="utf-8").replace("<application", '<uses-permission android:name="android.permission.INTERNET" />\n    <application', 1), encoding="utf-8")
             with self.assertRaises(AndroidAppSourceError): validate_android_app_sources(product, registry)
 
@@ -104,6 +118,20 @@ class AndroidAppSourceTests(unittest.TestCase):
         with temp:
             activity = product / "apps/SwirClock/src/org/swir/phoneos/clock/MainActivity.java"
             activity.write_text(activity.read_text(encoding="utf-8").replace("AlarmClock.ACTION_SET_ALARM", "Intent.ACTION_VIEW", 1), encoding="utf-8")
+            with self.assertRaises(AndroidAppSourceError): validate_android_app_sources(product, registry)
+
+    def test_gallery_must_keep_owner_confirmed_delete(self):
+        temp, product, registry = self._copy_fixture()
+        with temp:
+            activity = product / "apps/SwirGallery/src/org/swir/phoneos/gallery/MainActivity.java"
+            activity.write_text(activity.read_text(encoding="utf-8").replace("MediaStore.createDeleteRequest", "MediaStore.createWriteRequest", 1), encoding="utf-8")
+            with self.assertRaises(AndroidAppSourceError): validate_android_app_sources(product, registry)
+
+    def test_recorder_must_stop_when_leaving_foreground(self):
+        temp, product, registry = self._copy_fixture()
+        with temp:
+            activity = product / "apps/SwirRecorder/src/org/swir/phoneos/recorder/MainActivity.java"
+            activity.write_text(activity.read_text(encoding="utf-8").replace("stopRecording(false)", "refreshControls()", 1), encoding="utf-8")
             with self.assertRaises(AndroidAppSourceError): validate_android_app_sources(product, registry)
 
     def test_swirroot_service_cannot_gain_process_execution(self):

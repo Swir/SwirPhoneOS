@@ -16,13 +16,13 @@ class AndroidAppExpansionTests(unittest.TestCase):
         registry = root / "manifest.json"; shutil.copy2(Path("system_apps/manifest.json"), registry)
         return temp, product, registry
 
-    def test_notes_calendar_and_swirroot_are_reviewed_source_not_runtime(self):
+    def test_expanded_apps_are_reviewed_source_not_runtime(self):
         summary = public_android_app_source_summary(validate_android_app_sources())
-        self.assertEqual(summary["source_ready_count"], 10)
-        self.assertEqual(summary["localized_catalogs"], 80)
-        for app_id in ("notes", "calendar", "swirroot"): self.assertIn(app_id, summary["source_ready_apps"])
-        for capability in ("offline_notes", "local_calendar", "root_state", "authorization_audit"): self.assertIn(capability, summary["implemented_capabilities"])
-        for capability in ("provider_bridge", "guided_enable", "guided_unroot"): self.assertIn(capability, summary["remaining_target_capabilities"])
+        self.assertEqual(summary["source_ready_count"], 12)
+        self.assertEqual(summary["localized_catalogs"], 96)
+        for app_id in ("notes", "calendar", "gallery", "recorder", "swirroot"): self.assertIn(app_id, summary["source_ready_apps"])
+        for capability in ("offline_notes", "local_calendar", "local_media", "audio_recording", "microphone_state", "file_export", "root_state", "authorization_audit"): self.assertIn(capability, summary["implemented_capabilities"])
+        for capability in ("albums", "provider_bridge", "guided_enable", "guided_unroot"): self.assertIn(capability, summary["remaining_target_capabilities"])
         self.assertFalse(summary["android_build_verified"]); self.assertFalse(summary["runtime_verified"])
 
     def test_notes_must_keep_explicit_document_export(self):
@@ -42,7 +42,7 @@ class AndroidAppExpansionTests(unittest.TestCase):
     def test_stage_fragment_duplicate_is_rejected_across_manifests(self):
         temp, product, registry = self._copy_fixture()
         with temp:
-            fragment = product / "stage_manifest.d/notes-calendar.json"; data = json.loads(fragment.read_text(encoding="utf-8")); data["files"][0]["destination"] = "vendor/swir/apps/SwirCalculator/Android.bp"
+            fragment = product / "stage_manifest.d/media-capture.json"; data = json.loads(fragment.read_text(encoding="utf-8")); data["files"][0]["destination"] = "vendor/swir/apps/SwirCalculator/Android.bp"
             fragment.write_text(json.dumps(data), encoding="utf-8")
             with self.assertRaises(AndroidAppSourceError): validate_android_app_sources(product, registry)
 
