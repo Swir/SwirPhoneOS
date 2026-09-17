@@ -63,6 +63,7 @@ class GuiTests(unittest.TestCase):
             self.assertEqual(self.app.readiness.cget("text"), translate(lang, "review_readiness"))
 
     def test_readiness_review_is_display_only(self):
+        from swirphoneos.i18n import translate
         summary = {
             "schema_version": 1,
             "source": "swirphoneos_studio_swirroot_readiness_summary",
@@ -81,7 +82,9 @@ class GuiTests(unittest.TestCase):
             self.app.open_root_readiness()
         text = self.app.report.get("1.0", "end")
         self.assertIn("oneplus/avicii", text)
-        self.assertIn("owner_confirmation", text)
+        self.assertIn(translate("en", "readiness_action_enable"), text)
+        self.assertIn(translate("en", "readiness_gate_owner_confirmation"), text)
+        self.assertNotIn("owner_confirmation", text)
         self.assertEqual(self.app.status_key, "readiness_loaded")
         self.assertTrue(self.app.save.instate(["disabled"]))
         self.assertIsNotNone(self.app.readiness_summary)
