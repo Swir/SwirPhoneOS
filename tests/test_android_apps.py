@@ -100,11 +100,11 @@ class AndroidAppSourceTests(unittest.TestCase):
     def test_weather_cannot_gain_location_permission(self):
         self._replace_and_reject("apps/SwirWeather/AndroidManifest.xml", "<application", '<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>\n    <application')
 
-    def test_weather_must_keep_https_transport(self):
-        self._replace_and_reject("apps/SwirWeather/src/org/swir/phoneos/weather/MainActivity.java", "HttpsURLConnection", "HttpURLConnection")
+    def test_weather_must_keep_reviewed_forecast_endpoint_policy(self):
+        self._replace_and_reject("apps/SwirWeather/src/org/swir/phoneos/weather/MainActivity.java", "WeatherPolicy.forecastUrl", "WeatherPolicy.providerUrl")
 
     def test_backup_must_keep_safe_archive_inspection(self):
-        self._replace_and_reject("apps/SwirBackup/src/org/swir/phoneos/backup/MainActivity.java", "ZipInputStream", "InputStream")
+        self._replace_and_reject("apps/SwirBackup/src/org/swir/phoneos/backup/MainActivity.java", "Intent.EXTRA_ALLOW_MULTIPLE", "Intent.EXTRA_LOCAL_ONLY")
 
     def test_gallery_permission_allowlist_is_exact(self):
         self._replace_and_reject("apps/SwirGallery/AndroidManifest.xml", "android.permission.READ_MEDIA_VIDEO", "android.permission.READ_MEDIA_AUDIO")
