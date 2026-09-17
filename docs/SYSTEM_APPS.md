@@ -11,7 +11,7 @@ An app is not considered implemented merely because a package, screen or static 
 - `ANDROID_RUNTIME` — the app has been built into the pinned SwirPhoneOS product and exercised in the target Android runtime.
 - `HARDWARE_VERIFIED` — hardware-dependent capability has also passed exact-device evidence.
 
-The current registry contains 20 apps: **4 `HOST_CONTRACT`, 16 `ANDROID_SOURCE`, 0 `ANDROID_RUNTIME`, 0 `HARDWARE_VERIFIED`.**
+The current registry contains 20 apps: **3 `HOST_CONTRACT`, 17 `ANDROID_SOURCE`, 0 `ANDROID_RUNTIME`, 0 `HARDWARE_VERIFIED`.**
 
 ## Source-ready apps
 
@@ -22,6 +22,12 @@ Swir Phone is a permission-free source-stage dialer surface with an original Swi
 ### Swir Messages
 
 Swir Messages is a permission-free source-stage composer with app-private draft persistence, host-tested recipient/body bounds and an explicit `Intent.ACTION_SENDTO` + `smsto:` hand-off to an installed Android messaging app. It never calls `SmsManager`, does not request `SEND_SMS`, `READ_SMS` or `RECEIVE_SMS`, and does not silently send or read messages. `messages:mms` and `messages:conversation_history` remain explicitly unfinished until the exact platform telephony role/provider model and reference hardware are reviewed. The current `sms` source capability means safe owner-visible compose/handoff only; it is not a runtime or carrier-delivery claim.
+
+### Swir Camera
+
+Swir Camera is a first-party Camera2 source-stage capture app rather than a system-camera hand-off. It requests exactly `CAMERA`, presents an original dark/cyan preview surface, discovers the framework camera list, prefers the requested back/front lens, reports the selected lens, hardware level and selected photo/video sizes, captures JPEG stills, and records silent H.264/MP4 video. Photos and videos are written through scoped MediaStore pending-item flows under `Pictures/SwirPhoneOS` and `Movies/SwirPhoneOS`; no broad-storage permission is used.
+
+A pure-Java `CameraPolicy` is host-tested for orientation normalization, preview/video size selection, bounded media naming, capture readiness and a minimum safe video-stop interval. Source validation rejects added microphone/audio-recording paths, unreviewed delegated camera intents and permission drift. The source deliberately records video without audio so camera functionality does not silently broaden into microphone access. Android runtime, Camera2/HAL compatibility, orientation quality, front/back behavior and capture quality remain unverified until the pinned product boots and the exact reference camera stack is exercised.
 
 ### SwirCalculator
 
@@ -81,11 +87,11 @@ SwirRoot provides an original SwirPhoneOS owner UI, current build fingerprint, e
 
 The current source is intentionally fail-closed. It reports `UNAVAILABLE`, hard-disables its mutation backend and supported-build switch, requests no Android permissions and contains no process execution, boot-image modification, partition write, bootloader unlock, flash or exploit/bypass path. `guided_enable` and `guided_unroot` remain future capabilities until a legitimate exact-build backend and physical rollback/recovery proof exist.
 
-All sixteen source-ready apps use original SwirPhoneOS icons/UI and Android resources for English, Polish, Norwegian Bokmål, German, Spanish, French, Portuguese and Arabic. Layout direction follows the locale. Source validation checks package identity, exact per-app permission allowlists, localization-key/formatter/plural parity, product inclusion and complete bounded AOSP staging. It scans production Java for forbidden execution/network/broad-storage primitives and applies additional fail-closed constraints to SwirRoot.
+All seventeen source-ready apps use original SwirPhoneOS icons/UI and Android resources for English, Polish, Norwegian Bokmål, German, Spanish, French, Portuguese and Arabic. Layout direction follows the locale. Source validation checks package identity, exact per-app permission allowlists, localization-key/formatter/plural parity, product inclusion and complete bounded AOSP staging. It scans production Java for forbidden execution/network/broad-storage primitives and applies additional fail-closed constraints to SwirRoot. Camera is limited to `CAMERA`, Contacts to `READ_CONTACTS`, Gallery to media-read permissions and Recorder to `RECORD_AUDIO`; the remaining current source apps are permission-free.
 
 Source-summary schema v3 records missing capabilities by **app + capability**, not just capability name. This avoids false completion when multiple apps use the same capability label: SwirContacts can implement its provider bridge while Calendar's provider bridge remains open; Swir Phone can implement its dialer hand-off while `phone:in_call` and `phone:recent_calls` remain open; and Swir Messages can implement safe SMS compose/handoff while `messages:mms` and `messages:conversation_history` remain open.
 
-None of the sixteen is `ANDROID_RUNTIME` until a real pinned-AOSP build and Cuttlefish exercise succeeds.
+None of the seventeen is `ANDROID_RUNTIME` until a real pinned-AOSP build and Cuttlefish exercise succeeds.
 
 ## Design principles
 
@@ -109,17 +115,17 @@ None of the sixteen is `ANDROID_RUNTIME` until a real pinned-AOSP build and Cutt
 
 **System/trust:** Swir Settings, Update, Backup, Privacy, Device Care, Apps/Software Center and SwirRoot.
 
-Phone/SMS/Camera and other hardware-backed functions are declared only after validation against the exact reference-device stack. Swir Phone can provide a source-ready keypad and user-visible dialer hand-off before telephony validation, but in-call/default-dialer/recent-call behavior remains unimplemented and unverified. Swir Messages can provide a safe source-ready composer and owner-visible send hand-off before telephony validation, but default-SMS role, message-provider history, MMS and carrier delivery remain unimplemented/unverified. Contacts can have meaningful provider-backed source before telephony validation, but its runtime behavior remains unverified until the built product is exercised.
+Phone/SMS/Camera and other hardware-backed functions are declared only after validation against the exact reference-device stack. Swir Phone can provide a source-ready keypad and user-visible dialer hand-off before telephony validation, but in-call/default-dialer/recent-call behavior remains unimplemented and unverified. Swir Messages can provide a safe source-ready composer and owner-visible send hand-off before telephony validation, but default-SMS role, message-provider history, MMS and carrier delivery remain unimplemented/unverified. Swir Camera can provide meaningful Camera2 source and scoped MediaStore output before reference-device validation, but hardware compatibility and capture quality remain unverified. Contacts can have meaningful provider-backed source before telephony validation, but its runtime behavior remains unverified until the built product is exercised.
 
 ## Delivery order
 
 ### Emulator-ready core
 
-Prioritize the current sixteen source-ready apps through the real AOSP build and Cuttlefish runtime gate before adding more package breadth. All sixteen must build, launch and pass focused checks for state, persistence, permission handling, accessibility, locale switching and RTL. Source-only additions do not receive weighted progress credit.
+Prioritize the current seventeen source-ready apps through the real AOSP build and Cuttlefish runtime gate before adding more package breadth. All seventeen must build, launch and pass focused checks for state, persistence, permission handling, accessibility, locale switching and RTL. Camera additionally requires preview/capture exercise when the Cuttlefish camera path is available. Source-only additions do not receive weighted progress credit.
 
 ### Reference hardware
 
-Bring up the remaining Swir Phone telephony role/in-call/recent-call behavior, Swir Messages default-role/provider/MMS behavior, Camera and Backup as telephony, audio, camera, storage, sensors, power and encryption become validated for the reference device. Validate Contacts provider behavior, Recorder audio and Gallery media behavior on the same supported build before making physical-device claims.
+Bring up the remaining Swir Phone telephony role/in-call/recent-call behavior and Swir Messages default-role/provider/MMS behavior as the exact telephony stack is validated. Validate Swir Camera preview/photo/video/capability reporting, Contacts provider behavior, Recorder audio and Gallery media behavior on the same exact supported build before making physical-device claims. Bring up Backup only after exact storage/encryption/recovery behavior is known.
 
 ### Beta integration
 
