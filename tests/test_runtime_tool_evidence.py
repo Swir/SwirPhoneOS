@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
@@ -15,6 +16,7 @@ from swirphoneos.runtime_tool_evidence import (
 )
 
 
+@unittest.skipUnless(os.name == "posix", "AOSP Cuttlefish runtime-tool trust is Linux/POSIX-builder specific")
 class RuntimeToolEvidenceTests(unittest.TestCase):
     def _adb(self, root: Path, data: bytes = b"trusted-adb-binary") -> Path:
         path = root / "adb"
