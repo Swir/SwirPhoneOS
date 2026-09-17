@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Swir Phone</string>
+    <string name="eyebrow">SWIRPHONEOS • الهاتف</string>
+    <string name="title">اتصل مع بقاء التحكم بيدك</string>
+    <string name="subtitle">أدخل رقماً ثم مرّره إلى تطبيق الاتصال في النظام. لا يبدأ Swir Phone أي مكالمة بصمت.</string>
+    <string name="number_hint">رقم الهاتف</string>
+    <string name="number_content_description">رقم الهاتف المطلوب طلبه</string>
+    <string name="open_dialer">فتح تطبيق الاتصال</string>
+    <string name="erase">مسح</string>
+    <string name="handoff_notice">يتم تأكيد المكالمات في تطبيق اتصال Android. واجهة المكالمة وسجل المكالمات الحديثة غير منفذين بعد.</string>
+    <string name="invalid_number">أدخل رقم هاتف صالحاً.</string>
+    <string name="no_dialer">لا يتوفر تطبيق اتصال في النظام.</string>
+    <string name="key_content_description">مفتاح الاتصال %1$s</string>
+</resources>

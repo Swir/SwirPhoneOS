@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Swir Phone</string>
+    <string name="eyebrow">SWIRPHONEOS • TÉLÉPHONE</string>
+    <string name="title">Appelez en gardant le contrôle</string>
+    <string name="subtitle">Saisissez un numéro puis transmettez-le au composeur système. Swir Phone ne lance jamais un appel en silence.</string>
+    <string name="number_hint">Numéro de téléphone</string>
+    <string name="number_content_description">Numéro de téléphone à composer</string>
+    <string name="open_dialer">Ouvrir le composeur</string>
+    <string name="erase">Effacer</string>
+    <string name="handoff_notice">Les appels sont confirmés dans le composeur Android. L’interface en appel et les appels récents ne sont pas encore implémentés.</string>
+    <string name="invalid_number">Saisissez un numéro de téléphone valide.</string>
+    <string name="no_dialer">Aucun composeur système n’est disponible.</string>
+    <string name="key_content_description">Touche de numérotation %1$s</string>
+</resources>
