@@ -5,7 +5,7 @@
   "source_language": "en",
   "apps": [
     {"id":"phone","package":"org.swir.phoneos.phone","display_name":"Swir Phone","phase":"reference_hardware","status":"HOST_CONTRACT","hardware_dependent":true,"critical_for_beta":false,"capabilities":["dialer","in_call","recent_calls"]},
-    {"id":"contacts","package":"org.swir.phoneos.contacts","display_name":"Swir Contacts","phase":"reference_hardware","status":"HOST_CONTRACT","hardware_dependent":false,"critical_for_beta":false,"capabilities":["local_contacts","import_export","provider_bridge"]},
+    {"id":"contacts","package":"org.swir.phoneos.contacts","display_name":"Swir Contacts","phase":"reference_hardware","status":"ANDROID_SOURCE","hardware_dependent":false,"critical_for_beta":false,"capabilities":["local_contacts","import_export","provider_bridge"]},
     {"id":"messages","package":"org.swir.phoneos.messages","display_name":"Swir Messages","phase":"reference_hardware","status":"HOST_CONTRACT","hardware_dependent":true,"critical_for_beta":false,"capabilities":["sms","mms","conversation_history"]},
     {"id":"camera","package":"org.swir.phoneos.camera","display_name":"Swir Camera","phase":"reference_hardware","status":"HOST_CONTRACT","hardware_dependent":true,"critical_for_beta":false,"capabilities":["photo_capture","video_capture","camera_capability_report"]},
     {"id":"gallery","package":"org.swir.phoneos.gallery","display_name":"Swir Gallery","phase":"reference_hardware","status":"ANDROID_SOURCE","hardware_dependent":false,"critical_for_beta":false,"capabilities":["local_media","albums","share","safe_delete"]},
@@ -22,7 +22,7 @@
     {"id":"backup","package":"org.swir.phoneos.backup","display_name":"Swir Backup","phase":"reference_hardware","status":"HOST_CONTRACT","hardware_dependent":true,"critical_for_beta":false,"capabilities":["supported_data_backup","restore_orchestration","recovery_metadata"]},
     {"id":"privacy","package":"org.swir.phoneos.privacy","display_name":"Swir Privacy","phase":"emulator_core","status":"ANDROID_SOURCE","hardware_dependent":false,"critical_for_beta":true,"capabilities":["permission_review","privacy_indicators","access_history"]},
     {"id":"device_care","package":"org.swir.phoneos.device_care","display_name":"Swir Device Care","phase":"emulator_core","status":"ANDROID_SOURCE","hardware_dependent":true,"critical_for_beta":true,"capabilities":["storage_status","battery_status","thermal_status","hardware_diagnostics"]},
-    {"id":"apps","package":"org.swir.phoneos.apps","display_name":"Swir Apps","phase":"beta_integration","status":"HOST_CONTRACT","hardware_dependent":false,"critical_for_beta":false,"capabilities":["package_catalog","signature_provenance","update_status"]},
+    {"id":"apps","package":"org.swir.phoneos.apps","display_name":"Swir Apps","phase":"beta_integration","status":"ANDROID_SOURCE","hardware_dependent":false,"critical_for_beta":false,"capabilities":["package_catalog","signature_provenance","update_status"]},
     {"id":"swirroot","package":"org.swir.phoneos.swirroot","display_name":"SwirRoot","phase":"beta_integration","status":"ANDROID_SOURCE","hardware_dependent":true,"critical_for_beta":false,"capabilities":["root_state","guided_enable","guided_unroot","authorization_audit"]}
   ]
 }
