@@ -9,13 +9,15 @@ import unittest
 
 from swirphoneos.aosp_run_evidence import AospRunEvidenceError, collect_aosp_run_evidence
 from swirphoneos.build_evidence import create_evidence_bundle
+from swirphoneos.system_apps import load_registry
 
 
 class AospRunEvidenceTests(unittest.TestCase):
     SOURCE_COMMIT = "1" * 40
     WORKSPACE = "/tmp/swir-aosp"
     FINGERPRINT = "Swir/swirphoneos_cf_x86_64/vsoc_x86_64_only:17/CP2A.260605.016/1:userdebug/test-keys"
-    PACKAGES = ["org.swir.phoneos.files", "org.swir.phoneos.settings"]
+    APP_MANIFEST = Path("system_apps/manifest.json")
+    PACKAGES = sorted(app.package for app in load_registry(APP_MANIFEST).apps if app.source_ready)
 
     def _reports(self) -> dict[str, dict[str, object]]:
         manifest_sha = "a" * 64
@@ -176,6 +178,7 @@ class AospRunEvidenceTests(unittest.TestCase):
             "stage_path": paths["stage"],
             "post_stage_path": paths["post_stage"],
             "build_path": paths["build"],
+            "app_manifest_path": self.APP_MANIFEST,
         }
         if runtime:
             kwargs.update({
@@ -193,7 +196,8 @@ class AospRunEvidenceTests(unittest.TestCase):
             self.assertTrue(result["build_chain_complete"])
             self.assertFalse(result["runtime_chain_complete"])
             self.assertEqual(result["scope"], "BUILD_ONLY")
-            self.assertEqual(result["source_ready_packages"], [])
+            self.assertEqual(result["source_ready_packages"], self.PACKAGES)
+            self.assertEqual(len(result["app_manifest_sha256"]), 64)
             self.assertFalse(result["device_write_allowed"])
             self.assertEqual(len(result["run_evidence_sha256"]), 64)
 
@@ -204,7 +208,7 @@ class AospRunEvidenceTests(unittest.TestCase):
             self.assertTrue(result["run_evidence_complete"])
             self.assertTrue(result["runtime_chain_complete"])
             self.assertEqual(result["scope"], "BUILD_AND_RUNTIME")
-            self.assertEqual(result["source_ready_packages"], sorted(self.PACKAGES))
+            self.assertEqual(result["source_ready_packages"], self.PACKAGES)
             self.assertIn("bundle", result["report_file_sha256"])
 
     def test_rejects_cross_run_stage_digest(self):
@@ -218,7 +222,21 @@ class AospRunEvidenceTests(unittest.TestCase):
     def test_rejects_runtime_smoke_package_set_drift(self):
         with tempfile.TemporaryDirectory() as temporary:
             reports = self._reports()
-            reports["smoke"]["tested_packages"] = [self.PACKAGES[0]]
+            reports["smoke"]["tested_packages"] = self.PACKAGES[:-1]
+            paths = self._write(Path(temporary), reports)
+            with self.assertRaises(AospRunEvidenceError):
+                self._collect(paths, runtime=True)
+
+    def test_rejects_runtime_package_set_that_omits_registry_app(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            reports = self._reports()
+            subset = self.PACKAGES[:-1]
+            reports["runtime"]["required_source_ready_packages"] = subset
+            reports["runtime"]["present_required_packages"] = subset
+            reports["runtime"]["present_launchable_packages"] = subset
+            reports["smoke"]["tested_packages"] = subset
+            reports["smoke"]["launch_results"] = reports["smoke"]["launch_results"][:-1]
+            reports["bundle"] = create_evidence_bundle(reports["build"], reports["runtime"])
             paths = self._write(Path(temporary), reports)
             with self.assertRaises(AospRunEvidenceError):
                 self._collect(paths, runtime=True)
@@ -245,6 +263,7 @@ class AospRunEvidenceTests(unittest.TestCase):
                     stage_path=paths["stage"],
                     post_stage_path=paths["post_stage"],
                     build_path=paths["build"],
+                    app_manifest_path=self.APP_MANIFEST,
                     runtime_path=paths["runtime"],
                 )
 
