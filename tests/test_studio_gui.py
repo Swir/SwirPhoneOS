@@ -31,6 +31,7 @@ class GuiTests(unittest.TestCase):
         self.assertEqual(self.app.icon.width(), 48)
         self.assertTrue(self.app.save.instate(["disabled"]))
         self.assertTrue(self.app.readiness.instate(["!disabled"]))
+        self.assertTrue(self.app.device_validation.instate(["!disabled"]))
         self.assertIn("SwirPhoneOS", self.root.title())
 
     def test_success_shows_report(self):
@@ -39,6 +40,7 @@ class GuiTests(unittest.TestCase):
         self.assertIn("SYNTHETIC TEST ONLY", self.app.report.get("1.0", "end"))
         self.assertTrue(self.app.save.instate(["!disabled"]))
         self.assertTrue(self.app.readiness.instate(["!disabled"]))
+        self.assertTrue(self.app.device_validation.instate(["!disabled"]))
         self.assertEqual(self.app.status_key, "done")
 
     def test_failure_clears_stale_export(self):
@@ -61,6 +63,7 @@ class GuiTests(unittest.TestCase):
             self.app.refresh_language()
             self.assertEqual(self.app.scan.cget("text"), translate(lang, "scan"))
             self.assertEqual(self.app.readiness.cget("text"), translate(lang, "review_readiness"))
+            self.assertEqual(self.app.device_validation.cget("text"), translate(lang, "review_device_validation"))
 
     def test_readiness_review_is_display_only(self):
         from swirphoneos.i18n import translate
@@ -88,6 +91,36 @@ class GuiTests(unittest.TestCase):
         self.assertEqual(self.app.status_key, "readiness_loaded")
         self.assertTrue(self.app.save.instate(["disabled"]))
         self.assertIsNotNone(self.app.readiness_summary)
+        self.assertIsNone(self.app.device_validation_summary)
+
+    def test_device_validation_review_is_display_only(self):
+        from swirphoneos.i18n import translate
+        summary = {
+            "schema_version": 1,
+            "source": "swirphoneos_studio_physical_validation_summary",
+            "validation_session_id": "physical-review-only",
+            "profile_id": "oneplus/avicii",
+            "target_build": "Swir/test/build",
+            "support_candidate_review_ready": True,
+            "known_capability_failures": ["camera"],
+            "missing_requirements": [],
+            "support_status": "NOT_SUPPORTED",
+            "support_claim_allowed": False,
+            "profile_promotion_allowed": False,
+            "device_write_allowed": False,
+            "root_allowed": False,
+        }
+        with patch("swirphoneos.studio.filedialog.askopenfilename", return_value="/tmp/physical-validation.json"), \
+             patch("swirphoneos.studio.load_public_device_physical_validation_summary", return_value=summary):
+            self.app.open_device_validation()
+        text = self.app.report.get("1.0", "end")
+        self.assertIn("oneplus/avicii", text)
+        self.assertIn("physical-review-only", text)
+        self.assertIn(translate("en", "device_capability_camera"), text)
+        self.assertEqual(self.app.status_key, "device_validation_loaded")
+        self.assertTrue(self.app.save.instate(["disabled"]))
+        self.assertIsNone(self.app.readiness_summary)
+        self.assertIsNotNone(self.app.device_validation_summary)
 
     def test_readiness_review_failure_is_private(self):
         from swirphoneos.studio_evidence import StudioEvidenceError
@@ -98,6 +131,16 @@ class GuiTests(unittest.TestCase):
         error.assert_called_once()
         self.assertNotIn("private-token", str(error.call_args))
         self.assertIsNone(self.app.readiness_summary)
+
+    def test_device_validation_review_failure_is_private(self):
+        from swirphoneos.studio_evidence import StudioEvidenceError
+        with patch("swirphoneos.studio.filedialog.askopenfilename", return_value="/private/physical-validation.json"), \
+             patch("swirphoneos.studio.load_public_device_physical_validation_summary", side_effect=StudioEvidenceError("private-token")), \
+             patch("swirphoneos.studio.messagebox.showerror") as error:
+            self.app.open_device_validation()
+        error.assert_called_once()
+        self.assertNotIn("private-token", str(error.call_args))
+        self.assertIsNone(self.app.device_validation_summary)
 
     def test_minimum_window_keeps_report_and_footer(self):
         self.root.geometry("640x500")
@@ -127,6 +170,7 @@ class GuiTests(unittest.TestCase):
         self.app.start_scan()
         try:
             self.assertTrue(self.app.readiness.instate(["disabled"]))
+            self.assertTrue(self.app.device_validation.instate(["disabled"]))
             self.app.close()
             self.assertTrue(self.app.closed)
         finally:
