@@ -36,6 +36,17 @@ SYSTEM_APPS = {
     "apps": "SwirApps",
     "swirroot": "SwirRoot",
 }
+TOKENIZED_APPS = {
+    "phone": ("SwirPhone", "src/org/swir/phoneos/phone/MainActivity.java"),
+    "messages": ("SwirMessages", "src/org/swir/phoneos/messages/MainActivity.java"),
+    "camera": ("SwirCamera", "src/org/swir/phoneos/camera/MainActivity.java"),
+}
+REQUIRED_TOKEN_REFERENCES = (
+    "R.color.swir_background",
+    "R.color.swir_text_primary",
+    "R.color.swir_text_secondary",
+    "R.dimen.swir_touch_min",
+)
 REQUIRED_COLORS = {
     "swir_background",
     "swir_surface",
@@ -171,6 +182,16 @@ def validate_design_contract(product_root: Path | str = Path("platform/aosp_prod
             raise DesignContractError(f"{module} must use {DESIGN_THEME}, got {theme!r}")
         integrated_system.append(app_id)
 
+    tokenized_apps = []
+    for app_id, (module, relative_java) in TOKENIZED_APPS.items():
+        source = _read_regular_text(product / "apps" / module / relative_java)
+        if "android.graphics.Color" in source or "Color." in source:
+            raise DesignContractError(f"{module} tokenized UI must not use direct android.graphics.Color literals")
+        for required in REQUIRED_TOKEN_REFERENCES:
+            if required not in source:
+                raise DesignContractError(f"{module} tokenized UI missing shared design reference: {required}")
+        tokenized_apps.append(app_id)
+
     integrated_core = [app_id for app_id in CORE_APPS if app_id in integrated_system]
 
     stage_path = product / "stage_manifest.d" / "design.json"
@@ -206,9 +227,12 @@ def validate_design_contract(product_root: Path | str = Path("platform/aosp_prod
         "integrated_system_apps": integrated_system,
         "integrated_system_app_count": len(integrated_system),
         "expected_system_app_count": len(SYSTEM_APPS),
+        "tokenized_apps": tokenized_apps,
+        "tokenized_app_count": len(tokenized_apps),
         "day_night_tokens_declared": True,
         "minimum_touch_target_token_dp": 48,
         "all_system_apps_integrated": len(integrated_system) == len(SYSTEM_APPS),
+        "hardcoded_color_free_pilot_verified": len(tokenized_apps) == len(TOKENIZED_APPS),
         "android_build_verified": False,
         "runtime_visual_review_verified": False,
         "accessibility_review_verified": False,
