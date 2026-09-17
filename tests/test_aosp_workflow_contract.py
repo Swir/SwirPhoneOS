@@ -1,0 +1,36 @@
+from __future__ import annotations
+
+from pathlib import Path
+import unittest
+
+
+class AospWorkflowContractTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.text = Path(".github/workflows/aosp-build-evidence.yml").read_text(encoding="utf-8")
+
+    def test_builder_preflight_is_persisted_and_enforced_before_sync(self):
+        preflight = self.text.index("builder-preflight.json")
+        ready_gate = self.text.index('report.get("ready_for_full_build") is not True')
+        sync = self.text.index("repo init -u https://android.googlesource.com/platform/manifest")
+        self.assertLess(preflight, ready_gate)
+        self.assertLess(ready_gate, sync)
+        self.assertIn('report.get("cuttlefish_kvm_available") is not True', self.text)
+
+    def test_staged_source_copy_verification_is_required_before_build(self):
+        stage = self.text.index("stage-report.json")
+        verified = self.text.index('report.get("copy_verified") is not True')
+        build = self.text.index("m -j")
+        self.assertLess(stage, verified)
+        self.assertLess(verified, build)
+        self.assertIn('report.get("schema_version") != 4', self.text)
+        self.assertIn("staged_content_sha256", self.text)
+
+    def test_preflight_and_stage_reports_are_uploaded_even_on_failure(self):
+        self.assertIn("if: ${{ always() }}", self.text)
+        self.assertIn("builder-preflight.json", self.text)
+        self.assertIn("stage-report.json", self.text)
+        self.assertIn("if-no-files-found: error", self.text)
+
+
+if __name__ == "__main__":
+    unittest.main()
