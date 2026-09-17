@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Swir Gallery</string>
+    <string name="subtitle">Your local photos and videos, with scoped access and owner-confirmed deletion.</string>
+    <string name="media_permission_title">Media access</string>
+    <string name="media_permission_body">Allow photo and video access to browse local media. Swir Gallery does not request broad storage access.</string>
+    <string name="permission_granted">Media access is available. Only granted photo and video collections are shown.</string>
+    <string name="grant_access">Grant access</string>
+    <string name="refresh">Refresh</string>
+    <string name="search_hint">Search photos and videos</string>
+    <string name="empty">No matching media is available.</string>
+    <string name="image">Photo</string>
+    <string name="video">Video</string>
+    <string name="item_meta">%1$s · %2$s</string>
+    <string name="unnamed">Unnamed media</string>
+    <string name="open">Open</string>
+    <string name="share">Share</string>
+    <string name="delete">Delete</string>
+    <string name="share_title">Share media</string>
+    <string name="open_unavailable">No app can open this media item.</string>
+    <string name="share_unavailable">No app can share this media item.</string>
+    <string name="delete_unavailable">Android could not open the owner-confirmed delete request.</string>
+    <string name="permission_denied">Media access was not granted.</string>
+    <string name="media_load_failed">Local media could not be read.</string>
+    <string name="delete_complete">Media deletion was confirmed.</string>
+    <string name="delete_cancelled">Media deletion was cancelled.</string>
+    <string name="footer">by Swir · GitHub</string>
+</resources>

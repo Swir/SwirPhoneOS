@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Swir Gallery</string>
+    <string name="subtitle">Tus fotos y vídeos locales con acceso limitado y borrado confirmado por el propietario.</string>
+    <string name="media_permission_title">Acceso multimedia</string>
+    <string name="media_permission_body">Permite acceso a fotos y vídeos para explorar medios locales. Swir Gallery no solicita acceso amplio al almacenamiento.</string>
+    <string name="permission_granted">El acceso multimedia está disponible. Solo se muestran las colecciones de fotos y vídeos concedidas.</string>
+    <string name="grant_access">Permitir acceso</string>
+    <string name="refresh">Actualizar</string>
+    <string name="search_hint">Buscar fotos y vídeos</string>
+    <string name="empty">No hay medios coincidentes disponibles.</string>
+    <string name="image">Foto</string>
+    <string name="video">Vídeo</string>
+    <string name="item_meta">%1$s · %2$s</string>
+    <string name="unnamed">Medio sin nombre</string>
+    <string name="open">Abrir</string>
+    <string name="share">Compartir</string>
+    <string name="delete">Eliminar</string>
+    <string name="share_title">Compartir medio</string>
+    <string name="open_unavailable">Ninguna aplicación puede abrir este medio.</string>
+    <string name="share_unavailable">Ninguna aplicación puede compartir este medio.</string>
+    <string name="delete_unavailable">Android no pudo abrir la solicitud de eliminación confirmada por el propietario.</string>
+    <string name="permission_denied">No se concedió acceso multimedia.</string>
+    <string name="media_load_failed">No se pudieron leer los medios locales.</string>
+    <string name="delete_complete">Se confirmó la eliminación del medio.</string>
+    <string name="delete_cancelled">Se canceló la eliminación del medio.</string>
+    <string name="footer">by Swir · GitHub</string>
+</resources>

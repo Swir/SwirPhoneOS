@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Swir Recorder</string>
+    <string name="subtitle">Enregistrement vocal uniquement au premier plan, stockage local privé et export explicite.</string>
+    <string name="microphone_title">Microphone</string>
+    <string name="microphone_permission_body">L’autorisation du microphone est requise uniquement pendant un enregistrement lancé volontairement.</string>
+    <string name="grant_microphone">Autoriser le microphone</string>
+    <string name="microphone_status">%1$s · %2$s</string>
+    <string name="permission_granted">Autorisation accordée</string>
+    <string name="permission_missing">Autorisation manquante</string>
+    <string name="permission_denied">L’autorisation du microphone n’a pas été accordée.</string>
+    <string name="mic_muted">Microphone coupé</string>
+    <string name="mic_available">Microphone disponible</string>
+    <string name="microphone_muted_block">L’enregistrement est bloqué tant que le microphone est coupé.</string>
+    <string name="recording_controls">Commandes d’enregistrement</string>
+    <string name="state_idle">Prêt</string>
+    <string name="state_recording">Enregistrement</string>
+    <string name="state_paused">En pause</string>
+    <string name="start_recording">Enregistrer</string>
+    <string name="pause">Pause</string>
+    <string name="resume">Reprendre</string>
+    <string name="stop">Arrêter</string>
+    <string name="recordings">Enregistrements locaux</string>
+    <string name="empty">Aucun enregistrement local pour le moment.</string>
+    <string name="recording_meta">%1$s · %2$s</string>
+    <string name="play">Lire</string>
+    <string name="export">Exporter</string>
+    <string name="delete">Supprimer</string>
+    <string name="delete_title">Supprimer l’enregistrement ?</string>
+    <string name="delete_body">Cela supprime de l’appareil l’enregistrement privé de l’application.</string>
+    <string name="cancel">Annuler</string>
+    <string name="delete_confirm">Supprimer</string>
+    <string name="delete_failed">Impossible de supprimer l’enregistrement.</string>
+    <string name="recording_started">Enregistrement démarré.</string>
+    <string name="recording_stopped">Enregistrement sauvegardé localement.</string>
+    <string name="recording_failed">L’enregistrement n’a pas pu être terminé en toute sécurité.</string>
+    <string name="playback_failed">Impossible de lire l’enregistrement.</string>
+    <string name="export_complete">Enregistrement exporté.</string>
+    <string name="export_failed">Échec de l’export de l’enregistrement.</string>
+    <string name="invalid_recording">L’enregistrement est vide ou dépasse la limite de sécurité d’export.</string>
+    <string name="footer">by Swir · GitHub</string>
+</resources>

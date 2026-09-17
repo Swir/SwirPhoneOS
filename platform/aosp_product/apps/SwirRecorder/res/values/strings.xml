@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Swir Recorder</string>
+    <string name="subtitle">Foreground-only voice recording with private local storage and explicit export.</string>
+    <string name="microphone_title">Microphone</string>
+    <string name="microphone_permission_body">Microphone permission is required only while you deliberately record.</string>
+    <string name="grant_microphone">Grant microphone</string>
+    <string name="microphone_status">%1$s · %2$s</string>
+    <string name="permission_granted">Permission granted</string>
+    <string name="permission_missing">Permission missing</string>
+    <string name="permission_denied">Microphone permission was not granted.</string>
+    <string name="mic_muted">Microphone muted</string>
+    <string name="mic_available">Microphone available</string>
+    <string name="microphone_muted_block">Recording is blocked while the microphone is muted.</string>
+    <string name="recording_controls">Recording controls</string>
+    <string name="state_idle">Ready</string>
+    <string name="state_recording">Recording</string>
+    <string name="state_paused">Paused</string>
+    <string name="start_recording">Record</string>
+    <string name="pause">Pause</string>
+    <string name="resume">Resume</string>
+    <string name="stop">Stop</string>
+    <string name="recordings">Local recordings</string>
+    <string name="empty">No local recordings yet.</string>
+    <string name="recording_meta">%1$s · %2$s</string>
+    <string name="play">Play</string>
+    <string name="export">Export</string>
+    <string name="delete">Delete</string>
+    <string name="delete_title">Delete recording?</string>
+    <string name="delete_body">This removes the app-private recording from this device.</string>
+    <string name="cancel">Cancel</string>
+    <string name="delete_confirm">Delete</string>
+    <string name="delete_failed">The recording could not be deleted.</string>
+    <string name="recording_started">Recording started.</string>
+    <string name="recording_stopped">Recording saved locally.</string>
+    <string name="recording_failed">Recording could not be completed safely.</string>
+    <string name="playback_failed">The recording could not be played.</string>
+    <string name="export_complete">Recording exported.</string>
+    <string name="export_failed">Recording export failed.</string>
+    <string name="invalid_recording">This recording is empty or outside the export safety limit.</string>
+    <string name="footer">by Swir · GitHub</string>
+</resources>
