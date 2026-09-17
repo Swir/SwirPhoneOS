@@ -85,7 +85,7 @@ public final class MainActivity extends Activity {
 
         LinearLayout nowCard = card();
         nowCard.addView(text(getString(R.string.now), 13, Color.rgb(105, 216, 255)), matchWrap());
-        localTime = text("--:--", 44, Color.WHITE);
+        localTime = text(getString(R.string.clock_placeholder), 44, Color.WHITE);
         localTime.setGravity(Gravity.CENTER_HORIZONTAL);
         nowCard.addView(localTime, matchWrap());
         localDate = text("", 15, Color.rgb(180, 198, 217));
@@ -99,7 +99,7 @@ public final class MainActivity extends Activity {
 
         LinearLayout stopwatchCard = card();
         stopwatchCard.addView(text(getString(R.string.stopwatch), 17, Color.rgb(105, 216, 255)), matchWrap());
-        stopwatchText = text("00:00:00", 34, Color.WHITE);
+        stopwatchText = text(getString(R.string.duration_zero), 34, Color.WHITE);
         stopwatchText.setGravity(Gravity.CENTER_HORIZONTAL);
         stopwatchCard.addView(stopwatchText, matchWrap());
         LinearLayout stopwatchButtons = row();
@@ -114,7 +114,7 @@ public final class MainActivity extends Activity {
 
         LinearLayout timerCard = card();
         timerCard.addView(text(getString(R.string.timer), 17, Color.rgb(105, 216, 255)), matchWrap());
-        timerText = text("00:00:00", 34, Color.WHITE);
+        timerText = text(getString(R.string.duration_zero), 34, Color.WHITE);
         timerText.setGravity(Gravity.CENTER_HORIZONTAL);
         timerCard.addView(timerText, matchWrap());
         timerMinutes = input(R.string.timer_minutes_hint);
@@ -199,7 +199,7 @@ public final class MainActivity extends Activity {
         timerRunning = false;
         timerDuration = 0L;
         timerStartedAt = 0L;
-        timerText.setText("00:00:00");
+        timerText.setText(R.string.duration_zero);
     }
 
     private void renderTimer() {
