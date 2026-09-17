@@ -6,6 +6,7 @@ from pathlib import Path
 import sys
 from . import __version__
 from .android_apps import AndroidAppSourceError, public_android_app_source_summary, validate_android_app_sources
+from .aosp_run_evidence import AospRunEvidenceError, collect_aosp_run_evidence
 from .aosp_workspace import AospWorkspaceError, make_workspace_plan, public_manifest_evidence, public_workspace_plan, stage_product_tree, validate_resolved_manifest
 from .build_evidence import BuildEvidenceError, collect_build_evidence, create_evidence_bundle, load_json_report
 from .build_preflight import BuildPreflightError, capture_host, evaluate_preflight
@@ -40,6 +41,7 @@ def main(argv: list[str] | None = None) -> int:
     resolved_manifest=sub.add_parser("aosp-manifest",help="Validate a captured repo manifest -r snapshot and report SHA-256"); resolved_manifest.add_argument("--file",type=Path,required=True)
     build_evidence=sub.add_parser("build-evidence",help="Hash a completed local SwirPhoneOS AOSP product and bind it to the pinned manifest"); build_evidence.add_argument("--workspace",type=Path,required=True); build_evidence.add_argument("--manifest",type=Path,required=True); build_evidence.add_argument("--baseline",type=Path,default=Path("platform/aosp_baseline.json"))
     evidence_bundle=sub.add_parser("evidence-bundle",help="Bind completed build evidence to completed Cuttlefish runtime evidence"); evidence_bundle.add_argument("--build",type=Path,required=True); evidence_bundle.add_argument("--runtime",type=Path,required=True)
+    run_evidence=sub.add_parser("aosp-run-evidence",help="Bind preflight, source, staging, build and optional runtime/smoke evidence from one exact AOSP run"); run_evidence.add_argument("--source-commit",required=True); run_evidence.add_argument("--preflight",type=Path,required=True); run_evidence.add_argument("--plan",type=Path,required=True); run_evidence.add_argument("--manifest",type=Path,required=True); run_evidence.add_argument("--stage",type=Path,required=True); run_evidence.add_argument("--post-stage",type=Path,required=True); run_evidence.add_argument("--build",type=Path,required=True); run_evidence.add_argument("--runtime",type=Path,default=None); run_evidence.add_argument("--smoke",type=Path,default=None); run_evidence.add_argument("--bundle",type=Path,default=None)
     stage_product=sub.add_parser("stage-product",help="Plan or explicitly stage manifest-whitelisted Swir AOSP product/app source"); stage_product.add_argument("--workspace",type=Path,required=True); stage_product.add_argument("--product-root",type=Path,default=Path("platform/aosp_product")); stage_product.add_argument("--execute",action="store_true")
     cuttlefish=sub.add_parser("cuttlefish-evidence",help="Capture strict read-only runtime evidence from one local Cuttlefish/emulator"); cuttlefish.add_argument("--adb",required=True,type=Path,help="Absolute path to a trusted Android SDK adb executable"); cuttlefish.add_argument("--manifest",type=Path,default=Path("system_apps/manifest.json"))
     transaction_plan=sub.add_parser("transaction-plan",help="Validate a local preparation-only install/rollback plan; never performs device writes"); transaction_plan.add_argument("--file",required=True,type=Path)
@@ -67,6 +69,7 @@ def main(argv: list[str] | None = None) -> int:
         elif args.command=="aosp-manifest": result=public_manifest_evidence(validate_resolved_manifest(args.file))
         elif args.command=="build-evidence": result=collect_build_evidence(args.workspace,args.manifest,args.baseline)
         elif args.command=="evidence-bundle": result=create_evidence_bundle(load_json_report(args.build),load_json_report(args.runtime))
+        elif args.command=="aosp-run-evidence": result=collect_aosp_run_evidence(source_commit=args.source_commit,preflight_path=args.preflight,plan_path=args.plan,manifest_path=args.manifest,stage_path=args.stage,post_stage_path=args.post_stage,build_path=args.build,runtime_path=args.runtime,smoke_path=args.smoke,bundle_path=args.bundle)
         elif args.command=="stage-product": validate_product_contract(args.product_root); result=stage_product_tree(args.product_root,args.workspace,execute=args.execute)
         elif args.command=="cuttlefish-evidence": result=CuttlefishEvidenceCollector(args.adb).inspect(load_registry(args.manifest))
         elif args.command=="transaction-plan": result=public_plan_summary(load_plan(args.file))
@@ -79,6 +82,6 @@ def main(argv: list[str] | None = None) -> int:
         elif args.command=="root-policy": result=public_policy_summary(load_policy(args.policy))
         else: result=evaluate(load_ledger(args.ledger))
         print(json.dumps(result,indent=2,ensure_ascii=True)); return 2 if args.command=="gate" and not result["beta_release_allowed"] else 0
-    except (AndroidAppSourceError,AospWorkspaceError,BuildEvidenceError,BuildPreflightError,CuttlefishEvidenceError,DiagnosticError,FastbootDiagnosticError,HardwareEvidenceError,IdentityAssessmentError,LocalizationError,PlatformBaselineError,ProductContractError,ProfileError,SwirRootPolicyError,SystemAppRegistryError,TransactionEvidenceError,OSError,ValueError):
+    except (AndroidAppSourceError,AospRunEvidenceError,AospWorkspaceError,BuildEvidenceError,BuildPreflightError,CuttlefishEvidenceError,DiagnosticError,FastbootDiagnosticError,HardwareEvidenceError,IdentityAssessmentError,LocalizationError,PlatformBaselineError,ProductContractError,ProfileError,SwirRootPolicyError,SystemAppRegistryError,TransactionEvidenceError,OSError,ValueError):
         print("Operation failed: check project metadata or the trusted Android SDK tool path, USB mode, AOSP workspace/evidence/app source, read-only hardware/transaction evidence, host workspace and single-device connection. Raw errors are withheld for privacy.",file=sys.stderr); return 1
 if __name__=="__main__": raise SystemExit(main())
