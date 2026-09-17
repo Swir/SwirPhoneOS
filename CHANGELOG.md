@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Fail-closed install/rollback transaction evidence
+
+Added `swirphoneos.transaction_evidence`, a local-only preparation layer for future device-specific installation and recovery work. Schema v1 binds one transaction to an exact device profile/current-build/target-build tuple, requires both install and rollback artifact sets, verifies exact byte sizes and SHA-256 digests, rejects traversal/symlink/duplicate-key/unknown-field inputs, and can persist a create-only fsynced JSON journal. The journal remains explicitly `ARTIFACTS_VERIFIED_READ_ONLY`, records `owner_confirmation_recorded=false`, and can never set `write_allowed=true`.
+
+Added `transaction-plan` and `transaction-evidence` CLI surfaces plus negative/positive unit coverage for canonical plan hashing, mandatory rollback/owner gates, artifact tamper detection, path confinement, symlink rejection, cross-plan evidence rejection and no-overwrite journaling. Added `docs/RECOVERY_TRANSACTIONS.md` to define the evidence chain required before any future physical write path. This is real install/restore infrastructure work, but it does not complete the milestone: no partition map, supported hardware, write engine or physical install/restore proof exists. Weighted progress therefore remains **2%** and Beta remains **0/9**.
+
 ### SwirRoot Android source-stage control surface
 
 Added `SwirRoot` as the tenth meaningful first-party Android source application. It now has an original localized owner UI, current-build fingerprint diagnostics, explicit owner-confirmed enable/unroot review dialogs, a non-exported bound status service, a bounded app-private workflow-review audit, an original SwirPhoneOS icon and EN/PL/NB/DE/ES/FR/PT/AR resources with RTL support.
