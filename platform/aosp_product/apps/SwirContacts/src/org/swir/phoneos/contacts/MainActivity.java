@@ -21,14 +21,17 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 
-/** App-private contacts with explicit dial/email handoffs and owner-selected vCard export. */
+/** App-private contacts with explicit dial/email handoffs and owner-selected vCard import/export. */
 public final class MainActivity extends Activity {
     private static final int EXPORT_REQUEST = 6201;
+    private static final int IMPORT_REQUEST = 6202;
     private final ArrayList<ContactItem> contacts = new ArrayList<>();
     private ContactsDb db;
     private LinearLayout contactList;
@@ -50,14 +53,9 @@ public final class MainActivity extends Activity {
 
     @Override protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode != EXPORT_REQUEST || resultCode != RESULT_OK || data == null || data.getData() == null) return;
-        try (OutputStream out = getContentResolver().openOutputStream(data.getData())) {
-            if (out == null) throw new IOException();
-            out.write(exportAll().getBytes(StandardCharsets.UTF_8));
-            Toast.makeText(this, R.string.export_complete, Toast.LENGTH_SHORT).show();
-        } catch (IOException error) {
-            Toast.makeText(this, R.string.export_failed, Toast.LENGTH_LONG).show();
-        }
+        if (resultCode != RESULT_OK || data == null || data.getData() == null) return;
+        if (requestCode == EXPORT_REQUEST) exportTo(data.getData());
+        else if (requestCode == IMPORT_REQUEST) importFrom(data.getData());
     }
 
     private View buildUi() {
@@ -91,6 +89,9 @@ public final class MainActivity extends Activity {
         export.setOnClickListener(v -> requestExport());
         actions.addView(add, weighted()); actions.addView(export, weighted());
         root.addView(actions, spaced());
+        Button importButton = button(R.string.import_vcard);
+        importButton.setOnClickListener(v -> requestImport());
+        root.addView(importButton, spaced());
         contactList = new LinearLayout(this);
         contactList.setOrientation(LinearLayout.VERTICAL);
         root.addView(contactList, matchWrap());
@@ -146,11 +147,16 @@ public final class MainActivity extends Activity {
     }
 
     private void saveContact(String nameRaw, String phoneRaw, String emailRaw) {
+        if (insertContact(nameRaw, phoneRaw, emailRaw)) Toast.makeText(this, R.string.saved, Toast.LENGTH_SHORT).show();
+        else Toast.makeText(this, R.string.invalid_contact, Toast.LENGTH_SHORT).show();
+        refreshContacts();
+    }
+
+    private boolean insertContact(String nameRaw, String phoneRaw, String emailRaw) {
         String name = ContactPolicy.normalizeName(nameRaw), phone = ContactPolicy.normalizePhone(phoneRaw), email = ContactPolicy.normalizeEmail(emailRaw);
-        if (!ContactPolicy.validContact(name, phone, email)) { Toast.makeText(this, R.string.invalid_contact, Toast.LENGTH_SHORT).show(); return; }
+        if (!ContactPolicy.validContact(name, phone, email)) return false;
         ContentValues values = new ContentValues(); values.put("name", name); values.put("phone", phone); values.put("email", email);
-        long id = db.getWritableDatabase().insert("contacts", null, values);
-        Toast.makeText(this, id >= 0 ? R.string.saved : R.string.save_failed, Toast.LENGTH_SHORT).show(); refreshContacts();
+        return db.getWritableDatabase().insert("contacts", null, values) >= 0;
     }
 
     private void confirmDelete(ContactItem item) {
@@ -165,6 +171,42 @@ public final class MainActivity extends Activity {
         if (contacts.isEmpty()) { Toast.makeText(this, R.string.empty, Toast.LENGTH_SHORT).show(); return; }
         Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT).setType("text/vcard").putExtra(Intent.EXTRA_TITLE, getString(R.string.export_filename));
         startActivityForResult(intent, EXPORT_REQUEST);
+    }
+
+    private void requestImport() {
+        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT).setType("text/vcard").addCategory(Intent.CATEGORY_OPENABLE);
+        startActivityForResult(intent, IMPORT_REQUEST);
+    }
+
+    private void exportTo(Uri uri) {
+        try (OutputStream out = getContentResolver().openOutputStream(uri)) {
+            if (out == null) throw new IOException();
+            out.write(exportAll().getBytes(StandardCharsets.UTF_8));
+            Toast.makeText(this, R.string.export_complete, Toast.LENGTH_SHORT).show();
+        } catch (IOException error) {
+            Toast.makeText(this, R.string.export_failed, Toast.LENGTH_LONG).show();
+        }
+    }
+
+    private void importFrom(Uri uri) {
+        try (InputStream in = getContentResolver().openInputStream(uri); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            if (in == null) throw new IOException();
+            byte[] block = new byte[8192]; int total = 0, read;
+            while ((read = in.read(block)) != -1) {
+                total += read;
+                if (total > ContactPolicy.MAX_IMPORT_BYTES) throw new IOException();
+                out.write(block, 0, read);
+            }
+            ArrayList<String[]> parsed = ContactPolicy.parseVCards(new String(out.toByteArray(), StandardCharsets.UTF_8));
+            if (parsed.isEmpty()) throw new IOException();
+            int imported = 0;
+            for (String[] contact : parsed) if (insertContact(contact[0], contact[1], contact[2])) imported++;
+            if (imported == 0) throw new IOException();
+            refreshContacts();
+            Toast.makeText(this, R.string.import_complete, Toast.LENGTH_SHORT).show();
+        } catch (IOException | RuntimeException error) {
+            Toast.makeText(this, R.string.import_failed, Toast.LENGTH_LONG).show();
+        }
     }
 
     private String exportAll() { StringBuilder out = new StringBuilder(); for (ContactItem item : contacts) out.append(ContactPolicy.toVCard(item.name, item.phone, item.email)); return out.toString(); }

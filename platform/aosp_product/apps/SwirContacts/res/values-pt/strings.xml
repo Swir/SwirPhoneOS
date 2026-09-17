@@ -1,29 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Swir Contacts</string>
-    <string name="subtitle">Contactos locais privados guardados pelo SwirPhoneOS</string>
-    <string name="search_hint">Pesquisar contactos</string>
-    <string name="new_contact">Novo contacto</string>
-    <string name="export_vcard">Exportar vCard</string>
-    <string name="empty">Não existem contactos correspondentes.</string>
-    <string name="name_hint">Nome</string>
-    <string name="phone_hint">Telefone</string>
-    <string name="email_hint">E-mail</string>
-    <string name="save">Guardar</string>
-    <string name="cancel">Cancelar</string>
-    <string name="invalid_contact">Introduza um nome e um telefone ou e-mail válido.</string>
-    <string name="save_failed">Não foi possível guardar o contacto.</string>
-    <string name="saved">Contacto guardado.</string>
-    <string name="call">Ligar</string>
-    <string name="email">E-mail</string>
-    <string name="delete">Eliminar</string>
-    <string name="delete_title">Eliminar contacto?</string>
-    <string name="delete_message">Isto remove o contacto selecionado do Swir Contacts.</string>
-    <string name="delete_complete">Contacto eliminado.</string>
-    <string name="delete_failed">Não foi possível eliminar o contacto.</string>
-    <string name="action_unavailable">Não existe uma aplicação disponível para esta ação.</string>
-    <string name="export_complete">Contactos exportados.</string>
-    <string name="export_failed">Não foi possível exportar os contactos.</string>
-    <string name="export_filename">swir-contacts.vcf</string>
-    <string name="footer">by Swir · GitHub</string>
+    <string name="app_name">Swir Contacts</string><string name="subtitle">Contactos locais privados guardados pelo SwirPhoneOS</string><string name="search_hint">Pesquisar contactos</string><string name="new_contact">Novo contacto</string><string name="export_vcard">Exportar vCard</string><string name="import_vcard">Importar vCard</string><string name="empty">Não existem contactos correspondentes.</string><string name="name_hint">Nome</string><string name="phone_hint">Telefone</string><string name="email_hint">E-mail</string><string name="save">Guardar</string><string name="cancel">Cancelar</string><string name="invalid_contact">Introduza um nome e um telefone ou e-mail válido.</string><string name="save_failed">Não foi possível guardar o contacto.</string><string name="saved">Contacto guardado.</string><string name="call">Ligar</string><string name="email">E-mail</string><string name="delete">Eliminar</string><string name="delete_title">Eliminar contacto?</string><string name="delete_message">Isto remove o contacto selecionado do Swir Contacts.</string><string name="delete_complete">Contacto eliminado.</string><string name="delete_failed">Não foi possível eliminar o contacto.</string><string name="action_unavailable">Não existe uma aplicação disponível para esta ação.</string><string name="export_complete">Contactos exportados.</string><string name="export_failed">Não foi possível exportar os contactos.</string><string name="import_complete">Contactos importados.</string><string name="import_failed">Não foi possível importar com segurança o vCard selecionado.</string><string name="export_filename">swir-contacts.vcf</string><string name="footer">by Swir · GitHub</string>
 </resources>

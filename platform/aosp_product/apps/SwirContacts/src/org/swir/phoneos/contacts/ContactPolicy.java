@@ -1,5 +1,7 @@
 package org.swir.phoneos.contacts;
 
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Locale;
 
 /** Pure Java validation and vCard policy for owner-managed local contacts. */
@@ -8,6 +10,7 @@ public final class ContactPolicy {
     public static final int MAX_PHONE = 64;
     public static final int MAX_EMAIL = 254;
     public static final int MAX_IMPORT_BYTES = 1_000_000;
+    public static final int MAX_IMPORT_CONTACTS = 500;
 
     private ContactPolicy() {}
 
@@ -60,10 +63,58 @@ public final class ContactPolicy {
         return out.append("END:VCARD\r\n").toString();
     }
 
+    public static ArrayList<String[]> parseVCards(String raw) {
+        ArrayList<String[]> contacts = new ArrayList<>();
+        if (raw == null || raw.isEmpty() || raw.getBytes(StandardCharsets.UTF_8).length > MAX_IMPORT_BYTES) return contacts;
+        String normalized = raw.replace("\r\n", "\n").replace('\r', '\n');
+        String name = "", phone = "", email = "";
+        boolean inCard = false;
+        for (String line : normalized.split("\n", -1)) {
+            String trimmed = line.trim();
+            if (trimmed.equalsIgnoreCase("BEGIN:VCARD")) {
+                inCard = true; name = ""; phone = ""; email = "";
+                continue;
+            }
+            if (trimmed.equalsIgnoreCase("END:VCARD")) {
+                if (inCard && validContact(name, phone, email) && contacts.size() < MAX_IMPORT_CONTACTS) {
+                    contacts.add(new String[]{normalizeName(name), normalizePhone(phone), normalizeEmail(email)});
+                }
+                inCard = false;
+                continue;
+            }
+            if (!inCard) continue;
+            int colon = trimmed.indexOf(':');
+            if (colon <= 0 || colon == trimmed.length() - 1) continue;
+            String key = trimmed.substring(0, colon).toUpperCase(Locale.ROOT);
+            String value = unescapeVCard(trimmed.substring(colon + 1));
+            if (key.equals("FN") && name.isEmpty()) name = value;
+            else if ((key.equals("TEL") || key.startsWith("TEL;")) && phone.isEmpty()) phone = value;
+            else if ((key.equals("EMAIL") || key.startsWith("EMAIL;")) && email.isEmpty()) email = value;
+        }
+        return contacts;
+    }
+
     public static String escapeVCard(String value) {
         if (value == null) return "";
         return value.replace("\\", "\\\\").replace(";", "\\;").replace(",", "\\,")
                 .replace("\r", "").replace("\n", "\\n");
+    }
+
+    public static String unescapeVCard(String value) {
+        if (value == null) return "";
+        StringBuilder out = new StringBuilder();
+        boolean escaped = false;
+        for (int i = 0; i < value.length(); i++) {
+            char c = value.charAt(i);
+            if (escaped) {
+                if (c == 'n' || c == 'N') out.append(' ');
+                else out.append(c);
+                escaped = false;
+            } else if (c == '\\') escaped = true;
+            else out.append(c);
+        }
+        if (escaped) out.append('\\');
+        return out.toString();
     }
 
     private static String bounded(String raw, int max, boolean trimAllWhitespace) {

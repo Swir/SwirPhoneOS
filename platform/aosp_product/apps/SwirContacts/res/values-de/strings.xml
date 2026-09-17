@@ -1,29 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Swir Contacts</string>
-    <string name="subtitle">Private lokale Kontakte, gespeichert von SwirPhoneOS</string>
-    <string name="search_hint">Kontakte suchen</string>
-    <string name="new_contact">Neuer Kontakt</string>
-    <string name="export_vcard">vCard exportieren</string>
-    <string name="empty">Keine passenden Kontakte.</string>
-    <string name="name_hint">Name</string>
-    <string name="phone_hint">Telefon</string>
-    <string name="email_hint">E-Mail</string>
-    <string name="save">Speichern</string>
-    <string name="cancel">Abbrechen</string>
-    <string name="invalid_contact">Gib einen Namen und eine gültige Telefonnummer oder E-Mail-Adresse ein.</string>
-    <string name="save_failed">Kontakt konnte nicht gespeichert werden.</string>
-    <string name="saved">Kontakt gespeichert.</string>
-    <string name="call">Anrufen</string>
-    <string name="email">E-Mail</string>
-    <string name="delete">Löschen</string>
-    <string name="delete_title">Kontakt löschen?</string>
-    <string name="delete_message">Dadurch wird der ausgewählte Kontakt aus Swir Contacts entfernt.</string>
-    <string name="delete_complete">Kontakt gelöscht.</string>
-    <string name="delete_failed">Kontakt konnte nicht gelöscht werden.</string>
-    <string name="action_unavailable">Für diese Aktion ist keine App verfügbar.</string>
-    <string name="export_complete">Kontakte exportiert.</string>
-    <string name="export_failed">Kontakte konnten nicht exportiert werden.</string>
-    <string name="export_filename">swir-contacts.vcf</string>
-    <string name="footer">by Swir · GitHub</string>
+    <string name="app_name">Swir Contacts</string><string name="subtitle">Private lokale Kontakte, gespeichert von SwirPhoneOS</string><string name="search_hint">Kontakte suchen</string><string name="new_contact">Neuer Kontakt</string><string name="export_vcard">vCard exportieren</string><string name="import_vcard">vCard importieren</string><string name="empty">Keine passenden Kontakte.</string><string name="name_hint">Name</string><string name="phone_hint">Telefon</string><string name="email_hint">E-Mail</string><string name="save">Speichern</string><string name="cancel">Abbrechen</string><string name="invalid_contact">Gib einen Namen und eine gültige Telefonnummer oder E-Mail-Adresse ein.</string><string name="save_failed">Kontakt konnte nicht gespeichert werden.</string><string name="saved">Kontakt gespeichert.</string><string name="call">Anrufen</string><string name="email">E-Mail</string><string name="delete">Löschen</string><string name="delete_title">Kontakt löschen?</string><string name="delete_message">Dadurch wird der ausgewählte Kontakt aus Swir Contacts entfernt.</string><string name="delete_complete">Kontakt gelöscht.</string><string name="delete_failed">Kontakt konnte nicht gelöscht werden.</string><string name="action_unavailable">Für diese Aktion ist keine App verfügbar.</string><string name="export_complete">Kontakte exportiert.</string><string name="export_failed">Kontakte konnten nicht exportiert werden.</string><string name="import_complete">Kontakte importiert.</string><string name="import_failed">Die ausgewählte vCard konnte nicht sicher importiert werden.</string><string name="export_filename">swir-contacts.vcf</string><string name="footer">by Swir · GitHub</string>
 </resources>
