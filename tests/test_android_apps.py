@@ -13,12 +13,14 @@ class AndroidAppSourceTests(unittest.TestCase):
     def test_repository_source_apps_are_complete_but_not_runtime_claimed(self):
         summary = public_android_app_source_summary(validate_android_app_sources())
         self.assertEqual(summary["status"], "SOURCE_READY_NOT_BUILT")
-        self.assertEqual(set(summary["source_ready_apps"]), {"calculator","settings","files","device_care","update","privacy","clock","notes","calendar","gallery","recorder","contacts","apps","swirroot"})
-        self.assertEqual(summary["source_ready_count"], 14)
-        self.assertEqual(summary["localized_catalogs"], 112)
-        for capability in ("basic_math","system_settings","search","device_status","browse","copy_move_rename","share","safe_delete","storage_status","battery_status","thermal_status","hardware_diagnostics","channel_status","signed_metadata","permission_review","alarms","timers","stopwatch","world_clock","offline_notes","export","local_calendar","local_media","audio_recording","microphone_state","file_export","local_contacts","import_export","provider_bridge","package_catalog","signature_provenance","root_state","authorization_audit"):
+        self.assertEqual(set(summary["source_ready_apps"]), {"phone","calculator","settings","files","device_care","update","privacy","clock","notes","calendar","gallery","recorder","contacts","apps","swirroot"})
+        self.assertEqual(summary["source_ready_count"], 15)
+        self.assertEqual(summary["localized_catalogs"], 120)
+        for capability in ("dialer","basic_math","system_settings","search","device_status","browse","copy_move_rename","share","safe_delete","storage_status","battery_status","thermal_status","hardware_diagnostics","channel_status","signed_metadata","permission_review","alarms","timers","stopwatch","world_clock","offline_notes","export","local_calendar","local_media","audio_recording","microphone_state","file_export","local_contacts","import_export","provider_bridge","package_catalog","signature_provenance","root_state","authorization_audit"):
             self.assertIn(capability, summary["implemented_capabilities"])
-        self.assertEqual(summary["remaining_target_capabilities"], ["access_history","albums","guided_enable","guided_unroot","privacy_indicators","provider_bridge","recovery_handoff","scientific_math","staged_update_state","update_status"])
+        self.assertEqual(summary["remaining_target_capabilities"], ["access_history","albums","guided_enable","guided_unroot","in_call","privacy_indicators","provider_bridge","recent_calls","recovery_handoff","scientific_math","staged_update_state","update_status"])
+        self.assertIn("phone:in_call", summary["remaining_app_capabilities"])
+        self.assertIn("phone:recent_calls", summary["remaining_app_capabilities"])
         self.assertIn("calendar:provider_bridge", summary["remaining_app_capabilities"])
         self.assertIn("apps:update_status", summary["remaining_app_capabilities"])
         self.assertNotIn("contacts:provider_bridge", summary["remaining_app_capabilities"])
@@ -34,6 +36,18 @@ class AndroidAppSourceTests(unittest.TestCase):
         temp, product, registry = self._copy_fixture()
         with temp:
             manifest = product / "apps/SwirSettings/AndroidManifest.xml"; manifest.write_text(manifest.read_text(encoding="utf-8").replace("<application", '<uses-permission android:name="android.permission.INTERNET" />\n    <application', 1), encoding="utf-8")
+            with self.assertRaises(AndroidAppSourceError): validate_android_app_sources(product, registry)
+
+    def test_phone_cannot_gain_direct_call_permission(self):
+        temp, product, registry = self._copy_fixture()
+        with temp:
+            manifest = product / "apps/SwirPhone/AndroidManifest.xml"; manifest.write_text(manifest.read_text(encoding="utf-8").replace("<application", '<uses-permission android:name="android.permission.CALL_PHONE"/>\n    <application', 1), encoding="utf-8")
+            with self.assertRaises(AndroidAppSourceError): validate_android_app_sources(product, registry)
+
+    def test_phone_must_keep_user_visible_dial_handoff(self):
+        temp, product, registry = self._copy_fixture()
+        with temp:
+            activity = product / "apps/SwirPhone/src/org/swir/phoneos/phone/MainActivity.java"; activity.write_text(activity.read_text(encoding="utf-8").replace("Intent.ACTION_DIAL", "Intent.ACTION_CALL", 1), encoding="utf-8")
             with self.assertRaises(AndroidAppSourceError): validate_android_app_sources(product, registry)
 
     def test_gallery_permission_allowlist_is_exact(self):
