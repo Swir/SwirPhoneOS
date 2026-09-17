@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Swir Phone</string>
+    <string name="subtitle">لوحة اتصال بسيطة يتحكم بها مالك الجهاز</string>
+    <string name="number_hint">رقم الهاتف</string>
+    <string name="dial">المتابعة إلى الاتصال</string>
+    <string name="backspace">حذف حرف</string>
+    <string name="clear">مسح</string>
+    <string name="open_contacts">فتح Swir Contacts</string>
+    <string name="invalid_number">أدخل رقم هاتف صالحًا.</string>
+    <string name="dial_unavailable">لا يتوفر تطبيق اتصال للنظام.</string>
+    <string name="contacts_unavailable">Swir Contacts غير متاح.</string>
+    <string name="handoff_note">يتم تسليم المكالمات إلى شاشة الاتصال المرئية في أندرويد. هذه المرحلة من المصدر لا تُجري مكالمات بصمت.</string>
+    <string name="footer">by Swir · GitHub</string>
+</resources>

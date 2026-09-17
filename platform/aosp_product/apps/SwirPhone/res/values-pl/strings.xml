@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Swir Phone</string>
+    <string name="subtitle">Prosta klawiatura wybierania pod kontrolą właściciela</string>
+    <string name="number_hint">Numer telefonu</string>
+    <string name="dial">Przejdź do połączenia</string>
+    <string name="backspace">Cofnij znak</string>
+    <string name="clear">Wyczyść</string>
+    <string name="open_contacts">Otwórz Swir Contacts</string>
+    <string name="invalid_number">Wpisz prawidłowy numer telefonu.</string>
+    <string name="dial_unavailable">Brak dostępnej systemowej aplikacji telefonu.</string>
+    <string name="contacts_unavailable">Swir Contacts jest niedostępny.</string>
+    <string name="handoff_note">Połączenia są przekazywane do widocznego ekranu wybierania Androida. Ta wersja nie wykonuje połączeń w tle.</string>
+    <string name="footer">by Swir · GitHub</string>
+</resources>

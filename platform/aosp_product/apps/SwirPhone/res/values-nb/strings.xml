@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Swir Phone</string>
+    <string name="subtitle">Et enkelt eierstyrt talltastatur</string>
+    <string name="number_hint">Telefonnummer</string>
+    <string name="dial">Fortsett til samtale</string>
+    <string name="backspace">Slett tegn</string>
+    <string name="clear">Tøm</string>
+    <string name="open_contacts">Åpne Swir Contacts</string>
+    <string name="invalid_number">Skriv inn et gyldig telefonnummer.</string>
+    <string name="dial_unavailable">Ingen systemoppringer er tilgjengelig.</string>
+    <string name="contacts_unavailable">Swir Contacts er ikke tilgjengelig.</string>
+    <string name="handoff_note">Samtaler sendes til Androids synlige oppringingsskjerm. Denne kildeversjonen starter ikke samtaler skjult.</string>
+    <string name="footer">by Swir · GitHub</string>
+</resources>

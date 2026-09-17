@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Swir Contacts</string>
+    <string name="subtitle">جهات اتصال محلية خاصة يخزنها SwirPhoneOS</string>
+    <string name="search_hint">البحث في جهات الاتصال</string>
+    <string name="new_contact">جهة اتصال جديدة</string>
+    <string name="export_vcard">تصدير vCard</string>
+    <string name="empty">لا توجد جهات اتصال مطابقة.</string>
+    <string name="name_hint">الاسم</string>
+    <string name="phone_hint">الهاتف</string>
+    <string name="email_hint">البريد الإلكتروني</string>
+    <string name="save">حفظ</string>
+    <string name="cancel">إلغاء</string>
+    <string name="invalid_contact">أدخل اسمًا ورقم هاتف أو بريدًا إلكترونيًا صالحًا.</string>
+    <string name="save_failed">تعذر حفظ جهة الاتصال.</string>
+    <string name="saved">تم حفظ جهة الاتصال.</string>
+    <string name="call">اتصال</string>
+    <string name="email">بريد</string>
+    <string name="delete">حذف</string>
+    <string name="delete_title">حذف جهة الاتصال؟</string>
+    <string name="delete_message">سيؤدي هذا إلى إزالة جهة الاتصال المحددة من Swir Contacts.</string>
+    <string name="delete_complete">تم حذف جهة الاتصال.</string>
+    <string name="delete_failed">تعذر حذف جهة الاتصال.</string>
+    <string name="action_unavailable">لا يتوفر تطبيق لهذه العملية.</string>
+    <string name="export_complete">تم تصدير جهات الاتصال.</string>
+    <string name="export_failed">تعذر تصدير جهات الاتصال.</string>
+    <string name="export_filename">swir-contacts.vcf</string>
+    <string name="footer">by Swir · GitHub</string>
+</resources>

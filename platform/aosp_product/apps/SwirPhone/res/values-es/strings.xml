@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Swir Phone</string>
+    <string name="subtitle">Un teclado de marcación sencillo controlado por el propietario</string>
+    <string name="number_hint">Número de teléfono</string>
+    <string name="dial">Continuar a la llamada</string>
+    <string name="backspace">Borrar carácter</string>
+    <string name="clear">Borrar todo</string>
+    <string name="open_contacts">Abrir Swir Contacts</string>
+    <string name="invalid_number">Introduce un número de teléfono válido.</string>
+    <string name="dial_unavailable">No hay un marcador del sistema disponible.</string>
+    <string name="contacts_unavailable">Swir Contacts no está disponible.</string>
+    <string name="handoff_note">Las llamadas se transfieren a la pantalla visible de marcación de Android. Esta etapa de código no realiza llamadas en silencio.</string>
+    <string name="footer">by Swir · GitHub</string>
+</resources>

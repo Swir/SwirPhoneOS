@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Swir Phone</string>
+    <string name="subtitle">Ein einfaches, nutzergesteuertes Wählfeld</string>
+    <string name="number_hint">Telefonnummer</string>
+    <string name="dial">Zum Anruf wechseln</string>
+    <string name="backspace">Zeichen löschen</string>
+    <string name="clear">Leeren</string>
+    <string name="open_contacts">Swir Contacts öffnen</string>
+    <string name="invalid_number">Gib eine gültige Telefonnummer ein.</string>
+    <string name="dial_unavailable">Keine System-Telefon-App verfügbar.</string>
+    <string name="contacts_unavailable">Swir Contacts ist nicht verfügbar.</string>
+    <string name="handoff_note">Anrufe werden an den sichtbaren Android-Wählbildschirm übergeben. Diese Quellversion startet keine Anrufe unbemerkt.</string>
+    <string name="footer">by Swir · GitHub</string>
+</resources>

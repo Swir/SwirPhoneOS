@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Swir Contacts</string>
+    <string name="subtitle">Private lokale kontakter lagret av SwirPhoneOS</string>
+    <string name="search_hint">Søk i kontakter</string>
+    <string name="new_contact">Ny kontakt</string>
+    <string name="export_vcard">Eksporter vCard</string>
+    <string name="empty">Ingen samsvarende kontakter.</string>
+    <string name="name_hint">Navn</string>
+    <string name="phone_hint">Telefon</string>
+    <string name="email_hint">E-post</string>
+    <string name="save">Lagre</string>
+    <string name="cancel">Avbryt</string>
+    <string name="invalid_contact">Skriv inn navn og et gyldig telefonnummer eller e-post.</string>
+    <string name="save_failed">Kontakten kunne ikke lagres.</string>
+    <string name="saved">Kontakt lagret.</string>
+    <string name="call">Ring</string>
+    <string name="email">E-post</string>
+    <string name="delete">Slett</string>
+    <string name="delete_title">Slette kontakt?</string>
+    <string name="delete_message">Dette fjerner den valgte kontakten fra Swir Contacts.</string>
+    <string name="delete_complete">Kontakt slettet.</string>
+    <string name="delete_failed">Kontakten kunne ikke slettes.</string>
+    <string name="action_unavailable">Ingen app er tilgjengelig for denne handlingen.</string>
+    <string name="export_complete">Kontakter eksportert.</string>
+    <string name="export_failed">Kontakter kunne ikke eksporteres.</string>
+    <string name="export_filename">swir-contacts.vcf</string>
+    <string name="footer">by Swir · GitHub</string>
+</resources>

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Swir Phone</string>
+    <string name="subtitle">Un clavier de numérotation simple contrôlé par le propriétaire</string>
+    <string name="number_hint">Numéro de téléphone</string>
+    <string name="dial">Continuer vers l’appel</string>
+    <string name="backspace">Effacer un caractère</string>
+    <string name="clear">Effacer</string>
+    <string name="open_contacts">Ouvrir Swir Contacts</string>
+    <string name="invalid_number">Saisissez un numéro de téléphone valide.</string>
+    <string name="dial_unavailable">Aucun composeur système n’est disponible.</string>
+    <string name="contacts_unavailable">Swir Contacts n’est pas disponible.</string>
+    <string name="handoff_note">Les appels sont transmis à l’écran de numérotation visible d’Android. Cette version source ne lance pas d’appel silencieusement.</string>
+    <string name="footer">by Swir · GitHub</string>
+</resources>

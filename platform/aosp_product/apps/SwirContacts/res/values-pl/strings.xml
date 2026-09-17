@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Swir Contacts</string>
+    <string name="subtitle">Prywatne lokalne kontakty przechowywane przez SwirPhoneOS</string>
+    <string name="search_hint">Szukaj kontaktów</string>
+    <string name="new_contact">Nowy kontakt</string>
+    <string name="export_vcard">Eksport vCard</string>
+    <string name="empty">Brak pasujących kontaktów.</string>
+    <string name="name_hint">Nazwa</string>
+    <string name="phone_hint">Telefon</string>
+    <string name="email_hint">E-mail</string>
+    <string name="save">Zapisz</string>
+    <string name="cancel">Anuluj</string>
+    <string name="invalid_contact">Wpisz nazwę oraz prawidłowy telefon lub e-mail.</string>
+    <string name="save_failed">Nie udało się zapisać kontaktu.</string>
+    <string name="saved">Kontakt zapisany.</string>
+    <string name="call">Zadzwoń</string>
+    <string name="email">E-mail</string>
+    <string name="delete">Usuń</string>
+    <string name="delete_title">Usunąć kontakt?</string>
+    <string name="delete_message">Spowoduje to usunięcie wybranego kontaktu ze Swir Contacts.</string>
+    <string name="delete_complete">Kontakt usunięty.</string>
+    <string name="delete_failed">Nie udało się usunąć kontaktu.</string>
+    <string name="action_unavailable">Brak aplikacji obsługującej tę akcję.</string>
+    <string name="export_complete">Kontakty wyeksportowane.</string>
+    <string name="export_failed">Nie udało się wyeksportować kontaktów.</string>
+    <string name="export_filename">swir-contacts.vcf</string>
+    <string name="footer">by Swir · GitHub</string>
+</resources>
