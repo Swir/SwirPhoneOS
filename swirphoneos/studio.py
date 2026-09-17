@@ -10,7 +10,11 @@ import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
 from .i18n import CATALOGS, detect_language, translate
-from .studio_evidence import StudioEvidenceError, load_public_swirroot_readiness_summary
+from .studio_evidence import (
+    StudioEvidenceError,
+    load_public_device_physical_validation_summary,
+    load_public_swirroot_readiness_summary,
+)
 from .studio_icon import ICON_PNG
 from .studio_state import DiagnosticSession, UnifiedDiagnosticSession, save_report
 
@@ -32,6 +36,7 @@ class Studio:
         self.started = 0.0
         self.closed = False
         self.readiness_summary: dict[str, object] | None = None
+        self.device_validation_summary: dict[str, object] | None = None
         self._labels: list[tuple[tk.Widget, str]] = []
         self._wrapped: list[ttk.Label] = []
         root.title("SwirPhoneOS · Flash Studio")
@@ -87,15 +92,22 @@ class Studio:
         self.browse = self.button(fields, "browse", self.choose_tool)
         self.browse.grid(row=1, column=1)
 
+        # Two action rows prevent translated review labels from overlapping on
+        # narrow Windows displays while keeping the scan/save controls primary.
         actions = ttk.Frame(outer)
         actions.grid(row=3, column=0, sticky="ew", pady=8)
+        actions.columnconfigure(0, weight=1)
+        actions.columnconfigure(1, weight=1)
         self.scan = self.button(actions, "scan", self.start_scan)
-        self.scan.pack(side="left", padx=(0, 8))
+        self.scan.grid(row=0, column=0, sticky="ew", padx=(0, 4), pady=(0, 4))
         self.save = self.button(actions, "save", self.export_report)
-        self.save.pack(side="left", padx=(0, 8))
+        self.save.grid(row=0, column=1, sticky="ew", padx=(4, 0), pady=(0, 4))
         self.save.state(["disabled"])
         self.readiness = self.button(actions, "review_readiness", self.open_root_readiness)
-        self.readiness.pack(side="left")
+        self.readiness.grid(row=1, column=0, sticky="ew", padx=(0, 4))
+        self.device_validation = self.button(actions, "review_device_validation", self.open_device_validation)
+        self.device_validation.grid(row=1, column=1, sticky="ew", padx=(4, 0))
+
         self.status = ttk.Label(outer, text=self.tr("ready"), wraplength=700)
         self._wrapped.append(self.status)
         self.status.grid(row=4, column=0, sticky="ew")
@@ -123,6 +135,7 @@ class Studio:
         root.bind("<Control-o>", lambda _: self.choose_tool())
         root.bind("<Control-s>", lambda _: self.export_report())
         root.bind("<Control-r>", lambda _: self.open_root_readiness())
+        root.bind("<Control-d>", lambda _: self.open_device_validation())
         self.after_id = root.after(80, self.poll)
 
     def tr(self, key: str, **values: object) -> str:
@@ -155,6 +168,8 @@ class Studio:
         self.update_status()
         if self.readiness_summary is not None:
             self.show_report(self.render_readiness(self.readiness_summary))
+        elif self.device_validation_summary is not None:
+            self.show_report(self.render_device_validation(self.device_validation_summary))
         elif self.session.report is None:
             self.show_report(self.tr("empty"))
 
@@ -166,6 +181,7 @@ class Studio:
         self.save.state(["disabled"])
         self.session.report = None
         self.readiness_summary = None
+        self.device_validation_summary = None
         self.show_report(self.tr("empty"))
         self.update_status()
 
@@ -211,6 +227,32 @@ class Studio:
             writes=yes if summary["device_write_allowed"] is True else no,
         )
 
+    def render_device_validation(self, summary: dict[str, object]) -> str:
+        failures = summary["known_capability_failures"]
+        failures_text = (
+            ", ".join(self.tr(f"device_capability_{item}") for item in failures)
+            if failures
+            else self.tr("none")
+        )
+        missing = summary["missing_requirements"]
+        # Missing requirement values are stable evidence-schema identifiers.
+        # The explanatory UI copy remains fully localized while identifiers are
+        # intentionally preserved verbatim for operator/debug correspondence.
+        missing_text = ", ".join(str(item) for item in missing) if missing else self.tr("none")
+        yes = self.tr("yes")
+        no = self.tr("no")
+        return self.tr(
+            "device_validation_summary",
+            session=summary["validation_session_id"],
+            profile=summary["profile_id"],
+            build=summary["target_build"],
+            candidate=yes if summary["support_candidate_review_ready"] is True else no,
+            failures=failures_text,
+            missing=missing_text,
+            support=yes if summary["support_claim_allowed"] is True else no,
+            writes=yes if summary["device_write_allowed"] is True else no,
+        )
+
     def open_root_readiness(self) -> None:
         if self.session.busy:
             return
@@ -229,9 +271,33 @@ class Studio:
             messagebox.showerror("SwirPhoneOS", self.tr("readiness_failed"), parent=self.root)
             return
         self.readiness_summary = summary
+        self.device_validation_summary = None
         self.status_key = "readiness_loaded"
         self.save.state(["disabled"])
         self.show_report(self.render_readiness(summary))
+        self.update_status()
+
+    def open_device_validation(self) -> None:
+        if self.session.busy:
+            return
+        path = filedialog.askopenfilename(
+            parent=self.root,
+            title=self.tr("review_device_validation"),
+            filetypes=[("JSON", "*.json")],
+        )
+        if not path:
+            return
+        try:
+            # Preserve the selected path so symlink rejection remains effective.
+            summary = load_public_device_physical_validation_summary(Path(path))
+        except (OSError, StudioEvidenceError, ValueError):
+            messagebox.showerror("SwirPhoneOS", self.tr("device_validation_failed"), parent=self.root)
+            return
+        self.device_validation_summary = summary
+        self.readiness_summary = None
+        self.status_key = "device_validation_loaded"
+        self.save.state(["disabled"])
+        self.show_report(self.render_device_validation(summary))
         self.update_status()
 
     def start_scan(self) -> None:
@@ -245,7 +311,11 @@ class Studio:
         self.started = time.monotonic()
         self.status_key = "running"
         self.readiness_summary = None
-        for widget in (self.entry, self.browse, self.scan, self.save, self.readiness, self.transport_selector):
+        self.device_validation_summary = None
+        for widget in (
+            self.entry, self.browse, self.scan, self.save, self.readiness,
+            self.device_validation, self.transport_selector,
+        ):
             widget.state(["disabled"])
         self.show_report(self.tr("empty"))
         self.progress.start(15)
@@ -257,11 +327,15 @@ class Studio:
         result = self.session.poll()
         if result is not None:
             self.progress.stop()
-            for widget in (self.entry, self.browse, self.scan, self.readiness, self.transport_selector):
+            for widget in (
+                self.entry, self.browse, self.scan, self.readiness,
+                self.device_validation, self.transport_selector,
+            ):
                 widget.state(["!disabled"])
             if result.report_json is not None:
                 self.status_key = "done"
                 self.readiness_summary = None
+                self.device_validation_summary = None
                 self.show_report(result.report_json)
                 self.save.state(["!disabled"])
             else:
@@ -271,7 +345,12 @@ class Studio:
         self.after_id = self.root.after(80, self.poll)
 
     def export_report(self) -> None:
-        if self.session.busy or self.session.report is None or self.readiness_summary is not None:
+        if (
+            self.session.busy
+            or self.session.report is None
+            or self.readiness_summary is not None
+            or self.device_validation_summary is not None
+        ):
             return
         path = filedialog.asksaveasfilename(parent=self.root, title=self.tr("save"),
                                            defaultextension=".json", initialfile="swirphoneos-report.json",
