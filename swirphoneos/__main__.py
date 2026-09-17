@@ -14,6 +14,7 @@ from .diagnostics import DiagnosticError, ReadOnlyAdb
 from .fastboot import FastbootDiagnosticError, ReadOnlyFastboot
 from .i18n import LocalizationError, catalog_summary
 from .identity import IdentityAssessmentError, build_unified_report
+from .journal_evidence import load_journal, public_journal_summary
 from .platform import PlatformBaselineError, load_baseline, public_baseline_summary
 from .product_contract import ProductContractError, public_product_summary, validate_product_contract
 from .profiles import ProfileError, discover_profiles, public_profile_summary
@@ -40,6 +41,7 @@ def main(argv: list[str] | None = None) -> int:
     cuttlefish=sub.add_parser("cuttlefish-evidence",help="Capture strict read-only runtime evidence from one local Cuttlefish/emulator"); cuttlefish.add_argument("--adb",required=True,type=Path,help="Absolute path to a trusted Android SDK adb executable"); cuttlefish.add_argument("--manifest",type=Path,default=Path("system_apps/manifest.json"))
     transaction_plan=sub.add_parser("transaction-plan",help="Validate a local preparation-only install/rollback plan; never performs device writes"); transaction_plan.add_argument("--file",required=True,type=Path)
     transaction_evidence=sub.add_parser("transaction-evidence",help="Verify local plan artifacts and optionally create a read-only recovery journal"); transaction_evidence.add_argument("--plan",required=True,type=Path); transaction_evidence.add_argument("--artifacts",required=True,type=Path); transaction_evidence.add_argument("--journal",type=Path,default=None,help="Optional absolute create-only .json journal path")
+    transaction_journal=sub.add_parser("transaction-journal",help="Revalidate a persisted read-only recovery journal and its integrity hash"); transaction_journal.add_argument("--file",required=True,type=Path)
     sub.add_parser("i18n",help="Validate shared localization catalogs and show translation coverage")
     apps=sub.add_parser("apps",help="Validate the essential first-party system-app registry"); apps.add_argument("--manifest",type=Path,default=Path("system_apps/manifest.json"))
     android_apps=sub.add_parser("android-apps",help="Validate checked-in first-party Android app source without claiming build/runtime"); android_apps.add_argument("--product-root",type=Path,default=Path("platform/aosp_product")); android_apps.add_argument("--manifest",type=Path,default=Path("system_apps/manifest.json"))
@@ -64,6 +66,7 @@ def main(argv: list[str] | None = None) -> int:
         elif args.command=="transaction-plan": result=public_plan_summary(load_plan(args.file))
         elif args.command=="transaction-evidence":
             plan=load_plan(args.plan); evidence=verify_artifacts(plan,args.artifacts); result=create_journal(args.journal,plan,evidence) if args.journal is not None else evidence
+        elif args.command=="transaction-journal": result=public_journal_summary(load_journal(args.file))
         elif args.command=="i18n": result=catalog_summary()
         elif args.command=="apps": result=public_registry_summary(load_registry(args.manifest))
         elif args.command=="android-apps": result=public_android_app_source_summary(validate_android_app_sources(args.product_root,args.manifest))
