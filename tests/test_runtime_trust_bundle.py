@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
@@ -15,6 +16,7 @@ def _write(path: Path, value: dict[str, object]) -> Path:
     return path.resolve()
 
 
+@unittest.skipUnless(os.name == "posix", "AOSP Cuttlefish runtime-tool trust fixtures are Linux/POSIX-builder specific")
 class RuntimeTrustBundleTests(unittest.TestCase):
     def _fixtures(self, root: Path) -> tuple[Path, Path, Path, Path]:
         adb = root / "adb"
