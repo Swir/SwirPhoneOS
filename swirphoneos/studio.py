@@ -10,7 +10,11 @@ import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
 from .i18n import CATALOGS, detect_language, translate
-from .studio_evidence import StudioEvidenceError, load_public_swirroot_readiness_summary
+from .studio_evidence import (
+    StudioEvidenceError,
+    load_public_device_support_readiness_summary,
+    load_public_swirroot_readiness_summary,
+)
 from .studio_icon import ICON_PNG
 from .studio_state import DiagnosticSession, UnifiedDiagnosticSession, save_report
 
@@ -32,6 +36,7 @@ class Studio:
         self.started = 0.0
         self.closed = False
         self.readiness_summary: dict[str, object] | None = None
+        self.support_summary: dict[str, object] | None = None
         self._labels: list[tuple[tk.Widget, str]] = []
         self._wrapped: list[ttk.Label] = []
         root.title("SwirPhoneOS · Flash Studio")
@@ -95,7 +100,9 @@ class Studio:
         self.save.pack(side="left", padx=(0, 8))
         self.save.state(["disabled"])
         self.readiness = self.button(actions, "review_readiness", self.open_root_readiness)
-        self.readiness.pack(side="left")
+        self.readiness.pack(side="left", padx=(0, 8))
+        self.support_readiness = self.button(actions, "review_device_support", self.open_device_support_readiness)
+        self.support_readiness.pack(side="left")
         self.status = ttk.Label(outer, text=self.tr("ready"), wraplength=700)
         self._wrapped.append(self.status)
         self.status.grid(row=4, column=0, sticky="ew")
@@ -123,6 +130,7 @@ class Studio:
         root.bind("<Control-o>", lambda _: self.choose_tool())
         root.bind("<Control-s>", lambda _: self.export_report())
         root.bind("<Control-r>", lambda _: self.open_root_readiness())
+        root.bind("<Control-d>", lambda _: self.open_device_support_readiness())
         self.after_id = root.after(80, self.poll)
 
     def tr(self, key: str, **values: object) -> str:
@@ -153,7 +161,9 @@ class Studio:
         for widget, key in self._labels:
             widget.configure(text=self.tr(key))
         self.update_status()
-        if self.readiness_summary is not None:
+        if self.support_summary is not None:
+            self.show_report(self.render_device_support(self.support_summary))
+        elif self.readiness_summary is not None:
             self.show_report(self.render_readiness(self.readiness_summary))
         elif self.session.report is None:
             self.show_report(self.tr("empty"))
@@ -166,6 +176,7 @@ class Studio:
         self.save.state(["disabled"])
         self.session.report = None
         self.readiness_summary = None
+        self.support_summary = None
         self.show_report(self.tr("empty"))
         self.update_status()
 
@@ -211,6 +222,37 @@ class Studio:
             writes=yes if summary["device_write_allowed"] is True else no,
         )
 
+    def render_device_support(self, summary: dict[str, object]) -> str:
+        missing = summary["missing_requirements"]
+        missing_text = (
+            ", ".join(self.tr(f"device_support_gate_{item}") for item in missing)
+            if missing
+            else self.tr("none")
+        )
+        capabilities = summary["capability_status"]
+        capability_text = ", ".join(
+            f"{self.tr(f'device_support_capability_{name}')}: {self.tr('device_support_capability_state_unverified')}"
+            for name in capabilities
+        )
+        yes = self.tr("yes")
+        no = self.tr("no")
+        support = self.tr("device_support_status_not_supported")
+        return self.tr(
+            "device_support_summary",
+            profile=summary["profile_id"],
+            model=summary["device_model"],
+            codename=summary["device_codename"],
+            current=summary["observed_current_build"],
+            target=summary["target_build"],
+            support=support,
+            missing=missing_text,
+            capabilities=capability_text,
+            install=yes if summary["install_allowed"] is True else no,
+            writes=yes if summary["device_write_allowed"] is True else no,
+            root=yes if summary["root_allowed"] is True else no,
+            digest=summary["evidence_sha256"],
+        )
+
     def open_root_readiness(self) -> None:
         if self.session.busy:
             return
@@ -229,9 +271,34 @@ class Studio:
             messagebox.showerror("SwirPhoneOS", self.tr("readiness_failed"), parent=self.root)
             return
         self.readiness_summary = summary
+        self.support_summary = None
         self.status_key = "readiness_loaded"
         self.save.state(["disabled"])
         self.show_report(self.render_readiness(summary))
+        self.update_status()
+
+    def open_device_support_readiness(self) -> None:
+        if self.session.busy:
+            return
+        path = filedialog.askopenfilename(
+            parent=self.root,
+            title=self.tr("review_device_support"),
+            filetypes=[("JSON", "*.json")],
+        )
+        if not path:
+            return
+        try:
+            # Keep the selected path unresolved so the loader can reject
+            # symlinks rather than silently following them to a regular file.
+            summary = load_public_device_support_readiness_summary(Path(path))
+        except (OSError, StudioEvidenceError, ValueError):
+            messagebox.showerror("SwirPhoneOS", self.tr("device_support_failed"), parent=self.root)
+            return
+        self.support_summary = summary
+        self.readiness_summary = None
+        self.status_key = "device_support_loaded"
+        self.save.state(["disabled"])
+        self.show_report(self.render_device_support(summary))
         self.update_status()
 
     def start_scan(self) -> None:
@@ -245,7 +312,11 @@ class Studio:
         self.started = time.monotonic()
         self.status_key = "running"
         self.readiness_summary = None
-        for widget in (self.entry, self.browse, self.scan, self.save, self.readiness, self.transport_selector):
+        self.support_summary = None
+        for widget in (
+            self.entry, self.browse, self.scan, self.save, self.readiness,
+            self.support_readiness, self.transport_selector,
+        ):
             widget.state(["disabled"])
         self.show_report(self.tr("empty"))
         self.progress.start(15)
@@ -257,11 +328,15 @@ class Studio:
         result = self.session.poll()
         if result is not None:
             self.progress.stop()
-            for widget in (self.entry, self.browse, self.scan, self.readiness, self.transport_selector):
+            for widget in (
+                self.entry, self.browse, self.scan, self.readiness,
+                self.support_readiness, self.transport_selector,
+            ):
                 widget.state(["!disabled"])
             if result.report_json is not None:
                 self.status_key = "done"
                 self.readiness_summary = None
+                self.support_summary = None
                 self.show_report(result.report_json)
                 self.save.state(["!disabled"])
             else:
@@ -271,7 +346,12 @@ class Studio:
         self.after_id = self.root.after(80, self.poll)
 
     def export_report(self) -> None:
-        if self.session.busy or self.session.report is None or self.readiness_summary is not None:
+        if (
+            self.session.busy
+            or self.session.report is None
+            or self.readiness_summary is not None
+            or self.support_summary is not None
+        ):
             return
         path = filedialog.asksaveasfilename(parent=self.root, title=self.tr("save"),
                                            defaultextension=".json", initialfile="swirphoneos-report.json",
