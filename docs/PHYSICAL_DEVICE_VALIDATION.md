@@ -77,6 +77,12 @@ python -m swirphoneos.device_physical_validation_cli \
 
 The JSON output should be preserved together with the referenced evidence files and the exact readiness input. Do not edit and re-hash a failed report to force it green: semantic validation recomputes candidate state from the physical test/capability inventory and keeps all support/write/root/promotion flags denied.
 
+## SwirPhoneStudio review
+
+SwirPhoneStudio can open the generated physical-validation JSON through **Review device validation**. The Studio loader accepts only an absolute regular `.json` file, rejects symlinks, duplicate keys, oversized input and semantic/integrity drift, then displays a bounded summary: validation session, device profile, exact target build, candidate-review state, known capability failures and remaining requirements.
+
+The review surface is localized through the shared data-only host catalog in EN/PL/NB/DE/ES/FR/PT/AR. It deliberately does not import the raw evidence file list, hardware/journal hashes or any write primitive into the UI. A green candidate-review state therefore remains a review result only; Studio still displays and enforces `support_claim_allowed=false`, `device_write_allowed=false` and `root_allowed=false`.
+
 ## OnePlus Nord / avicii status
 
 The checked-in `oneplus/avicii` profile remains `PLANNED_NOT_SUPPORTED`. No physical validation bundle has been captured in this repository. There is no verified partition map, stock-restore proof, physical SwirPhoneOS boot, install/rollback cycle, or exact-device capability matrix yet.
