@@ -11,7 +11,7 @@ An app is not considered implemented merely because a package, screen or static 
 - `ANDROID_RUNTIME` — the app has been built into the pinned SwirPhoneOS product and exercised in the target Android runtime.
 - `HARDWARE_VERIFIED` — hardware-dependent capability has also passed exact-device evidence.
 
-The current registry contains 20 apps: **8 `HOST_CONTRACT`, 12 `ANDROID_SOURCE`, 0 `ANDROID_RUNTIME`, 0 `HARDWARE_VERIFIED`.**
+The current registry contains 20 apps: **6 `HOST_CONTRACT`, 14 `ANDROID_SOURCE`, 0 `ANDROID_RUNTIME`, 0 `HARDWARE_VERIFIED`.**
 
 ## Source-ready apps
 
@@ -29,47 +29,55 @@ SwirFiles is a beta-critical permission-free file manager built around an owner-
 
 ### SwirDeviceCare
 
-SwirDeviceCare is a beta-critical permission-free diagnostics source backed by Android framework state for manufacturer/model/security patch, battery/charging, storage, memory and current thermal state. A pure-Java health model is host-tested. Hardware interpretation remains provisional until exact-device testing.
+SwirDeviceCare is a beta-critical permission-free diagnostics source backed by Android framework state for manufacturer/model/security patch, battery/charging, storage, memory and current thermal state. Hardware interpretation remains provisional until exact-device testing.
 
 ### SwirUpdate
 
-SwirUpdate is meaningful beta-critical Android source, but deliberately **not an installer yet**. It reports real local build identity, maps build type/tags to a visible development channel, and contains a dependency-free SHA-256/RSA detached-signature verification policy with host tests including tamper rejection. It exposes a safe hand-off to Android's existing system-update settings where available.
-
-No network permission, downloader, update-package staging, recovery install or silent write path is present. `staged_update_state` and `recovery_handoff` remain unimplemented target capabilities until the signed OTA/recovery architecture is built and runtime-tested.
+SwirUpdate is meaningful beta-critical Android source, but deliberately **not an installer yet**. It reports real local build identity and contains a dependency-free SHA-256/RSA detached-signature verification policy. No network permission, downloader, update-package staging, recovery install or silent write path is present. `staged_update_state` and `recovery_handoff` remain future capabilities.
 
 ### SwirPrivacy
 
-SwirPrivacy is a beta-critical permission-free privacy center. It searches and opens only an exact reviewed allowlist of authoritative Android privacy, permission, location, app and special-access settings. The pure-Java route catalog is host-tested and unreviewed routes fail source validation.
-
-At this stage the implemented capability is `permission_review`. Platform-backed live privacy indicators and access history remain explicit future work rather than placeholder claims.
+SwirPrivacy is a beta-critical permission-free privacy center. It searches and opens only an exact reviewed allowlist of Android privacy, permission, location, app and special-access settings. Platform-backed live privacy indicators and access history remain future work.
 
 ### SwirClock
 
-SwirClock is a permission-free daily clock source. It shows locale-formatted local time/date plus UTC, provides a foreground stopwatch and bounded foreground timer, and hands alarm creation to Android's system alarm surface with the UI kept visible for owner review. It does not request exact-alarm privileges and does not silently create alarms. A pure-Java `ClockCore` covers timer bounds, alarm-time validation, stopwatch/timer calculations, duration formatting and world-time formatting in host CI.
+SwirClock is a permission-free daily clock source with locale-formatted time/date, foreground stopwatch/timer and a user-visible hand-off to Android alarm creation. It does not request exact-alarm privileges or silently create alarms.
 
 ### SwirNotes
 
-SwirNotes stores owner-created notes in an app-private SQLite database and supports create/edit/delete/search, explicit text sharing and user-selected Markdown export. It requests no network or storage permission and keeps its note policy independently host-testable.
+SwirNotes stores owner-created notes in an app-private SQLite database and supports create/edit/delete/search, explicit text sharing and user-selected Markdown export. It requests no network or storage permission.
 
 ### SwirCalendar
 
-SwirCalendar stores a local SQLite agenda, supports date/time editing and search, and provides explicit sharing plus user-selected iCalendar export. CalendarProvider integration remains unimplemented and is explicitly rejected by the current source validator rather than being overclaimed.
+SwirCalendar stores a local SQLite agenda, supports date/time editing and search, and provides explicit sharing plus user-selected iCalendar export. CalendarProvider integration remains unimplemented and is tracked specifically as `calendar:provider_bridge`.
 
 ### SwirGallery
 
-SwirGallery is meaningful scoped-media Android source rather than a placeholder browser. It requests exactly `READ_MEDIA_IMAGES` and `READ_MEDIA_VIDEO`, lists only media collections Android grants, supports local search, opens and shares content through URI grants, and delegates deletion to Android's owner-confirmed `MediaStore.createDeleteRequest` flow. It never requests broad storage access or direct media write permission. Its pure-Java `MediaPolicy` is host-tested for MIME scope, search behavior and bounded input handling. Album grouping remains an explicit target capability rather than a source-stage claim.
+SwirGallery requests exactly `READ_MEDIA_IMAGES` and `READ_MEDIA_VIDEO`, browses scoped MediaStore content, supports local search/open/share and delegates deletion to Android's owner-confirmed flow. Album grouping remains a future capability.
 
 ### SwirRecorder
 
-SwirRecorder is meaningful foreground-only voice-recorder source. It requests exactly `RECORD_AUDIO` at runtime, records AAC audio in an MPEG-4 container to app-private storage, supports pause/resume/stop, local playback, owner-confirmed local deletion and explicit export through `ACTION_CREATE_DOCUMENT`. It surfaces the framework microphone mute state and deliberately stops an active recording when the activity leaves the foreground; there is no background/foreground service recording path in this stage. A pure-Java `RecorderPolicy` host test covers deterministic private file naming, export-size bounds and permission/mute gating. Actual microphone/audio-route behavior remains hardware-dependent and unverified until exact-device testing.
+SwirRecorder requests exactly `RECORD_AUDIO`, records AAC/MPEG-4 to app-private storage while foregrounded, supports pause/resume/stop/playback, surfaces microphone-mute state and exports through a user-selected document. Exact-device audio behavior remains unverified.
+
+### SwirContacts
+
+SwirContacts is a real local ContactsProvider client rather than a placeholder list. It requests exactly `READ_CONTACTS`, browses names and phone numbers through the Android provider, supports local search, and hands creation/editing to Android's authoritative contact UI. Import is an explicit user-selected vCard hand-off and export copies the selected provider vCard to a user-selected document. It deliberately does not request `WRITE_CONTACTS`, storage or network permissions. Its pure-Java `ContactPolicy` is host-tested for search, lookup-key validation and safe export naming.
+
+### Swir Apps
+
+Swir Apps is a permission-free local Software Center foundation. It enumerates visible launchable apps through PackageManager, displays package/version state, derives a bounded SHA-256 signing-certificate fingerprint, launches selected apps and opens Android's authoritative application-details surface. It has no remote catalog, downloader or installer and therefore does not claim `update_status`; that remains tracked as `apps:update_status`. Its pure-Java `AppCatalogPolicy` validates package identities, search and signer-digest formatting.
 
 ### SwirRoot
 
-SwirRoot is meaningful Android source rather than only a host contract. It provides an original SwirPhoneOS owner UI, current build fingerprint, explicit root-state vocabulary, owner-confirmed enable/unroot **review** dialogs, a non-exported status/diagnostic service, a bounded app-private workflow audit and a host-tested pure-Java safety gate model.
+SwirRoot provides an original SwirPhoneOS owner UI, current build fingerprint, explicit root-state vocabulary, owner-confirmed enable/unroot **review** dialogs, a non-exported status/diagnostic service, bounded app-private workflow audit and host-tested safety gates.
 
-The current source is intentionally fail-closed. It reports `UNAVAILABLE`, hard-disables its mutation backend and supported-build switch, requests no Android permissions and contains no process execution, boot-image modification, partition write, bootloader unlock, flash or exploit/bypass path. `root_state` and `authorization_audit` are source-implemented. `guided_enable` and `guided_unroot` remain future target capabilities until a legitimate exact-build backend, rollback material, durable transaction journal, known non-root restore state and physical recovery evidence exist.
+The current source is intentionally fail-closed. It reports `UNAVAILABLE`, hard-disables its mutation backend and supported-build switch, requests no Android permissions and contains no process execution, boot-image modification, partition write, bootloader unlock, flash or exploit/bypass path. `guided_enable` and `guided_unroot` remain future capabilities until a legitimate exact-build backend and physical rollback/recovery proof exist.
 
-All twelve source-ready apps use original SwirPhoneOS icons/UI and Android resources for English, Polish, Norwegian Bokmål, German, Spanish, French, Portuguese and Arabic. Layout direction follows the locale. Source validation checks package identity, exact per-app permission allowlists, localization-key parity, product inclusion and complete bounded AOSP staging. It scans all production Java files for forbidden execution/network/broad-storage primitives and applies additional fail-closed constraints to SwirRoot. Permission-free apps must remain permission-free; Gallery and Recorder are restricted to their reviewed scoped permissions. None is `ANDROID_RUNTIME` until a real pinned-AOSP build and Cuttlefish exercise succeeds.
+All fourteen source-ready apps use original SwirPhoneOS icons/UI and Android resources for English, Polish, Norwegian Bokmål, German, Spanish, French, Portuguese and Arabic. Layout direction follows the locale. Source validation checks package identity, exact per-app permission allowlists, localization-key parity, product inclusion and complete bounded AOSP staging. It scans production Java for forbidden execution/network/broad-storage primitives and applies additional fail-closed constraints to SwirRoot.
+
+Source-summary schema v3 records missing capabilities by **app + capability**, not just capability name. This avoids false completion when multiple apps use the same capability label: SwirContacts can implement its provider bridge while Calendar's provider bridge remains open.
+
+None of the fourteen is `ANDROID_RUNTIME` until a real pinned-AOSP build and Cuttlefish exercise succeeds.
 
 ## Design principles
 
@@ -93,21 +101,21 @@ All twelve source-ready apps use original SwirPhoneOS icons/UI and Android resou
 
 **System/trust:** Swir Settings, Update, Backup, Privacy, Device Care, Apps/Software Center and SwirRoot.
 
-Phone/SMS/Camera and other hardware-backed functions are declared only after validation against the exact reference-device stack. Gallery and Recorder can have meaningful source before that point, but Recorder microphone behavior remains explicitly hardware-unverified and Gallery runtime behavior remains unverified until the pinned product boots.
+Phone/SMS/Camera and other hardware-backed functions are declared only after validation against the exact reference-device stack. Contacts can have meaningful provider-backed source before telephony validation, but its runtime behavior remains unverified until the built product is exercised.
 
 ## Delivery order
 
 ### Emulator-ready core
 
-Prioritize the current twelve source-ready apps through the real AOSP build and Cuttlefish runtime gate before adding more package breadth. The next milestone-driving work is still the exact Android 17 product build/boot: all twelve packages must build, launch and pass focused checks for state, persistence, permission handling, accessibility, locale switching and RTL. Source-only additions do not receive weighted progress credit.
+Prioritize the current fourteen source-ready apps through the real AOSP build and Cuttlefish runtime gate before adding more package breadth. All fourteen must build, launch and pass focused checks for state, persistence, permission handling, accessibility, locale switching and RTL. Source-only additions do not receive weighted progress credit.
 
 ### Reference hardware
 
-Bring up Phone, Contacts, Messages, Camera and Backup as telephony, audio, camera, storage, sensors, power and encryption become validated for the reference device. Validate Swir Recorder against the real microphone/audio stack and Swir Gallery against real provider/media behavior on the same supported build before making hardware claims.
+Bring up Phone, Messages, Camera and Backup as telephony, audio, camera, storage, sensors, power and encryption become validated for the reference device. Validate Contacts provider behavior, Recorder audio and Gallery media behavior on the same supported build before making physical-device claims.
 
 ### Beta integration
 
-Polish cross-app navigation, sharing, search, notifications, permissions, accessibility, localization, crash handling, backup/recovery, app/update signing and visual consistency. SwirRoot mutation remains blocked until exact-build recovery evidence exists.
+Polish cross-app navigation, sharing, search, notifications, permissions, accessibility, localization, crash handling, backup/recovery, app/update signing and visual consistency. Add a reviewed signed source for Swir Apps update status only when the OTA/app distribution trust model exists. SwirRoot mutation remains blocked until exact-build recovery evidence exists.
 
 ## SwirRoot
 
