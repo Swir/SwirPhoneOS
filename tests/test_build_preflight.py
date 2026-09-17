@@ -4,34 +4,32 @@ import json
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
+from unittest.mock import patch
 
 from swirphoneos.build_preflight import (
+    ADVISORY_COMMANDS,
     BuildPreflightError,
     HostSnapshot,
     MIN_FREE_BYTES,
     MIN_RAM_BYTES,
+    REQUIRED_COMMANDS,
+    _repo_launcher_version,
     capture_host,
     evaluate_preflight,
 )
 
 
 def ready_snapshot(**overrides: object) -> HostSnapshot:
+    commands = {name: True for name in (*REQUIRED_COMMANDS, *ADVISORY_COMMANDS)}
     values: dict[str, object] = {
         "system": "linux",
         "machine": "x86_64",
         "glibc_version": "2.39",
         "ram_bytes": MIN_RAM_BYTES,
         "free_bytes": MIN_FREE_BYTES,
-        "commands": {
-            "git": True,
-            "repo": True,
-            "bash": True,
-            "python3": True,
-            "curl": True,
-            "zip": True,
-            "unzip": True,
-        },
+        "commands": commands,
         "kvm_available": True,
+        "repo_launcher_version": "2.65",
     }
     values.update(overrides)
     return HostSnapshot(**values)  # type: ignore[arg-type]
@@ -50,11 +48,16 @@ def check_map(result: dict[str, object]) -> dict[str, bool]:
 class BuildPreflightTests(unittest.TestCase):
     def test_ready_host_passes_sync_and_full_build(self) -> None:
         result = evaluate_preflight(ready_snapshot())
+        self.assertEqual(result["schema_version"], 1)
         self.assertTrue(result["ready_for_source_sync"])
         self.assertTrue(result["ready_for_full_build"])
         self.assertTrue(result["cuttlefish_kvm_available"])
         self.assertEqual(result["operation"], "READ_ONLY_HOST_PREFLIGHT")
         self.assertTrue(all(check_map(result).values()))
+        host = result["host"]
+        self.assertIsInstance(host, dict)
+        assert isinstance(host, dict)
+        self.assertEqual(host["repo_launcher_version"], "2.65")
 
     def test_low_ram_blocks_full_build_but_not_source_sync(self) -> None:
         result = evaluate_preflight(ready_snapshot(ram_bytes=MIN_RAM_BYTES - 1))
@@ -84,13 +87,31 @@ class BuildPreflightTests(unittest.TestCase):
                 result = evaluate_preflight(ready_snapshot(glibc_version=value))
                 self.assertFalse(result["ready_for_source_sync"])
 
-    def test_missing_repo_or_git_blocks(self) -> None:
-        for command in ("repo", "git"):
+    def test_old_or_unknown_repo_launcher_blocks_before_sync(self) -> None:
+        for value in ("2.3", None, "unknown"):
+            with self.subTest(value=value):
+                result = evaluate_preflight(ready_snapshot(repo_launcher_version=value))
+                self.assertFalse(result["ready_for_source_sync"])
+                self.assertFalse(check_map(result)["repo_launcher_2_4_plus"])
+
+    def test_required_command_surface_is_fail_closed(self) -> None:
+        for command in REQUIRED_COMMANDS:
             commands = dict(ready_snapshot().commands)
             commands[command] = False
             with self.subTest(command=command):
                 result = evaluate_preflight(ready_snapshot(commands=commands))
                 self.assertFalse(result["ready_for_source_sync"])
+                self.assertFalse(check_map(result)[f"command_{command}"])
+
+    def test_advisory_command_does_not_block(self) -> None:
+        commands = dict(ready_snapshot().commands)
+        commands[ADVISORY_COMMANDS[0]] = False
+        result = evaluate_preflight(ready_snapshot(commands=commands))
+        self.assertTrue(result["ready_for_source_sync"])
+        advisory = result["advisory_commands"]
+        self.assertIsInstance(advisory, list)
+        assert isinstance(advisory, list)
+        self.assertIn({"id": ADVISORY_COMMANDS[0], "available": False}, advisory)
 
     def test_kvm_is_reported_but_not_a_source_sync_gate(self) -> None:
         result = evaluate_preflight(ready_snapshot(kvm_available=False))
@@ -114,6 +135,22 @@ class BuildPreflightTests(unittest.TestCase):
                 self.assertFalse(result["ready_for_full_build"])
                 self.assertFalse(check_map(result)[check_id])
 
+    def test_repo_launcher_version_is_parsed_without_execution(self) -> None:
+        with TemporaryDirectory() as folder:
+            launcher = Path(folder) / "repo"
+            launcher.write_text("#!/usr/bin/env python3\nVERSION = (2, 65)\n", encoding="utf-8")
+            self.assertEqual(_repo_launcher_version(str(launcher)), "2.65")
+
+    def test_repo_launcher_parser_rejects_unverifiable_or_oversized_files(self) -> None:
+        with TemporaryDirectory() as folder:
+            root = Path(folder)
+            no_version = root / "repo-no-version"
+            no_version.write_text("#!/usr/bin/env python3\n", encoding="utf-8")
+            self.assertIsNone(_repo_launcher_version(str(no_version)))
+            huge = root / "repo-huge"
+            huge.write_bytes(b"x" * (1024 * 1024 + 1))
+            self.assertIsNone(_repo_launcher_version(str(huge)))
+
     def test_relative_workspace_is_rejected_without_host_mutation(self) -> None:
         with self.assertRaises(BuildPreflightError):
             capture_host(Path("relative"))
@@ -125,7 +162,8 @@ class BuildPreflightTests(unittest.TestCase):
     def test_existing_absolute_workspace_can_be_inspected_without_leaking_path(self) -> None:
         with TemporaryDirectory() as folder:
             path = Path(folder).resolve()
-            snapshot = capture_host(path)
+            with patch("swirphoneos.build_preflight.shutil.which", return_value=None):
+                snapshot = capture_host(path)
             result = evaluate_preflight(snapshot)
             self.assertGreaterEqual(snapshot.free_bytes, 0)
             self.assertIsInstance(snapshot.commands, dict)
@@ -136,13 +174,27 @@ class BuildPreflightTests(unittest.TestCase):
             assert isinstance(workspace, dict)
             self.assertFalse(workspace["cleanup_performed"])
 
+    def test_capture_reads_repo_version_but_never_runs_launcher(self) -> None:
+        with TemporaryDirectory() as folder:
+            root = Path(folder).resolve()
+            launcher = root / "repo"
+            launcher.write_text("#!/usr/bin/env python3\nVERSION = (2, 66)\n", encoding="utf-8")
+
+            def fake_which(name: str) -> str | None:
+                return str(launcher) if name == "repo" else "/usr/bin/" + name
+
+            with patch("swirphoneos.build_preflight.shutil.which", side_effect=fake_which):
+                snapshot = capture_host(root)
+            self.assertEqual(snapshot.repo_launcher_version, "2.66")
+
     def test_repo_local_manifest_is_detected_before_sync(self) -> None:
         with TemporaryDirectory() as folder:
             root = Path(folder).resolve()
             local = root / ".repo" / "local_manifests"
             local.mkdir(parents=True)
             (local / "unreviewed.xml").write_text("<manifest />", encoding="utf-8")
-            snapshot = capture_host(root)
+            with patch("swirphoneos.build_preflight.shutil.which", return_value=None):
+                snapshot = capture_host(root)
             self.assertTrue(snapshot.repo_local_manifests_present)
             result = evaluate_preflight(snapshot)
             self.assertFalse(result["ready_for_source_sync"])
@@ -154,7 +206,8 @@ class BuildPreflightTests(unittest.TestCase):
             repo = root / ".repo"
             repo.mkdir()
             (repo / "local_manifest.xml").write_text("<manifest />", encoding="utf-8")
-            snapshot = capture_host(root)
+            with patch("swirphoneos.build_preflight.shutil.which", return_value=None):
+                snapshot = capture_host(root)
             self.assertTrue(snapshot.repo_legacy_local_manifest_present)
             self.assertFalse(evaluate_preflight(snapshot)["ready_for_full_build"])
 
@@ -165,7 +218,8 @@ class BuildPreflightTests(unittest.TestCase):
             out.mkdir(parents=True)
             artifact = out / "system.img"
             artifact.write_bytes(b"stale")
-            snapshot = capture_host(root)
+            with patch("swirphoneos.build_preflight.shutil.which", return_value=None):
+                snapshot = capture_host(root)
             self.assertTrue(snapshot.out_tree_nonempty)
             self.assertTrue(artifact.is_file())
             result = evaluate_preflight(snapshot)
@@ -178,7 +232,8 @@ class BuildPreflightTests(unittest.TestCase):
             root = Path(folder).resolve()
             (root / ".repo" / "local_manifests").mkdir(parents=True)
             (root / "out").mkdir()
-            snapshot = capture_host(root)
+            with patch("swirphoneos.build_preflight.shutil.which", return_value=None):
+                snapshot = capture_host(root)
             self.assertFalse(snapshot.repo_local_manifests_present)
             self.assertFalse(snapshot.out_tree_nonempty)
 
