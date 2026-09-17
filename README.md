@@ -42,9 +42,10 @@ The manual-only self-hosted `aosp-build-evidence.yml` workflow binds the exact w
 
 ### Functional Android application sources
 
-Fifteen first-party applications are wired into `PRODUCT_PACKAGES` as meaningful **`ANDROID_SOURCE`**. They remain below `ANDROID_RUNTIME` until the pinned AOSP product actually builds and they are exercised in Cuttlefish.
+Sixteen first-party applications are wired into `PRODUCT_PACKAGES` as meaningful **`ANDROID_SOURCE`**. They remain below `ANDROID_RUNTIME` until the pinned AOSP product actually builds and they are exercised in Cuttlefish.
 
 - **Swir Phone** — permission-free keypad with host-tested fail-closed dial-string normalization and an explicit `ACTION_DIAL` hand-off to Android's system dialer. It never places calls silently; default-dialer role, in-call UI and recent-call history remain future exact-telephony work.
+- **Swir Messages** — permission-free local composer with app-private draft persistence, host-tested recipient/body bounds and an explicit `ACTION_SENDTO`/`smsto:` hand-off to an installed Android messaging app. It never silently sends or reads SMS; MMS, conversation history, default-SMS role and carrier delivery remain future exact-telephony work.
 - **SwirCalculator** — host-tested BigDecimal basic arithmetic and locale-aware display; scientific math remains future work.
 - **SwirSettings** — searchable hub with real build/device status and a reviewed allowlist of authoritative Android settings routes.
 - **SwirFiles** — user-granted Storage Access Framework tree with browse/search/create/rename/copy/move/delete/open/share and no broad storage permission.
@@ -60,21 +61,21 @@ Fifteen first-party applications are wired into `PRODUCT_PACKAGES` as meaningful
 - **Swir Apps** — permission-free local Software Center catalog for launchable apps with package/version and signing-certificate SHA-256 provenance, app launch and authoritative Android app-details hand-off. Remote catalog/install/update status is deliberately not implemented.
 - **SwirRoot** — original owner-facing root-state/safety UI plus a non-exported status/diagnostic service and host-tested transition policy. It remains `UNAVAILABLE`; mutation support and supported-build switches are hard-disabled.
 
-All fifteen apps ship English, Polish, Norwegian Bokmål, German, Spanish, French, Portuguese and Arabic resources with RTL-aware application layout. Source validation checks package identity, exact per-app permission allowlists, localization parity, pure-Java policy cores and complete bounded AOSP staging. It scans every production Java file for forbidden process/network/broad-storage primitives; SwirRoot receives additional fail-closed checks. Contacts is limited to `READ_CONTACTS`, Gallery to `READ_MEDIA_IMAGES` + `READ_MEDIA_VIDEO`, Recorder to `RECORD_AUDIO`, and all other current source apps — including Swir Phone — remain permission-free. Android localization lint additionally verifies exact source-key coverage, formatter/plural contracts and common hardcoded Java UI sinks; this remains source-only evidence, not runtime RTL proof.
+All sixteen apps ship English, Polish, Norwegian Bokmål, German, Spanish, French, Portuguese and Arabic resources with RTL-aware application layout. Source validation checks package identity, exact per-app permission allowlists, localization parity, pure-Java policy cores and complete bounded AOSP staging. It scans every production Java file for forbidden process/network/broad-storage primitives; SwirRoot receives additional fail-closed checks. Contacts is limited to `READ_CONTACTS`, Gallery to `READ_MEDIA_IMAGES` + `READ_MEDIA_VIDEO`, Recorder to `RECORD_AUDIO`, and all other current source apps — including Swir Phone and Swir Messages — remain permission-free. Android localization lint additionally verifies exact source-key coverage, formatter/plural contracts and common hardcoded Java UI sinks; this remains source-only evidence, not runtime RTL proof.
 
-Source-summary schema v3 also tracks unfinished capabilities **per application**. This prevents one app implementing a shared capability name from hiding another app's gap; for example, SwirContacts implements its provider bridge while `calendar:provider_bridge` remains explicitly unfinished, `apps:update_status` remains unfinished, and Swir Phone keeps `phone:in_call` plus `phone:recent_calls` explicitly open.
+Source-summary schema v3 also tracks unfinished capabilities **per application**. This prevents one app implementing a shared capability name from hiding another app's gap; for example, SwirContacts implements its provider bridge while `calendar:provider_bridge` remains explicitly unfinished, `apps:update_status` remains unfinished, Swir Phone keeps `phone:in_call` plus `phone:recent_calls` open, and Swir Messages keeps `messages:mms` plus `messages:conversation_history` open.
 
 The `swirphoneos.cuttlefish_smoke` runner is deliberately emulator-only. It first requires complete exact-identity Cuttlefish evidence, then launches each already-installed source-ready package through its resolved package-local launcher component, requires Android `am start -W` success and confirms the expected package as resumed foreground activity. It never promotes app status automatically.
 
 ### Complete system-app plan and SwirRoot
 
-The machine-readable suite contains 20 applications: Phone, Contacts, Messages, Camera, Gallery, Files, Settings, Browser, Clock, Calculator, Notes, Recorder, Calendar, Weather, Update, Backup, Privacy, Device Care, Apps/Software Center and SwirRoot. Current registry state is **15 `ANDROID_SOURCE`, 5 `HOST_CONTRACT`, 0 `ANDROID_RUNTIME`, 0 `HARDWARE_VERIFIED`**.
+The machine-readable suite contains 20 applications: Phone, Contacts, Messages, Camera, Gallery, Files, Settings, Browser, Clock, Calculator, Notes, Recorder, Calendar, Weather, Update, Backup, Privacy, Device Care, Apps/Software Center and SwirRoot. Current registry state is **16 `ANDROID_SOURCE`, 4 `HOST_CONTRACT`, 0 `ANDROID_RUNTIME`, 0 `HARDWARE_VERIFIED`**.
 
 SwirRoot has meaningful Android source for its owner-facing state, diagnostics, audit and safety-review surface, but it is **not a working root implementation**. Unverified builds remain `UNAVAILABLE`; authorization is deny-by-default; rollback material, journaling, exact-build/profile checks and explicit owner confirmation remain mandatory; exploit/bypass methods are forbidden; Android mutation support is hard-disabled; supported root builds remain zero. `guided_enable` and `guided_unroot` remain target capabilities until a legitimate exact-build backend and tested rollback/unroot path exist.
 
 ### Global localization
 
-Host localization is data-driven with system-locale detection and English fallback. The desktop and all fifteen current Android source apps use EN/PL/NB/DE/ES/FR/PT/AR catalogs. The mobile architecture requires the same localization discipline for first setup, launcher, SystemUI, Settings, recovery, updater, SwirRoot and all bundled apps, including RTL, fonts/scripts, plurals, accessibility and locale-specific formatting.
+Host localization is data-driven with system-locale detection and English fallback. The desktop and all sixteen current Android source apps use EN/PL/NB/DE/ES/FR/PT/AR catalogs. The mobile architecture requires the same localization discipline for first setup, launcher, SystemUI, Settings, recovery, updater, SwirRoot and all bundled apps, including RTL, fonts/scripts, plurals, accessibility and locale-specific formatting.
 
 ## Developer commands
 
