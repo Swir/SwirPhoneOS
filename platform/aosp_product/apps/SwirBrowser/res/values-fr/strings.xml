@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Swir Browser</string>
+    <string name="title">Swir Browser</string>
+    <string name="subtitle">Un navigateur ciblé avec des contrôles de confidentialité locaux explicites.</string>
+    <string name="address_hint">Rechercher ou saisir une adresse</string>
+    <string name="go">Aller</string>
+    <string name="back">Retour</string>
+    <string name="forward">Suivant</string>
+    <string name="reload">Recharger</string>
+    <string name="share">Partager</string>
+    <string name="clear_data">Confidentialité</string>
+    <string name="status_ready">Prêt</string>
+    <string name="status_loading">Chargement…</string>
+    <string name="status_blocked">Navigation non sûre bloquée</string>
+    <string name="error_invalid">Cette adresse ne peut pas être ouverte en toute sécurité.</string>
+    <string name="clear_confirm_title">Effacer les données du navigateur ?</string>
+    <string name="clear_confirm_message">Les cookies, le stockage web, le cache et l’historique local seront supprimés de Swir Browser.</string>
+    <string name="clear_confirm">Effacer les données</string>
+    <string name="cancel">Annuler</string>
+    <string name="toast_cleared">Données du navigateur effacées</string>
+</resources>
