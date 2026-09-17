@@ -23,13 +23,13 @@ Version: **0.0.2.dev0 + unreleased Android-source/platform hardening**. Updated:
 | Cuttlefish product | `PRODUCT_PACKAGES` includes all 20 essential first-party apps; **not built or booted** |
 | ARM64 GSI product | Source contract registered as `swirphoneos_gsi_arm64-aosp_current-userdebug`; standard AOSP ARM64 + GSI-release inheritance, all 20 apps, exact staging and `systemimage` plan implemented; **not built, Treble/VTS-validated or physically tested** |
 | ARM64 GSI build evidence | Manual-only self-hosted workflow and fail-closed `system.img` SHA-256/build-identity collector implemented; compatibility/install/rollback/write/release flags remain false; no successful GSI build evidence recorded |
-| Shared Swir Android design | `SwirDesign` source contract v2 is statically linked and `Theme.SwirPhoneOS` declared by all 20 system apps; Phone/Messages/Camera additionally consume shared palette/touch tokens without direct `android.graphics.Color` literals; Android build, visual/runtime and accessibility review remain unverified |
+| Shared Swir Android design | `SwirDesign` source contract v4 is statically linked and `Theme.SwirPhoneOS` declared by all 20 system apps; eight activities directly consume the shared palette/touch tokens, including all 5/5 beta-critical core apps; Android build, visual/runtime and accessibility review remain unverified |
 | Swir Phone | `ANDROID_SOURCE`; permission-free keypad + explicit `ACTION_DIAL`; in-call/default-role/recent calls open |
 | Swir Contacts | `ANDROID_SOURCE`; exactly `READ_CONTACTS`, scoped provider browse/search, Android-managed create/edit, vCard import/export; runtime unverified |
 | Swir Messages | `ANDROID_SOURCE`; permission-free local compose/draft + explicit `ACTION_SENDTO`/`smsto:`; MMS/history/runtime/carrier behavior open |
 | Swir Camera | `ANDROID_SOURCE`; permission-free CameraManager capability reporting + owner-visible photo/video capture hand-off; direct capture and exact-device photo/video remain open |
 | Swir Gallery | `ANDROID_SOURCE`; scoped MediaStore browse/search/open/share and owner-confirmed delete; albums open |
-| Swir Files | `ANDROID_SOURCE`; user-granted SAF operations; runtime unverified |
+| Swir Files | `ANDROID_SOURCE`; user-granted SAF browse/search/copy/move/rename/create/share/delete flows; shared Swir design/touch tokens at source stage; provider/runtime/accessibility behavior unverified |
 | Swir Settings | `ANDROID_SOURCE`; reviewed settings routes/search/device state; runtime unverified |
 | Swir Browser | `ANDROID_SOURCE`; exactly `INTERNET`, HTTPS-only WebView with conservative privacy defaults; downloads open |
 | Swir Clock | `ANDROID_SOURCE`; localized time/stopwatch/timer/user-visible alarm hand-off |
