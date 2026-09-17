@@ -217,7 +217,9 @@ class Studio:
         if not path:
             return
         try:
-            summary = load_public_swirroot_readiness_summary(Path(path).resolve())
+            # Do not resolve here: resolving could turn a selected symlink into
+            # its regular target and bypass the evidence loader's symlink gate.
+            summary = load_public_swirroot_readiness_summary(Path(path))
         except (OSError, StudioEvidenceError, ValueError):
             messagebox.showerror("SwirPhoneOS", self.tr("readiness_failed"), parent=self.root)
             return
