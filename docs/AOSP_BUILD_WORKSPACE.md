@@ -10,7 +10,7 @@ Run on the intended Linux x86-64 builder:
 python -m swirphoneos build-preflight --workspace /path/to/aosp
 ```
 
-This is read-only: it installs nothing, initializes nothing and downloads nothing.
+This is read-only: it installs nothing, initializes nothing and downloads nothing. The dedicated full-build contract currently requires Linux x86-64, supported glibc, `git`, `repo`, at least 64 GiB RAM and at least 400 GiB free workspace capacity. Runtime collection additionally requires usable KVM.
 
 ## 2. Generate the exact-tag plan
 
@@ -29,7 +29,7 @@ repo manifest -r -o swirphoneos-pinned-manifest.xml
 python -m swirphoneos aosp-manifest --file swirphoneos-pinned-manifest.xml
 ```
 
-Every project must resolve to a full 40-character Git SHA. Preserve the manifest, SHA-256 digest, Repo/Git/JDK/host versions and complete build log.
+Every project must resolve to a full 40-character Git SHA. Preserve the manifest and its SHA-256 evidence. The manual builder workflow records the bounded run context and source/build evidence automatically; failures preserve only the reviewed bounded diagnostic set rather than publishing an unrestricted build log.
 
 ## 4. Stage the SwirPhoneOS source bundle
 
@@ -45,7 +45,11 @@ Then, only inside an initialized AOSP checkout:
 python -m swirphoneos stage-product --workspace /path/to/aosp --execute
 ```
 
-Staging is driven by `platform/aosp_product/stage_manifest.json`. Every source and destination is explicit; destination paths must stay under `vendor/swir/`; traversal, duplicate paths, symlink sources, missing files and oversized bundles are rejected. The current bundle stages the Swir product definition plus the source/resources required to build SwirCalculator. It never uses a recursive arbitrary copy and never communicates with a phone.
+Staging is driven by `platform/aosp_product/stage_manifest.json` plus reviewed `stage_manifest.d/*.json` fragments. Every source and destination is explicit; destination paths must stay under `vendor/swir/`; traversal, duplicate paths, symlink sources/destinations, missing files and oversized bundles are rejected. The current bundle covers the Swir Cuttlefish product and all source/resources required by the twelve applications marked `ANDROID_SOURCE` in the system-app registry. It never uses an arbitrary recursive repository copy and never communicates with a phone.
+
+Schema-v5 staging also protects persistent self-hosted AOSP workspaces against stale source. Before copying, the tool inventories regular files under `vendor/swir/` without following symlinks and rejects any file that is not an exact current manifest destination. It does not silently delete stale files. After copying, it requires the whole regular-file set under `vendor/swir/` to equal the current reviewed destination set exactly and records `destination_tree_closed=true` plus exact file counts.
+
+If staging reports a stale/unreviewed file, inspect the path and deliberately clean the owner-controlled build workspace before retrying. Do not weaken or bypass the closure check to obtain a build.
 
 ## 5. Validate checked-in Android application source
 
@@ -55,7 +59,7 @@ Before starting a full AOSP build:
 python -m swirphoneos android-apps
 ```
 
-The current validator checks SwirCalculator package identity, AOSP module contract, `PRODUCT_PACKAGES` integration, permission-free manifest, RTL/backup policy, Java package identity, forbidden process/network/root primitives, eight locale catalogs and complete stage coverage. Its result is `SOURCE_READY_NOT_BUILT`; it is not APK/runtime evidence.
+The validator currently covers all twelve source-ready applications. It checks package/module/product integration, exact per-app permission allowlists, localization parity for EN/PL/NB/DE/ES/FR/PT/AR, RTL requirements, complete bounded stage coverage and source-wide rejection of forbidden process/network/broad-storage primitives. SwirRoot receives additional fail-closed checks. Its result is source validation only; it is not APK/runtime or physical-device evidence.
 
 ## 6. Build
 
@@ -65,12 +69,24 @@ lunch swirphoneos_cf_x86_64-aosp_current-userdebug
 m -j16
 ```
 
-A successful host command is build evidence only after its outputs/logs are preserved. It is not emulator-boot evidence.
+After a successful compile, run the post-build stage verifier before accepting build provenance:
 
-## 7. Boot evidence
+```bash
+python -m swirphoneos.stage_evidence --report /path/to/stage-report.json --workspace /path/to/aosp
+```
 
-Launch Cuttlefish from the produced artifacts and record at minimum `sys.boot_completed=1`, SystemUI/Settings usability, SwirCalculator package/activity runtime and regression results. Only verified runtime may move an app from `ANDROID_SOURCE` toward `ANDROID_RUNTIME` or advance emulator-gate evidence.
+It re-hashes every reviewed staged file and independently re-inventories the entire `vendor/swir/` regular-file tree. Any changed, missing, symlinked, generated, stale or otherwise unreviewed file fails the evidence chain. This prevents an old or build-created Swir source file from being silently included in an accepted run.
+
+A successful host command becomes build evidence only after the exact pinned source identity, exact build identity and hashed core images are captured. It is not emulator-boot evidence.
+
+## 7. Boot and application evidence
+
+The manual `AOSP build evidence` workflow can optionally launch the exact product it just built in Cuttlefish. Runtime evidence must prove `sys.boot_completed=1`, the exact SwirPhoneOS product/device/manufacturer, Android 17 / API 37, the exact build fingerprint and presence plus package-local launcher resolution for every current `ANDROID_SOURCE` app.
+
+The emulator-only smoke runner then launches each source-ready app using its resolved package-local component, requires `am start -W` success and confirms the expected package is resumed in the foreground. Build, runtime and smoke evidence are bound into one run chain; none of these operations promotes registry status automatically.
+
+Focused interactive checks for persistence, permissions, accessibility, locale switching, text expansion and Arabic RTL are still required before reviewing any `ANDROID_RUNTIME` promotion.
 
 ## Safety boundary
 
-These tools operate on an owner-controlled build workspace. They do not unlock, erase, boot, flash, root, relock or restore a phone. Physical installation remains device-profile-specific and requires separate rollback/recovery evidence. SwirRoot stays unavailable until exact-build boot/update/recovery contracts are verified.
+These tools operate on an owner-controlled build workspace or local emulator. They do not unlock, erase, flash, root, relock or restore a physical phone. Physical installation remains device-profile-specific and requires separate rollback/recovery and exact-hardware evidence. SwirRoot stays unavailable until exact-build boot/update/recovery contracts and a legitimate supported device path are physically verified.
