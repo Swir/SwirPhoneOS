@@ -13,7 +13,12 @@ from pathlib import Path
 
 from .hardware_evidence import load_hardware_evidence, validate_hardware_evidence
 from .journal_evidence import load_journal, validate_journal
-from .swirroot import SwirRootPolicy, load_policy
+from .swirroot import (
+    REQUIRED_ENABLE_GATES,
+    REQUIRED_UNROOT_GATES,
+    SwirRootPolicy,
+    load_policy,
+)
 
 
 class SwirRootReadinessError(ValueError):
@@ -109,11 +114,9 @@ def collect_swirroot_readiness(
     observed_build = _text(hardware.get("adb_build_fingerprint_reported"), "hardware build fingerprint")
     expected_current_build = _text(journal.get("expected_current_build"), "journal expected_current_build")
     target_build = _text(journal.get("target_build"), "journal target_build")
-    current_build_match = observed_build == expected_current_build
-    target_build_match = target_build == exact_build
-    if not current_build_match:
+    if observed_build != expected_current_build:
         raise SwirRootReadinessError("Read-only hardware fingerprint does not match the journal's expected current build.")
-    if not target_build_match:
+    if target_build != exact_build:
         raise SwirRootReadinessError("Requested exact SwirPhoneOS build does not match the journal target build.")
 
     hardware_evidence_sha = _sha256(hardware.get("evidence_sha256"), "hardware evidence sha256")
@@ -136,8 +139,13 @@ def collect_swirroot_readiness(
     required = policy.enable_gates if action == "enable" else policy.unroot_gates
     missing = sorted(name for name in required if gates.get(name) is not True)
     backend_available = policy.root_available and exact_build in policy.supported_builds
+
+    # validate_hardware_evidence() accepts only correlation-only schema v2,
+    # which deliberately requires root_allowed=false. A future authoritative
+    # hardware/root evidence type must be introduced explicitly instead of
+    # silently reinterpreting this report as authorization.
     hardware_root_authorized = hardware.get("root_allowed") is True
-    transition_ready = bool(not missing and backend_available and hardware_root_authorized)
+    transition_ready = False
 
     core: dict[str, object] = {
         "schema_version": 1,
@@ -177,7 +185,8 @@ def validate_swirroot_readiness(report: object) -> dict[str, object]:
         raise SwirRootReadinessError("SwirRoot readiness report must match schema v1 exactly.")
     if report["schema_version"] != 1 or report["source"] != "swirphoneos_swirroot_readiness_projection":
         raise SwirRootReadinessError("SwirRoot readiness provenance is invalid.")
-    if report["action"] not in _ACTIONS:
+    action = report["action"]
+    if action not in _ACTIONS:
         raise SwirRootReadinessError("SwirRoot readiness action is invalid.")
     for key in ("policy_id", "exact_build", "profile_id", "transaction_id"):
         _text(report[key], key, limit=512)
@@ -213,13 +222,18 @@ def validate_swirroot_readiness(report: object) -> dict[str, object]:
     missing = report["missing_requirements"]
     if not isinstance(missing, list) or len(missing) > len(gate_names) or not all(isinstance(item, str) and item in gate_names for item in missing) or len(set(missing)) != len(missing) or missing != sorted(missing):
         raise SwirRootReadinessError("SwirRoot missing-requirements list is invalid.")
+    required = REQUIRED_ENABLE_GATES if action == "enable" else REQUIRED_UNROOT_GATES
+    expected_missing = sorted(name for name in required if gates[name] is not True)
+    if missing != expected_missing:
+        raise SwirRootReadinessError("SwirRoot missing requirements do not match the policy-gate projection.")
+
     for key in ("policy_backend_available", "hardware_root_authorized", "transition_ready", "device_write_allowed", "root_operation_executed", "status_promotion_performed"):
         if type(report[key]) is not bool:
             raise SwirRootReadinessError(f"{key} must be boolean.")
+    if report["hardware_root_authorized"] is not False or report["transition_ready"] is not False:
+        raise SwirRootReadinessError("Correlation-only readiness evidence can never authorize a root transition.")
     if report["device_write_allowed"] is not False or report["root_operation_executed"] is not False or report["status_promotion_performed"] is not False:
         raise SwirRootReadinessError("Readiness evidence must never claim mutation or status promotion.")
-    if report["transition_ready"] and (missing or not report["policy_backend_available"] or not report["hardware_root_authorized"]):
-        raise SwirRootReadinessError("transition_ready contradicts the required gates.")
     if report["warnings"] != _WARNINGS:
         raise SwirRootReadinessError("SwirRoot readiness warnings were modified.")
 
