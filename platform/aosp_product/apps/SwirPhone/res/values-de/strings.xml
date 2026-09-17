@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Swir Phone</string>
+    <string name="eyebrow">SWIRPHONEOS • TELEFON</string>
+    <string name="title">Kontrolliert anrufen</string>
+    <string name="subtitle">Nummer eingeben und an die System-Telefonapp übergeben. Swir Phone startet niemals unbemerkt einen Anruf.</string>
+    <string name="number_hint">Telefonnummer</string>
+    <string name="number_content_description">Zu wählende Telefonnummer</string>
+    <string name="open_dialer">Telefonapp öffnen</string>
+    <string name="erase">Löschen</string>
+    <string name="handoff_notice">Anrufe werden in der Android-Telefonapp bestätigt. Anrufoberfläche und Anrufliste sind noch nicht implementiert.</string>
+    <string name="invalid_number">Gib eine gültige Telefonnummer ein.</string>
+    <string name="no_dialer">Keine System-Telefonapp verfügbar.</string>
+    <string name="key_content_description">Wähltaste %1$s</string>
+</resources>

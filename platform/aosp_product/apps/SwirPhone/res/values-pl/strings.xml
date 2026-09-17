@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Swir Phone</string>
+    <string name="eyebrow">SWIRPHONEOS • TELEFON</string>
+    <string name="title">Dzwoń z pełną kontrolą</string>
+    <string name="subtitle">Wpisz numer, a potem przekaż go do systemowego dialera. Swir Phone nigdy nie wykonuje połączenia po cichu.</string>
+    <string name="number_hint">Numer telefonu</string>
+    <string name="number_content_description">Numer telefonu do wybrania</string>
+    <string name="open_dialer">Otwórz dialer</string>
+    <string name="erase">Usuń</string>
+    <string name="handoff_notice">Połączenia są potwierdzane w dialerze Androida. Interfejs rozmowy i ostatnie połączenia nie są jeszcze zaimplementowane.</string>
+    <string name="invalid_number">Wpisz prawidłowy numer telefonu.</string>
+    <string name="no_dialer">Brak dostępnego systemowego dialera.</string>
+    <string name="key_content_description">Klawisz wybierania %1$s</string>
+</resources>

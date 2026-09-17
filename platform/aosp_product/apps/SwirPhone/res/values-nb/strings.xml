@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Swir Phone</string>
+    <string name="eyebrow">SWIRPHONEOS • TELEFON</string>
+    <string name="title">Ring med kontroll</string>
+    <string name="subtitle">Skriv inn et nummer og send det videre til systemets oppringer. Swir Phone starter aldri et anrop i skjul.</string>
+    <string name="number_hint">Telefonnummer</string>
+    <string name="number_content_description">Telefonnummer som skal ringes</string>
+    <string name="open_dialer">Åpne oppringer</string>
+    <string name="erase">Slett</string>
+    <string name="handoff_notice">Anrop bekreftes i Android-oppringeren. Samtalegrensesnitt og nylige anrop er ikke implementert ennå.</string>
+    <string name="invalid_number">Skriv inn et gyldig telefonnummer.</string>
+    <string name="no_dialer">Ingen systemoppringer er tilgjengelig.</string>
+    <string name="key_content_description">Tast %1$s</string>
+</resources>

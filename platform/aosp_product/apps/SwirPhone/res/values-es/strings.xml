@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Swir Phone</string>
+    <string name="eyebrow">SWIRPHONEOS • TELÉFONO</string>
+    <string name="title">Llama con control</string>
+    <string name="subtitle">Introduce un número y pásalo al marcador del sistema. Swir Phone nunca inicia una llamada en silencio.</string>
+    <string name="number_hint">Número de teléfono</string>
+    <string name="number_content_description">Número de teléfono para marcar</string>
+    <string name="open_dialer">Abrir marcador</string>
+    <string name="erase">Borrar</string>
+    <string name="handoff_notice">Las llamadas se confirman en el marcador de Android. La interfaz de llamada y el historial aún no están implementados.</string>
+    <string name="invalid_number">Introduce un número de teléfono válido.</string>
+    <string name="no_dialer">No hay un marcador del sistema disponible.</string>
+    <string name="key_content_description">Tecla de marcación %1$s</string>
+</resources>

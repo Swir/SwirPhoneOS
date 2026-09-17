@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Swir Phone</string>
+    <string name="eyebrow">SWIRPHONEOS • PHONE</string>
+    <string name="title">Call with confidence</string>
+    <string name="subtitle">Enter a number, then hand it to the system dialer. Swir Phone never places a call silently.</string>
+    <string name="number_hint">Phone number</string>
+    <string name="number_content_description">Phone number to dial</string>
+    <string name="open_dialer">Open dialer</string>
+    <string name="erase">Erase</string>
+    <string name="handoff_notice">Calls are confirmed in the Android dialer. In-call UI and recent calls are not implemented yet.</string>
+    <string name="invalid_number">Enter a valid phone number.</string>
+    <string name="no_dialer">No system dialer is available.</string>
+    <string name="key_content_description">Dial key %1$s</string>
+</resources>
