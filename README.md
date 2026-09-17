@@ -1,87 +1,103 @@
-<p align="center"><img src="branding/swirphoneos.svg" width="136" alt="SwirPhoneOS icon"></p>
-<h1 align="center">SwirPhoneOS</h1>
-<p align="center">An Android-compatible mobile OS and a safety-first PC companion. By Swir.</p>
+<!-- SWIR-README-STANDARD:v1 -->
 
-> **Developer foundation, not a ROM release.** No bootable SwirPhoneOS image, supported phone, installer, backup or stock-restore implementation is available yet. Meaningful Android application source exists, but no APK/runtime claim is made before a real pinned-AOSP build and boot.
+<div align="center">
 
-<!-- SWIR-ROADMAP-STANDARD:v1 -->
+<img src="branding/swirphoneos.svg" width="144" alt="SwirPhoneOS icon" />
+
+# ⚡ SwirPhoneOS
+
+### A safety-first Android-compatible mobile OS project with its own apps, services, device profiles and PC companion
+
+**Linux kernel + AOSP userspace • Android 17 foundation • SwirPhoneStudio • SwirRoot • Global i18n**
+
+![AOSP](https://img.shields.io/badge/AOSP-Android_17-02050A?style=for-the-badge&logo=android&logoColor=62E5FF)
+![Python](https://img.shields.io/badge/Python-3.11%2B-02050A?style=for-the-badge&logo=python&logoColor=62E5FF)
+![Windows](https://img.shields.io/badge/Studio-Windows_x64-02050A?style=for-the-badge&logo=windows11&logoColor=62E5FF)
+![Status](https://img.shields.io/badge/Stage-Foundation-02050A?style=for-the-badge&logo=githubactions&logoColor=62E5FF)
+
 ![CI](https://github.com/Swir/SwirPhoneOS/actions/workflows/ci.yml/badge.svg)
-![Roadmap](https://img.shields.io/badge/ROADMAP-2%25-blue)
-![Done](https://img.shields.io/badge/DONE-1%2F10_milestones-blue)
-![Status](https://img.shields.io/badge/STATUS-foundation-orange)
+![Roadmap](https://img.shields.io/badge/roadmap-2%25-0088FF?style=flat-square)
+![Milestones](https://img.shields.io/badge/milestones-1%2F10-0088FF?style=flat-square)
+![Beta gates](https://img.shields.io/badge/beta_gates-0%2F9-orange?style=flat-square)
 
-## Overall progress
+</div>
 
-**2% — weighted engineering milestones, not phone compatibility.**
+<img width="100%" src="https://raw.githubusercontent.com/Swir/Swir/main/assets/power-divider-v4.svg" alt="SWIR electric divider" />
+
+> **Developer foundation — not a ROM release.** There is currently no public bootable SwirPhoneOS image, supported phone, installer or beta release. Android application source and build/evidence infrastructure are real, but runtime/device support is not claimed before real AOSP builds, boot evidence and physical validation exist.
+
+## 📊 Project status
+
+**2% — 1/10 weighted engineering milestones completed. Beta readiness: 0/9 gates passed.**
 
 `[--------------------] 2%`
 
-| Completed milestones | Remaining | Total | Weighted progress |
-| --- | --- | --- | --- |
-| 1 | 9 | 10 | 2% |
+The authoritative ledger is [`project.json`](project.json). CI, source-ready applications, Windows packaging, read-only hardware evidence and local recovery preparation do **not** substitute for an Android build, Cuttlefish boot or physical-device validation.
 
-The canonical ledger is [`project.json`](project.json). Host tests, desktop packaging, Android source, read-only hardware correlation and local transaction preparation do not complete build, boot or hardware gates. **Beta: 0/9 gates passed.**
+| Area | Current verified state |
+|---|---|
+| Android baseline | `android-17.0.0_r1` / API 37 pinned, not built |
+| Cuttlefish product | Source-integrated, not built or booted |
+| ARM64 GSI | Source/build-evidence path exists, no real `system.img` evidence yet |
+| System apps | 20 `ANDROID_SOURCE`, 0 `ANDROID_RUNTIME`, 0 hardware-verified |
+| SwirPhoneStudio | Read-only ADB/Fastboot diagnostics and Windows developer packaging |
+| Device support | No supported phone yet; `oneplus/avicii` remains `PLANNED_NOT_SUPPORTED` |
+| SwirRoot | Source-stage UI/policy only; mutation backend disabled, supported builds = 0 |
+| Release | No beta/public OS release |
 
-## What works now
+See [`BUILD_STATUS.md`](BUILD_STATUS.md) for the detailed evidence matrix.
 
-### Safety-first host tooling
+## 🌐 What is SwirPhoneOS?
 
-The `swirphoneos` Python package provides strictly read-only ADB and Fastboot/FastbootD diagnostics. SwirPhoneStudio adds a multilingual dark/blue desktop UI, explicit trusted-tool selection, asynchronous inspection, immutable report export and Windows x64/Python 3.14 developer packaging. No unlock, erase, boot, flash, root, relock or restore control is enabled.
+SwirPhoneOS is being designed as our own mobile operating system built around the Linux kernel and AOSP/Android-compatible userspace and HAL integration where practical. The architecture uses a shared core plus reviewed device-specific profiles/ports rather than pretending that one generic image or flashing sequence is safe for every Android phone.
 
-Physical-device evidence gathering records exact firmware/build fingerprint, board/hardware, slot and verified-boot/VBMeta hints through a narrow ADB allowlist. Fastboot can optionally record bounded `has-slot` and `partition-size` hints for reviewed partition names without `getvar all`. Saved ADB and Fastboot observations can be correlated only when profile/model/codename/build and non-conflicting slot/bootloader hints agree. The integrity-hashed result remains explicitly `CORRELATED_READ_ONLY_NOT_VERIFIED`: it cannot claim support, verify hardware or enable writes, flashing, root or restore.
+The project also includes **SwirPhoneStudio**, a Windows-first PC companion for diagnostics and future recovery/install workflows, plus **SwirRoot**, a first-party owner-controlled root design for explicitly supported builds. Root support must use legitimate unlocked/owner-supported boot or image paths, verified rollback and explicit confirmation; exploit-based bootloader or vendor-protection bypasses are forbidden.
 
-A local-only transaction evidence layer prepares the recovery side of future installation work without contacting a phone. Schema v1 binds one exact profile/current-build/target-build tuple to explicit target and rollback files, verifies each file's size and SHA-256 under a confined local root, rejects traversal/symlinks/duplicate keys/unknown fields, and can persist a create-only fsynced recovery journal. Accepted plans require rollback and explicit owner confirmation, but the journal deliberately records `owner_confirmation_recorded=false` and `write_allowed=false`. None of this makes the current `avicii` profile supported or completes the install/restore milestone.
+## ✨ Highlights
 
-### Android 17 platform foundation
+| Feature | What it provides today |
+|---|---|
+| ⚙️ Pinned Android 17 foundation | Exact AOSP tag/baseline identity, build planning and reproducibility contracts |
+| 🧪 Cuttlefish evidence chain | Exact product identity, boot/runtime/app-smoke collectors prepared for the first real build |
+| 📱 20 first-party system apps | Meaningful Android source integrated into `PRODUCT_PACKAGES`, not counted as runtime until actually built/exercised |
+| 🖥️ SwirPhoneStudio | Multilingual dark/cyan desktop diagnostics with trusted ADB/Fastboot tool selection and Windows packaging |
+| 🛡️ Fail-closed recovery preparation | Exact local artifact hashing, create-only recovery journals and cross-transport read-only hardware correlation |
+| 🔐 SwirRoot safety model | Deny-by-default policy, mandatory rollback/journal gates and a new readiness projection that still cannot authorize writes |
+| 🌍 Global i18n | EN/PL/NB/DE/ES/FR/PT/AR resources across all 20 current Android source apps with RTL-aware configuration |
+| 🧩 Device profiles | Shared core plus exact per-device metadata/ports; unsupported hardware stays unsupported until evidence exists |
 
-The development baseline is pinned to **Android 17 / API 37** at `android-17.0.0_r1`. The exact identity is recorded in [`platform/aosp_baseline.json`](platform/aosp_baseline.json), but status remains `PINNED_NOT_BUILT`: no completed AOSP sync, Kati/Soong build or Cuttlefish boot is claimed.
+## 📱 Essential system apps
 
-The repository contains an x86_64 Cuttlefish product, exact-tag workspace planning, resolved `repo manifest -r` verification, bounded `vendor/swir/` source staging and strict build/runtime evidence tooling. Schema-v5 staging requires exact destination-tree closure before and after compilation so a persistent build host cannot silently compile stale or unreviewed Swir files. `build-evidence` requires hashed core images and the exact pinned Android release/API, build ID `CP2A.260605.016`, security patch `2026-06-05` and `userdebug` type from the built product.
+All required everyday-app slots have meaningful Android source and are included in the developer product, but all remain below `ANDROID_RUNTIME` until the pinned OS builds and boots.
 
-The manual-only self-hosted `aosp-build-evidence.yml` workflow binds the exact workflow source commit to builder preflight, exact AOSP plan, resolved manifest, staging before build, post-build staged-source evidence and build evidence. When runtime collection is explicitly enabled it can launch the **exact product it just built**, wait for strict boot evidence, run emulator-only launch smoke over every source-ready app, bind build/runtime fingerprints and clean up Cuttlefish. Failed runs retain only bounded diagnostic evidence. This path is implemented but has **not** completed a real AOSP build/boot yet.
+| App | Source-stage capability |
+|---|---|
+| Phone | Permission-free keypad + explicit Android `ACTION_DIAL`; in-call/default-role/history still open |
+| Contacts | Scoped `READ_CONTACTS`, browse/search, Android-managed edit/create, vCard import/export |
+| Messages | Local draft/composer + explicit `ACTION_SENDTO`; no silent SMS, MMS/history still open |
+| Camera | Camera2 capability inspection + explicit system photo/video capture hand-off; direct capture unverified |
+| Gallery | Scoped MediaStore browse/search/open/share + owner-confirmed delete |
+| Files | Storage Access Framework browse/search/create/rename/copy/move/delete/open/share |
+| Settings | Searchable Swir hub + reviewed authoritative Android settings routes |
+| Browser | HTTPS-first WebView with conservative privacy defaults; downloads still open |
+| Clock | Localized clock, foreground stopwatch/timer + visible alarm hand-off |
+| Calculator | Host-tested `BigDecimal` basic arithmetic + locale-aware display |
+| Notes | App-private SQLite CRUD/search/share + Markdown export |
+| Voice Recorder | Foreground-only private AAC/MPEG-4 record/playback/export |
+| Calendar | Local SQLite agenda + share/ICS export; provider bridge still open |
+| Weather | Bounded Open-Meteo HTTPS current-weather lookup for owner-entered coordinates |
+| System Updater | Read-only build/channel state + SHA-256/RSA metadata verification; install disabled |
+| Backup/Restore | Bounded owner-selected archive creation + safe inspection; restore orchestration still open |
+| Privacy Center | Reviewed routes into Android privacy/permission surfaces |
+| Device Care | Framework-backed device/battery/storage/memory/thermal diagnostics |
+| Software Center | Local app catalog, version/signing SHA-256 provenance, launch/details hand-off |
+| SwirRoot | Owner-facing state/safety UI + non-exported diagnostics; mutation backend disabled |
 
-### Functional Android application sources
+The machine-readable registry is [`system_apps/manifest.json`](system_apps/manifest.json).
 
-All twenty essential first-party applications are now wired into `PRODUCT_PACKAGES` as meaningful **`ANDROID_SOURCE`**. This closes the host-contract-only app gap, but every app remains below `ANDROID_RUNTIME` until the pinned AOSP product actually builds and is exercised in Cuttlefish.
+## 🚀 Quick Start — developer tooling
 
-- **Swir Phone** — permission-free keypad with host-tested fail-closed dial-string normalization and an explicit `ACTION_DIAL` hand-off to Android's system dialer. It never places calls silently; default-dialer role, in-call UI and recent-call history remain future exact-telephony work.
-- **Swir Contacts** — ContactsProvider browse/search using exactly `READ_CONTACTS`, Android-managed create/edit, explicit vCard import hand-off and user-selected vCard export. It does not request `WRITE_CONTACTS` or network access.
-- **Swir Messages** — permission-free local composer with app-private draft persistence, host-tested recipient/body bounds and an explicit `ACTION_SENDTO`/`smsto:` hand-off to an installed Android messaging app. It never silently sends or reads SMS; MMS, conversation history, default-SMS role and carrier delivery remain future exact-telephony work.
-- **Swir Camera** — permission-free Camera2 capability inspection for enumerated cameras, facing and largest JPEG size, plus explicit Android photo/video capture hand-off. Direct Camera2 capture, camera permission ownership and exact-device photo/video behavior remain intentionally unclaimed until reference-hardware validation.
-- **Swir Gallery** — scoped photo/video MediaStore browser with search/open/share and Android owner-confirmed deletion; albums remain future work.
-- **Swir Files** — user-granted Storage Access Framework tree with browse/search/create/rename/copy/move/delete/open/share and no broad storage permission.
-- **Swir Settings** — searchable hub with real build/device status and a reviewed allowlist of authoritative Android settings routes.
-- **Swir Browser** — HTTPS-first WebView browser with URL bounds, cleartext/file/content access disabled, JavaScript and DOM storage off by default, third-party cookies blocked, safe-browsing enabled and explicit cache/history/cookie/storage clearing. Downloads remain deliberately unfinished.
-- **Swir Clock** — localized time, foreground stopwatch/timer and user-visible alarm hand-off without exact-alarm privileges.
-- **Swir Calculator** — host-tested BigDecimal basic arithmetic and locale-aware display; scientific math remains future work.
-- **Swir Notes** — private local SQLite notes with create/edit/delete/search, explicit sharing and user-selected Markdown export.
-- **Swir Recorder** — foreground-only private AAC/MPEG-4 recording with pause/resume/stop/playback, microphone state and explicit document export; exact-device audio behavior is unverified.
-- **Swir Calendar** — local SQLite agenda with editing/search/share and iCalendar export; CalendarProvider bridging remains future work.
-- **Swir Weather** — bounded HTTPS Open-Meteo current-weather retrieval for owner-entered coordinates with persistent metric/imperial preference and provider attribution. It does not request device location permission.
-- **Swir Update** — read-only channel/build status plus host-tested SHA-256/RSA metadata verification; download/staging/recovery install remain disabled.
-- **Swir Backup** — owner-selected SAF document backup into a bounded archive with build fingerprint/SDK recovery metadata plus fail-closed archive inspection. It cannot read other apps' private data and does not restore archive entries yet.
-- **Swir Privacy** — reviewed permission-free routes into Android privacy/permission surfaces; live indicators/access history remain future platform work.
-- **Swir Device Care** — framework-backed device/security-patch, battery, storage, memory and thermal diagnostics without privileged permissions.
-- **Swir Apps** — permission-free local Software Center catalog for launchable apps with package/version and signing-certificate SHA-256 provenance, app launch and authoritative Android app-details hand-off. Remote catalog/install/update status is deliberately not implemented.
-- **SwirRoot** — original owner-facing root-state/safety UI plus a non-exported status/diagnostic service and host-tested transition policy. It remains `UNAVAILABLE`; mutation support and supported-build switches are hard-disabled.
-
-All twenty apps ship English, Polish, Norwegian Bokmål, German, Spanish, French, Portuguese and Arabic resources with RTL-aware application layout. Source validation checks package identity, exact per-app permission allowlists, localization parity, pure-Java policy cores and complete bounded AOSP staging. It scans production Java for forbidden process and broad-storage primitives, and network primitives are accepted only for the explicitly reviewed Swir Browser and Swir Weather paths. Contacts is limited to `READ_CONTACTS`, Gallery to `READ_MEDIA_IMAGES` + `READ_MEDIA_VIDEO`, Recorder to `RECORD_AUDIO`, Browser and Weather to `INTERNET`, and the remaining source apps are permission-free. SwirRoot receives additional fail-closed checks. Android localization lint verifies exact source-key coverage, formatter/plural contracts and common hardcoded Java UI sinks; this remains source-only evidence, not runtime RTL proof.
-
-Source-summary schema v3 tracks unfinished capabilities **per application**. This prevents one app implementing a shared capability name from hiding another app's gap. Explicit current gaps include `camera:photo_capture`, `camera:video_capture`, `browser:downloads`, `calendar:provider_bridge`, `backup:restore_orchestration`, `apps:update_status`, `phone:in_call`, `phone:recent_calls`, `messages:mms`, `messages:conversation_history`, and SwirRoot guided enable/unroot.
-
-The `swirphoneos.cuttlefish_smoke` runner is deliberately emulator-only. It first requires complete exact-identity Cuttlefish evidence, then launches each already-installed source-ready package through its resolved package-local launcher component, requires Android `am start -W` success and confirms the expected package as resumed foreground activity. It never promotes app status automatically.
-
-### Complete system-app plan and SwirRoot
-
-The machine-readable suite contains 20 applications: Phone, Contacts, Messages, Camera, Gallery, Files, Settings, Browser, Clock, Calculator, Notes, Recorder, Calendar, Weather, Update, Backup, Privacy, Device Care, Apps/Software Center and SwirRoot. Current registry state is **20 `ANDROID_SOURCE`, 0 `HOST_CONTRACT`, 0 `ANDROID_RUNTIME`, 0 `HARDWARE_VERIFIED`**.
-
-SwirRoot has meaningful Android source for its owner-facing state, diagnostics, audit and safety-review surface, but it is **not a working root implementation**. Unverified builds remain `UNAVAILABLE`; authorization is deny-by-default; rollback material, journaling, exact-build/profile checks and explicit owner confirmation remain mandatory; exploit/bypass methods are forbidden; Android mutation support is hard-disabled; supported root builds remain zero. `guided_enable` and `guided_unroot` remain target capabilities until a legitimate exact-build backend and tested rollback/unroot path exist.
-
-### Global localization
-
-Host localization is data-driven with system-locale detection and English fallback. The desktop and all twenty current Android source apps use EN/PL/NB/DE/ES/FR/PT/AR catalogs. The mobile architecture requires the same localization discipline for first setup, launcher, SystemUI, Settings, recovery, updater, SwirRoot and all bundled apps, including RTL, fonts/scripts, plurals, accessibility and locale-specific formatting.
-
-## Developer commands
+There is no end-user OS installer yet. From a development checkout, use the host validation tools first:
 
 ```sh
 python -m unittest discover -s tests -v
@@ -90,48 +106,138 @@ python -m swirphoneos gate
 python -m swirphoneos profiles
 python -m swirphoneos baseline
 python -m swirphoneos product-contract
+python -m swirphoneos gsi-contract
+python -m swirphoneos android-apps
+python -m swirphoneos i18n
+python -m swirphoneos apps
+python -m swirphoneos root-policy
+```
+
+`gate` intentionally remains blocked while mandatory beta evidence is missing.
+
+### AOSP / Cuttlefish planning
+
+```sh
+python -m swirphoneos build-preflight --workspace /path/to/aosp
 python -m swirphoneos aosp-plan --workspace /path/to/aosp --jobs 16
 python -m swirphoneos aosp-manifest --file /path/to/aosp/swirphoneos-pinned-manifest.xml
-python -m swirphoneos android-apps
-python -m swirphoneos build-preflight --workspace /path/to/aosp
 python -m swirphoneos build-evidence --workspace /path/to/aosp --manifest /path/to/aosp/swirphoneos-pinned-manifest.xml
 python -m swirphoneos cuttlefish-evidence --adb /absolute/path/to/adb > runtime-evidence.json
 python -m swirphoneos.cuttlefish_smoke --adb /absolute/path/to/adb > app-smoke-evidence.json
-python -m swirphoneos evidence-bundle --build build-evidence.json --runtime runtime-evidence.json
-python -m swirphoneos aosp-run-evidence --source-commit <40-char-sha> --preflight builder-preflight.json --plan aosp-plan.json --manifest resolved-manifest.json --stage stage-report.json --post-stage post-build-stage-evidence.json --build build-evidence.json --runtime runtime-evidence.json --smoke app-smoke-evidence.json --bundle evidence-bundle.json
+```
+
+The manual self-hosted builder path requires a clean dedicated Linux host, enough RAM/disk and KVM/Cuttlefish support. It intentionally fails closed on local-manifest injection, stale `out/`, unsafe workspace roots and unreviewed `vendor/swir/` files.
+
+### Read-only device and recovery evidence
+
+```sh
 python -m swirphoneos inspect-device --transport adb --tool /absolute/path/to/adb > adb-observation.json
 python -m swirphoneos inspect-device --transport fastboot --tool /absolute/path/to/fastboot --partitions > fastboot-observation.json
 python -m swirphoneos hardware-evidence --adb-report adb-observation.json --fastboot-report fastboot-observation.json > hardware-evidence.json
 python -m swirphoneos transaction-plan --file /absolute/path/to/plan.json
-python -m swirphoneos transaction-device-check --plan /absolute/path/to/plan.json --hardware /absolute/path/to/hardware-evidence.json
-python -m swirphoneos transaction-evidence --plan /absolute/path/to/plan.json --artifacts /absolute/path/to/artifacts
-python -m swirphoneos i18n
-python -m swirphoneos apps
-python -m swirphoneos root-policy
-python -m swirphoneos.studio
+python -m swirphoneos transaction-evidence --plan /absolute/path/to/plan.json --artifacts /absolute/path/to/artifacts --journal /absolute/path/to/recovery-journal.json
 ```
 
-`gate` intentionally exits blocked while mandatory beta evidence is missing. `android-apps` validates checked-in source only. Hardware correlation and transaction matching are read-only evidence/preparation surfaces and cannot authorize phone writes. Build/run/runtime/app-smoke evidence remains emulator/build evidence, not physical-device compatibility proof.
+The new SwirRoot readiness binder can then show which root policy gates are still missing without performing a device write:
 
-## Product direction
+```sh
+python -m swirphoneos.root_readiness_cli \
+  --action enable \
+  --exact-build '<exact SwirPhoneOS build identity>' \
+  --journal /absolute/path/to/recovery-journal.json \
+  --hardware /absolute/path/to/hardware-evidence.json
+```
 
-**SwirPhoneOS Core:** Linux kernel + AOSP/Android-compatible userspace/HAL integration, shared core where practical, device-specific packs where required, original Swir UI/services/apps, privacy controls and signed OTA updates.
+With the current repository policy and correlation-only hardware evidence, `transition_ready` remains false by design.
 
-**SwirPhoneStudio:** Windows-first, Linux-capable companion for detection, verified downloads, backup/install planning, transaction journaling, recovery and stock restore. Write controls remain disabled until exact-device safety gates are physically verified.
+## ✅ Requirements and compatibility
 
-**SwirRoot:** first-party owner-controlled root enable/disable for explicitly supported SwirPhoneOS builds with verified rollback, diagnostics, per-app authorization and tested unroot/recovery. It does not use bootloader exploits or protection bypasses. Current Android source deliberately stops before mutation execution.
+### Host tooling
 
-**Worldwide use:** every system surface and bundled app uses shared localization architecture, detects the best locale during setup and falls back to English.
+- Python 3.11+ is the supported host-tooling family tested by CI.
+- SwirPhoneStudio has a Windows x64 developer packaging path.
+- Physical diagnostics require an explicitly selected trusted Android SDK `adb` or `fastboot` executable.
+- AOSP/Cuttlefish builds require a capable dedicated Linux x86-64 builder; normal hosted CI is not treated as build/boot evidence.
 
-## Compatibility and release policy
+### Device compatibility
 
-SwirPhoneOS targets broad Android-device coverage through a shared AOSP/GSI-capable core plus validated device-specific profiles/ports. A single identical image or flashing sequence cannot safely cover every Android phone because bootloaders, AVB policy, kernels, vendor interfaces, partition layouts and OEM unlock rules differ. Unsupported hardware stays unsupported until evidence exists.
+The first planned physical reference is **OnePlus Nord AC2003 (`avicii`)**, currently **`PLANNED_NOT_SUPPORTED`**. No flashing or root support is enabled for it.
 
-The first planned reference device is OnePlus Nord AC2003 (`avicii`), currently `PLANNED_NOT_SUPPORTED`.
+A generic ARM64 GSI target exists for development, but a built GSI is not proof that it is safe on an arbitrary Treble phone. Treble/VTS, vendor interface compatibility, AVB/boot requirements, recovery and per-device functionality must be validated before any support claim.
 
-A beta Release requires a reproducible OS build, real boot path, safe install/rollback/recovery, at least one physically verified phone profile, usable core system functionality and verified release artifacts/checksums. Telephony, camera, recorder/audio and SwirRoot are stated per exact tested device/build. **No beta is published now.**
+## 🏗️ Architecture
 
-[Architecture](ARCHITECTURE.md) · [Roadmap](ROADMAP.md) · [Build status](BUILD_STATUS.md) · [System Apps](docs/SYSTEM_APPS.md) · [Global i18n](docs/I18N.md) · [AOSP workspace](docs/AOSP_BUILD_WORKSPACE.md) · [AOSP builder evidence](docs/AOSP_BUILDER_EVIDENCE.md) · [Runtime evidence](docs/AOSP_RUNTIME_EVIDENCE.md) · [Hardware evidence](docs/HARDWARE_EVIDENCE.md) · [Recovery transactions](docs/RECOVERY_TRANSACTIONS.md) · [SwirRoot](docs/SWIRROOT.md) · [Changelog](CHANGELOG.md)
+```text
+Linux kernel
+   ↓
+AOSP / Android-compatible userspace + HAL/vendor integration
+   ↓
+SwirPhoneOS product, services, design language and system apps
+   ├── shared core
+   ├── Cuttlefish x86_64 developer product
+   ├── ARM64 GSI development target
+   └── exact device-specific profiles / ports
 
----
-**by Swir** · [GitHub](https://github.com/Swir)
+PC side
+   └── SwirPhoneStudio → read-only diagnostics → recovery/install evidence → future gated execution
+
+Privilege side
+   └── SwirRoot → exact-build policy → rollback/journal evidence → future physically validated backend only
+```
+
+More detail: [`ARCHITECTURE.md`](ARCHITECTURE.md), [`docs/AOSP_BUILD_WORKSPACE.md`](docs/AOSP_BUILD_WORKSPACE.md), [`docs/HARDWARE_EVIDENCE.md`](docs/HARDWARE_EVIDENCE.md), [`docs/RECOVERY_TRANSACTIONS.md`](docs/RECOVERY_TRANSACTIONS.md), [`docs/SWIRROOT.md`](docs/SWIRROOT.md), [`docs/SWIRROOT_READINESS_EVIDENCE.md`](docs/SWIRROOT_READINESS_EVIDENCE.md).
+
+## 🌍 Localization
+
+English is the canonical fallback/source language. All twenty current Android source apps contain EN, PL, NB, DE, ES, FR, PT and AR catalogs with RTL-aware configuration. Source lint checks key parity, formatter/plural contracts and common hardcoded Java UI sinks.
+
+Runtime locale switching, text expansion, fonts/scripts, accessibility and visual Arabic RTL still require the first real SwirPhoneOS boot and interactive review. First-boot setup, launcher, SystemUI, recovery and every bundled app are expected to use the same shared localization discipline as implementation expands.
+
+## 🔐 Safety and limitations
+
+SwirPhoneOS intentionally prefers a blocked state to an unsafe compatibility claim.
+
+- no generic "works on every Android phone" promise;
+- no bootloader exploit, silent unlock or vendor-protection bypass path;
+- no unattended flash/erase/relock operation in current tooling;
+- no working SwirRoot backend or supported root build;
+- no beta until a reproducible OS build, real boot, safe install/rollback/recovery and at least one physically verified phone profile exist;
+- telephony, camera, recorder/audio and root status are always stated per exact tested device/build;
+- read-only ADB/Fastboot correlation is not cryptographic hardware identity and never authorizes writes.
+
+## 🗺️ Roadmap and releases
+
+The current weighted roadmap remains **2%** and **Beta 0/9**. See [`ROADMAP.md`](ROADMAP.md) and [`BETA_RELEASE_GATE.md`](BETA_RELEASE_GATE.md) for the evidence required before release.
+
+There is **no public SwirPhoneOS beta image today**. A future beta must include real binaries/images, manifest/checksums, exact compatibility matrix, installation/recovery instructions and known issues only after every mandatory gate is satisfied.
+
+## 🗂️ Project structure
+
+```text
+platform/          AOSP product, Cuttlefish/GSI integration and bounded staging
+system_apps/       machine-readable essential-app registry
+swirphoneos/       host safety, build, evidence and diagnostics tooling
+swirroot/          SwirRoot policy metadata
+studio/            SwirPhoneStudio desktop application
+ device_packs/     per-device metadata/ports (unsupported until validated)
+docs/              engineering, evidence, i18n and safety documentation
+tests/             fail-closed host regression suite
+```
+
+## 🔎 Search Keywords
+
+`SwirPhoneOS` • `AOSP Android 17 custom OS` • `Linux mobile operating system` • `Android GSI ARM64` • `Cuttlefish AOSP build` • `SwirPhoneStudio` • `SwirRoot` • `Android device profiles` • `safe Android flashing design` • `Android recovery rollback` • `Treble GSI validation` • `Android system apps` • `Android localization RTL` • `OnePlus Nord avicii port` • `reproducible AOSP build`
+
+<img width="100%" src="https://raw.githubusercontent.com/Swir/Swir/main/assets/power-divider-v4.svg" alt="SWIR electric divider" />
+
+<div align="center">
+
+### `BUILD • VERIFY • RECOVER • EVOLVE`
+
+⭐ **If this project is useful, consider leaving a star.**
+
+[**← SWIR profile**](https://github.com/Swir) · [**All projects →**](https://github.com/Swir?tab=repositories)
+
+**by Swir**
+
+</div>
