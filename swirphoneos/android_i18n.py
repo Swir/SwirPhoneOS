@@ -35,12 +35,16 @@ _MAX_JAVA_TEXT = 1_000_000
 _FORMAT_TOKEN = re.compile(
     r"%(?:(?P<index>[1-9][0-9]*)\$)?(?P<flags>[-#+ 0,(<]*)?(?P<width>[0-9]*)?(?:\.(?P<precision>[0-9]+))?(?P<kind>[a-zA-Z%])"
 )
-_DIRECT_UI_LITERAL = re.compile(
-    r"\b(?:setText|setTitle|setHint|setMessage|setContentDescription|setPositiveButton|setNegativeButton|setNeutralButton)\s*\(\s*\"((?:\\.|[^\"\\])*)\"",
+_SINGLE_ARGUMENT_UI_LITERAL = re.compile(
+    r"\b(?:setText|setTitle|setHint|setMessage|setContentDescription)\s*\(\s*\"((?:\\.|[^\"\\])*)\"\s*\)",
+    re.DOTALL,
+)
+_DIALOG_BUTTON_LITERAL = re.compile(
+    r"\b(?:setPositiveButton|setNegativeButton|setNeutralButton)\s*\(\s*\"((?:\\.|[^\"\\])*)\"\s*,",
     re.DOTALL,
 )
 _TOAST_LITERAL = re.compile(
-    r"\bToast\.makeText\s*\([^,]+,\s*\"((?:\\.|[^\"\\])*)\"",
+    r"\bToast\.makeText\s*\([^,]+,\s*\"((?:\\.|[^\"\\])*)\"\s*,",
     re.DOTALL,
 )
 
@@ -217,11 +221,12 @@ def _validate_no_direct_ui_literals(app_root: Path) -> int:
         raise AndroidLocalizationError("Source-ready Android app has no production Java source.")
     for path in java_files:
         source = _without_java_comments(_read_text(path, limit=_MAX_JAVA_TEXT))
-        for pattern in (_DIRECT_UI_LITERAL, _TOAST_LITERAL):
+        for pattern in (_SINGLE_ARGUMENT_UI_LITERAL, _DIALOG_BUTTON_LITERAL, _TOAST_LITERAL):
             for match in pattern.finditer(source):
                 if match.group(1).strip():
+                    relative = path.relative_to(app_root).as_posix()
                     raise AndroidLocalizationError(
-                        f"Direct user-facing Java string literal is forbidden in {path.name}; use Android resources."
+                        f"Direct user-facing Java string literal is forbidden in {relative}; use Android resources."
                     )
     return len(java_files)
 
