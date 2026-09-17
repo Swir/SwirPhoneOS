@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Swir Messages</string>
+    <string name="eyebrow">SWIRPHONEOS • MELDINGER</string>
+    <string name="title">Skriv privat</string>
+    <string name="subtitle">Skriv meldingen lokalt, og send den deretter videre til Androids meldingsapp for endelig sending.</string>
+    <string name="recipients_hint">Mottakernummer</string>
+    <string name="recipients_content_description">Telefonnummer til mottakeren</string>
+    <string name="message_hint">Melding</string>
+    <string name="message_content_description">Meldingstekst</string>
+    <string name="characters_remaining">%1$d tegn igjen</string>
+    <string name="clear_draft">Tøm utkast</string>
+    <string name="continue_to_messages">Fortsett til Meldinger</string>
+    <string name="handoff_notice">Swir Messages sender aldri SMS i skjul. Systemets meldingsapp utfører den endelige sendingen. Samtalehistorikk og MMS er ikke implementert ennå.</string>
+    <string name="invalid_message">Skriv inn en gyldig mottaker og en melding som ikke er tom.</string>
+    <string name="no_messaging_app">Ingen kompatibel meldingsapp er tilgjengelig.</string>
+    <string name="draft_cleared">Utkast tømt.</string>
+</resources>
