@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+### Source-ready first-party Swir Camera
+
+Added `SwirCamera` as meaningful first-party Camera2 Android source with an original dark/cyan SwirPhoneOS UI and icon, owner-granted `CAMERA` permission, live preview, back/front camera selection, JPEG still capture, silent H.264/MP4 video capture through MediaRecorder, scoped MediaStore output under SwirPhoneOS picture/movie collections, and a framework-derived capability report covering camera count, lens facing, hardware level and selected capture sizes.
+
+The app deliberately does not request microphone, network or broad-storage permissions. Video is intentionally silent at this source stage. A dependency-free `CameraPolicy` is host-tested for rotation normalization, preview/video size selection, bounded media naming, capture readiness and a minimum safe video-stop interval. Source validation enforces the exact `CAMERA` permission allowlist, rejects audio-recording/delegated-camera drift, requires the Camera2/MediaStore capture path, checks all eight localization catalogs and requires complete exact-tree AOSP staging.
+
+SwirCamera is now included in the Cuttlefish `PRODUCT_PACKAGES` set and exact staging closure. The registry is **17 `ANDROID_SOURCE`, 3 `HOST_CONTRACT`, 0 `ANDROID_RUNTIME`, 0 hardware-verified**. This does not claim a successful AOSP build, Cuttlefish camera runtime, physical camera/HAL compatibility, capture quality or supported-device camera behavior. Weighted progress therefore remains **2%**, 1/10 milestones, and Beta remains **0/9**.
+
 ### Safe source-ready Swir Messages composer
 
 Added `SwirMessages` as meaningful permission-free first-party Android source with an original dark/cyan UI and icon, app-private draft persistence, EN/PL/NB/DE/ES/FR/PT/AR resources, RTL-aware layout and exact AOSP/Cuttlefish product staging. A dependency-free `MessagePolicy` is host-tested for bounded recipient normalization, duplicate-recipient handling, body normalization/length limits and explicit hand-off readiness.

@@ -13,10 +13,10 @@ class AndroidAppSourceTests(unittest.TestCase):
     def test_repository_source_apps_are_complete_but_not_runtime_claimed(self):
         summary = public_android_app_source_summary(validate_android_app_sources())
         self.assertEqual(summary["status"], "SOURCE_READY_NOT_BUILT")
-        self.assertEqual(set(summary["source_ready_apps"]), {"phone","messages","calculator","settings","files","device_care","update","privacy","clock","notes","calendar","gallery","recorder","contacts","apps","swirroot"})
-        self.assertEqual(summary["source_ready_count"], 16)
-        self.assertEqual(summary["localized_catalogs"], 128)
-        for capability in ("dialer","sms","basic_math","system_settings","search","device_status","browse","copy_move_rename","share","safe_delete","storage_status","battery_status","thermal_status","hardware_diagnostics","channel_status","signed_metadata","permission_review","alarms","timers","stopwatch","world_clock","offline_notes","export","local_calendar","local_media","audio_recording","microphone_state","file_export","local_contacts","import_export","provider_bridge","package_catalog","signature_provenance","root_state","authorization_audit"):
+        self.assertEqual(set(summary["source_ready_apps"]), {"phone","messages","camera","calculator","settings","files","device_care","update","privacy","clock","notes","calendar","gallery","recorder","contacts","apps","swirroot"})
+        self.assertEqual(summary["source_ready_count"], 17)
+        self.assertEqual(summary["localized_catalogs"], 136)
+        for capability in ("dialer","sms","photo_capture","video_capture","camera_capability_report","basic_math","system_settings","search","device_status","browse","copy_move_rename","share","safe_delete","storage_status","battery_status","thermal_status","hardware_diagnostics","channel_status","signed_metadata","permission_review","alarms","timers","stopwatch","world_clock","offline_notes","export","local_calendar","local_media","audio_recording","microphone_state","file_export","local_contacts","import_export","provider_bridge","package_catalog","signature_provenance","root_state","authorization_audit"):
             self.assertIn(capability, summary["implemented_capabilities"])
         self.assertEqual(summary["remaining_target_capabilities"], ["access_history","albums","conversation_history","guided_enable","guided_unroot","in_call","mms","privacy_indicators","provider_bridge","recent_calls","recovery_handoff","scientific_math","staged_update_state","update_status"])
         self.assertIn("phone:in_call", summary["remaining_app_capabilities"])
@@ -26,6 +26,9 @@ class AndroidAppSourceTests(unittest.TestCase):
         self.assertIn("calendar:provider_bridge", summary["remaining_app_capabilities"])
         self.assertIn("apps:update_status", summary["remaining_app_capabilities"])
         self.assertNotIn("messages:sms", summary["remaining_app_capabilities"])
+        self.assertNotIn("camera:photo_capture", summary["remaining_app_capabilities"])
+        self.assertNotIn("camera:video_capture", summary["remaining_app_capabilities"])
+        self.assertNotIn("camera:camera_capability_report", summary["remaining_app_capabilities"])
         self.assertNotIn("contacts:provider_bridge", summary["remaining_app_capabilities"])
         self.assertFalse(summary["android_build_verified"]); self.assertFalse(summary["runtime_verified"]); self.assertFalse(summary["device_write_allowed"])
 
@@ -63,6 +66,30 @@ class AndroidAppSourceTests(unittest.TestCase):
         temp, product, registry = self._copy_fixture()
         with temp:
             activity = product / "apps/SwirMessages/src/org/swir/phoneos/messages/MainActivity.java"; activity.write_text(activity.read_text(encoding="utf-8").replace("Intent.ACTION_SENDTO", "Intent.ACTION_SEND", 1), encoding="utf-8")
+            with self.assertRaises(AndroidAppSourceError): validate_android_app_sources(product, registry)
+
+    def test_camera_permission_allowlist_is_exact(self):
+        temp, product, registry = self._copy_fixture()
+        with temp:
+            manifest = product / "apps/SwirCamera/AndroidManifest.xml"
+            source = manifest.read_text(encoding="utf-8")
+            manifest.write_text(source.replace("android.permission.CAMERA", "android.permission.RECORD_AUDIO", 1), encoding="utf-8")
+            with self.assertRaises(AndroidAppSourceError): validate_android_app_sources(product, registry)
+
+    def test_camera_must_keep_first_party_camera2_capture_path(self):
+        temp, product, registry = self._copy_fixture()
+        with temp:
+            activity = product / "apps/SwirCamera/src/org/swir/phoneos/camera/MainActivity.java"
+            source = activity.read_text(encoding="utf-8")
+            self.assertIn("CameraDevice.TEMPLATE_RECORD", source)
+            activity.write_text(source.replace("CameraDevice.TEMPLATE_RECORD", "CameraDevice.TEMPLATE_PREVIEW", 1), encoding="utf-8")
+            with self.assertRaises(AndroidAppSourceError): validate_android_app_sources(product, registry)
+
+    def test_camera_cannot_gain_audio_recording_path(self):
+        temp, product, registry = self._copy_fixture()
+        with temp:
+            activity = product / "apps/SwirCamera/src/org/swir/phoneos/camera/MainActivity.java"
+            activity.write_text(activity.read_text(encoding="utf-8") + "\n// MediaRecorder.AudioSource.MIC\n", encoding="utf-8")
             with self.assertRaises(AndroidAppSourceError): validate_android_app_sources(product, registry)
 
     def test_gallery_permission_allowlist_is_exact(self):

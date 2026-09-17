@@ -54,6 +54,12 @@ jobs:
           mkdir -p _messages-java-test
           javac -d _messages-java-test platform/aosp_product/apps/SwirMessages/src/org/swir/phoneos/messages/MessagePolicy.java platform/aosp_product/apps/SwirMessages/hosttest/MessagePolicyHostTest.java
           java -cp _messages-java-test org.swir.phoneos.messages.MessagePolicyHostTest
+      - name: Host-test SwirCamera capture policy
+        if: runner.os == 'Linux' && matrix.python == '3.14'
+        run: |
+          mkdir -p _camera-java-test
+          javac -d _camera-java-test platform/aosp_product/apps/SwirCamera/src/org/swir/phoneos/camera/CameraPolicy.java platform/aosp_product/apps/SwirCamera/hosttest/CameraPolicyHostTest.java
+          java -cp _camera-java-test org.swir.phoneos.camera.CameraPolicyHostTest
       - name: Host-test SwirCalculator pure Java engine
         if: runner.os == 'Linux' && matrix.python == '3.14'
         run: |

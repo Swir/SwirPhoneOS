@@ -1,0 +1,31 @@
+<resources>
+    <string name="app_name">Swir Camera</string>
+    <string name="status_waiting">Aguardando a câmara</string>
+    <string name="status_permission_required">É necessária permissão da câmara</string>
+    <string name="status_permission_granted">Permissão da câmara concedida</string>
+    <string name="status_permission_denied">Permissão da câmara negada</string>
+    <string name="status_opening">Abrindo a câmara</string>
+    <string name="status_open_failed">Não foi possível abrir a câmara</string>
+    <string name="status_ready">Câmara pronta</string>
+    <string name="status_disconnected">Câmara desligada</string>
+    <string name="status_camera_error">Erro da câmara %1$d</string>
+    <string name="status_preview_failed">Não foi possível iniciar a pré-visualização</string>
+    <string name="status_not_ready">A câmara não está pronta</string>
+    <string name="status_capturing_photo">Capturando foto</string>
+    <string name="status_photo_saved">Foto guardada em Imagens do SwirPhoneOS</string>
+    <string name="status_photo_failed">Não foi possível guardar a foto</string>
+    <string name="status_recording">Gravando vídeo sem áudio</string>
+    <string name="status_video_saved">Vídeo guardado em Filmes do SwirPhoneOS</string>
+    <string name="status_video_failed">Não foi possível guardar o vídeo</string>
+    <string name="status_video_too_short">Grave pelo menos meio segundo antes de parar</string>
+    <string name="take_photo">Foto</string>
+    <string name="start_video">Vídeo</string>
+    <string name="stop_video">Parar</string>
+    <string name="switch_camera">Trocar</string>
+    <string name="capability_waiting">O relatório da câmara aparecerá após a abertura</string>
+    <string name="capability_report">%1$d câmaras · %2$s · HW %3$d · Foto %4$dx%5$d · Vídeo %6$dx%7$d</string>
+    <string name="lens_back">traseira</string>
+    <string name="lens_front">frontal</string>
+    <string name="lens_external">externa</string>
+    <string name="lens_unknown">lente desconhecida</string>
+</resources>

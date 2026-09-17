@@ -1,0 +1,31 @@
+<resources>
+    <string name="app_name">Swir Camera</string>
+    <string name="status_waiting">Waiting for camera</string>
+    <string name="status_permission_required">Camera permission is required</string>
+    <string name="status_permission_granted">Camera permission granted</string>
+    <string name="status_permission_denied">Camera permission denied</string>
+    <string name="status_opening">Opening camera</string>
+    <string name="status_open_failed">Could not open camera</string>
+    <string name="status_ready">Camera ready</string>
+    <string name="status_disconnected">Camera disconnected</string>
+    <string name="status_camera_error">Camera error %1$d</string>
+    <string name="status_preview_failed">Preview could not start</string>
+    <string name="status_not_ready">Camera is not ready</string>
+    <string name="status_capturing_photo">Capturing photo</string>
+    <string name="status_photo_saved">Photo saved to SwirPhoneOS Pictures</string>
+    <string name="status_photo_failed">Photo could not be saved</string>
+    <string name="status_recording">Recording silent video</string>
+    <string name="status_video_saved">Video saved to SwirPhoneOS Movies</string>
+    <string name="status_video_failed">Video could not be saved</string>
+    <string name="status_video_too_short">Record at least half a second before stopping</string>
+    <string name="take_photo">Photo</string>
+    <string name="start_video">Video</string>
+    <string name="stop_video">Stop</string>
+    <string name="switch_camera">Switch</string>
+    <string name="capability_waiting">Camera capability report will appear after opening</string>
+    <string name="capability_report">%1$d cameras · %2$s · HW %3$d · Photo %4$dx%5$d · Video %6$dx%7$d</string>
+    <string name="lens_back">back</string>
+    <string name="lens_front">front</string>
+    <string name="lens_external">external</string>
+    <string name="lens_unknown">unknown lens</string>
+</resources>
