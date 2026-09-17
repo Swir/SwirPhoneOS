@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Swir Browser</string>
+    <string name="title">Swir Browser</string>
+    <string name="subtitle">متصفح مركز مع عناصر تحكم محلية وواضحة للخصوصية.</string>
+    <string name="address_hint">ابحث أو أدخل عنواناً</string>
+    <string name="go">انتقال</string>
+    <string name="back">رجوع</string>
+    <string name="forward">تقدم</string>
+    <string name="reload">إعادة تحميل</string>
+    <string name="share">مشاركة</string>
+    <string name="clear_data">الخصوصية</string>
+    <string name="status_ready">جاهز</string>
+    <string name="status_loading">جارٍ التحميل…</string>
+    <string name="status_blocked">تم حظر تنقل غير آمن</string>
+    <string name="error_invalid">لا يمكن فتح هذا العنوان بأمان.</string>
+    <string name="clear_confirm_title">مسح بيانات المتصفح؟</string>
+    <string name="clear_confirm_message">ستُحذف ملفات تعريف الارتباط وتخزين الويب وذاكرة التخزين المؤقت والسجل المحلي من Swir Browser.</string>
+    <string name="clear_confirm">مسح البيانات</string>
+    <string name="cancel">إلغاء</string>
+    <string name="toast_cleared">تم مسح بيانات المتصفح</string>
+</resources>
