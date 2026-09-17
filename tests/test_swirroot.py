@@ -4,6 +4,7 @@ from __future__ import annotations
 from copy import deepcopy
 import json
 from pathlib import Path
+import tempfile
 import unittest
 
 from swirphoneos.swirroot import SwirRootPolicyError, load_policy, public_policy_summary, validate_policy
@@ -56,6 +57,33 @@ class SwirRootPolicyTests(unittest.TestCase):
     def test_default_state_cannot_pretend_root_is_off_on_unverified_build(self):
         bad = deepcopy(self.data)
         bad["default_state"] = "ROOT_OFF"
+        with self.assertRaises(SwirRootPolicyError):
+            validate_policy(bad)
+
+    def test_policy_loader_rejects_duplicate_json_keys(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "policy.json"
+            path.write_text('{"schema_version":1,"schema_version":1}', encoding="utf-8")
+            with self.assertRaises(SwirRootPolicyError):
+                load_policy(path)
+
+    def test_policy_loader_rejects_symlink(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            target = root / "policy-real.json"
+            target.write_text(POLICY.read_text(encoding="utf-8"), encoding="utf-8")
+            link = root / "policy-link.json"
+            try:
+                link.symlink_to(target)
+            except (OSError, NotImplementedError):
+                self.skipTest("Symlinks are unavailable in this environment")
+            with self.assertRaises(SwirRootPolicyError):
+                load_policy(link)
+
+    def test_supported_build_ids_reject_control_characters(self):
+        bad = deepcopy(self.data)
+        bad["write_operations_enabled"] = True
+        bad["supported_builds"] = ["supported\nbuild"]
         with self.assertRaises(SwirRootPolicyError):
             validate_policy(bad)
 
