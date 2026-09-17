@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Swir Messages</string>
+    <string name="eyebrow">SWIRPHONEOS • MENSAGENS</string>
+    <string name="title">Escreva com privacidade</string>
+    <string name="subtitle">Escreva a mensagem localmente e depois encaminhe-a para a aplicação de mensagens do Android para o envio final.</string>
+    <string name="recipients_hint">Número do destinatário</string>
+    <string name="recipients_content_description">Número de telefone do destinatário</string>
+    <string name="message_hint">Mensagem</string>
+    <string name="message_content_description">Conteúdo da mensagem</string>
+    <string name="characters_remaining">Restam %1$d caracteres</string>
+    <string name="clear_draft">Limpar rascunho</string>
+    <string name="continue_to_messages">Continuar para Mensagens</string>
+    <string name="handoff_notice">Swir Messages nunca envia SMS silenciosamente. A aplicação de mensagens do sistema realiza o envio final. O histórico de conversas e MMS ainda não estão implementados.</string>
+    <string name="invalid_message">Introduza um destinatário válido e uma mensagem não vazia.</string>
+    <string name="no_messaging_app">Nenhuma aplicação de mensagens compatível está disponível.</string>
+    <string name="draft_cleared">Rascunho limpo.</string>
+</resources>

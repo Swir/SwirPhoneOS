@@ -14,10 +14,10 @@ class SystemAppRegistryTests(unittest.TestCase):
     def test_repository_manifest_contains_exact_essential_suite(self):
         registry = load_registry(MANIFEST); self.assertEqual(registry.app_ids, REQUIRED_APP_IDS); self.assertEqual(len(registry.apps), 20)
     def test_source_ready_is_distinct_from_android_runtime(self):
-        summary = public_registry_summary(load_registry(MANIFEST)); self.assertEqual(summary["source_ready"], 15); self.assertEqual(summary["runtime_implemented"], 0); self.assertEqual(summary["hardware_verified"], 0); self.assertGreaterEqual(summary["beta_critical_count"], 5); self.assertEqual(summary["beta_critical_runtime_implemented"], 0)
+        summary = public_registry_summary(load_registry(MANIFEST)); self.assertEqual(summary["source_ready"], 16); self.assertEqual(summary["runtime_implemented"], 0); self.assertEqual(summary["hardware_verified"], 0); self.assertGreaterEqual(summary["beta_critical_count"], 5); self.assertEqual(summary["beta_critical_runtime_implemented"], 0)
     def test_source_ready_apps_remain_below_runtime(self):
         states = {app.app_id: app.status for app in load_registry(MANIFEST).apps}
-        for app_id in ("phone","settings","calculator","files","device_care","update","privacy","clock","notes","calendar","gallery","recorder","contacts","apps","swirroot"): self.assertEqual(states[app_id], "ANDROID_SOURCE")
+        for app_id in ("phone","messages","settings","calculator","files","device_care","update","privacy","clock","notes","calendar","gallery","recorder","contacts","apps","swirroot"): self.assertEqual(states[app_id], "ANDROID_SOURCE")
     def test_unique_packages(self):
         registry = load_registry(MANIFEST); self.assertEqual(len({app.package for app in registry.apps}), len(registry.apps))
     def test_missing_essential_app_is_rejected(self):

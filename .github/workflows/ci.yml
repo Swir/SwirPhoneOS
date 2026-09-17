@@ -48,6 +48,12 @@ jobs:
           mkdir -p _phone-java-test
           javac -d _phone-java-test platform/aosp_product/apps/SwirPhone/src/org/swir/phoneos/phone/DialerPolicy.java platform/aosp_product/apps/SwirPhone/hosttest/DialerPolicyHostTest.java
           java -cp _phone-java-test org.swir.phoneos.phone.DialerPolicyHostTest
+      - name: Host-test SwirMessages compose policy
+        if: runner.os == 'Linux' && matrix.python == '3.14'
+        run: |
+          mkdir -p _messages-java-test
+          javac -d _messages-java-test platform/aosp_product/apps/SwirMessages/src/org/swir/phoneos/messages/MessagePolicy.java platform/aosp_product/apps/SwirMessages/hosttest/MessagePolicyHostTest.java
+          java -cp _messages-java-test org.swir.phoneos.messages.MessagePolicyHostTest
       - name: Host-test SwirCalculator pure Java engine
         if: runner.os == 'Linux' && matrix.python == '3.14'
         run: |

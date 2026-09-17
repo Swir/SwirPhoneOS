@@ -11,13 +11,17 @@ An app is not considered implemented merely because a package, screen or static 
 - `ANDROID_RUNTIME` — the app has been built into the pinned SwirPhoneOS product and exercised in the target Android runtime.
 - `HARDWARE_VERIFIED` — hardware-dependent capability has also passed exact-device evidence.
 
-The current registry contains 20 apps: **5 `HOST_CONTRACT`, 15 `ANDROID_SOURCE`, 0 `ANDROID_RUNTIME`, 0 `HARDWARE_VERIFIED`.**
+The current registry contains 20 apps: **4 `HOST_CONTRACT`, 16 `ANDROID_SOURCE`, 0 `ANDROID_RUNTIME`, 0 `HARDWARE_VERIFIED`.**
 
 ## Source-ready apps
 
 ### Swir Phone
 
 Swir Phone is a permission-free source-stage dialer surface with an original SwirPhoneOS keypad, accessibility labels and host-tested fail-closed dial-string policy. It normalizes bounded owner-entered phone strings and uses `Intent.ACTION_DIAL` to transfer the number to Android's authoritative system dialer, where the owner still confirms the call. It does not request `CALL_PHONE`, place calls directly, read the call log or claim default-dialer/in-call functionality. `phone:in_call` and `phone:recent_calls` remain explicitly unfinished until the exact Telecom/telephony stack and reference hardware are validated.
+
+### Swir Messages
+
+Swir Messages is a permission-free source-stage composer with app-private draft persistence, host-tested recipient/body bounds and an explicit `Intent.ACTION_SENDTO` + `smsto:` hand-off to an installed Android messaging app. It never calls `SmsManager`, does not request `SEND_SMS`, `READ_SMS` or `RECEIVE_SMS`, and does not silently send or read messages. `messages:mms` and `messages:conversation_history` remain explicitly unfinished until the exact platform telephony role/provider model and reference hardware are reviewed. The current `sms` source capability means safe owner-visible compose/handoff only; it is not a runtime or carrier-delivery claim.
 
 ### SwirCalculator
 
@@ -77,11 +81,11 @@ SwirRoot provides an original SwirPhoneOS owner UI, current build fingerprint, e
 
 The current source is intentionally fail-closed. It reports `UNAVAILABLE`, hard-disables its mutation backend and supported-build switch, requests no Android permissions and contains no process execution, boot-image modification, partition write, bootloader unlock, flash or exploit/bypass path. `guided_enable` and `guided_unroot` remain future capabilities until a legitimate exact-build backend and physical rollback/recovery proof exist.
 
-All fifteen source-ready apps use original SwirPhoneOS icons/UI and Android resources for English, Polish, Norwegian Bokmål, German, Spanish, French, Portuguese and Arabic. Layout direction follows the locale. Source validation checks package identity, exact per-app permission allowlists, localization-key/formatter/plural parity, product inclusion and complete bounded AOSP staging. It scans production Java for forbidden execution/network/broad-storage primitives and applies additional fail-closed constraints to SwirRoot.
+All sixteen source-ready apps use original SwirPhoneOS icons/UI and Android resources for English, Polish, Norwegian Bokmål, German, Spanish, French, Portuguese and Arabic. Layout direction follows the locale. Source validation checks package identity, exact per-app permission allowlists, localization-key/formatter/plural parity, product inclusion and complete bounded AOSP staging. It scans production Java for forbidden execution/network/broad-storage primitives and applies additional fail-closed constraints to SwirRoot.
 
-Source-summary schema v3 records missing capabilities by **app + capability**, not just capability name. This avoids false completion when multiple apps use the same capability label: SwirContacts can implement its provider bridge while Calendar's provider bridge remains open, and Swir Phone can implement its dialer hand-off while `phone:in_call` and `phone:recent_calls` remain open.
+Source-summary schema v3 records missing capabilities by **app + capability**, not just capability name. This avoids false completion when multiple apps use the same capability label: SwirContacts can implement its provider bridge while Calendar's provider bridge remains open; Swir Phone can implement its dialer hand-off while `phone:in_call` and `phone:recent_calls` remain open; and Swir Messages can implement safe SMS compose/handoff while `messages:mms` and `messages:conversation_history` remain open.
 
-None of the fifteen is `ANDROID_RUNTIME` until a real pinned-AOSP build and Cuttlefish exercise succeeds.
+None of the sixteen is `ANDROID_RUNTIME` until a real pinned-AOSP build and Cuttlefish exercise succeeds.
 
 ## Design principles
 
@@ -105,17 +109,17 @@ None of the fifteen is `ANDROID_RUNTIME` until a real pinned-AOSP build and Cutt
 
 **System/trust:** Swir Settings, Update, Backup, Privacy, Device Care, Apps/Software Center and SwirRoot.
 
-Phone/SMS/Camera and other hardware-backed functions are declared only after validation against the exact reference-device stack. Swir Phone can provide a source-ready keypad and user-visible dialer hand-off before telephony validation, but in-call/default-dialer/recent-call behavior remains unimplemented and unverified. Contacts can have meaningful provider-backed source before telephony validation, but its runtime behavior remains unverified until the built product is exercised.
+Phone/SMS/Camera and other hardware-backed functions are declared only after validation against the exact reference-device stack. Swir Phone can provide a source-ready keypad and user-visible dialer hand-off before telephony validation, but in-call/default-dialer/recent-call behavior remains unimplemented and unverified. Swir Messages can provide a safe source-ready composer and owner-visible send hand-off before telephony validation, but default-SMS role, message-provider history, MMS and carrier delivery remain unimplemented/unverified. Contacts can have meaningful provider-backed source before telephony validation, but its runtime behavior remains unverified until the built product is exercised.
 
 ## Delivery order
 
 ### Emulator-ready core
 
-Prioritize the current fifteen source-ready apps through the real AOSP build and Cuttlefish runtime gate before adding more package breadth. All fifteen must build, launch and pass focused checks for state, persistence, permission handling, accessibility, locale switching and RTL. Source-only additions do not receive weighted progress credit.
+Prioritize the current sixteen source-ready apps through the real AOSP build and Cuttlefish runtime gate before adding more package breadth. All sixteen must build, launch and pass focused checks for state, persistence, permission handling, accessibility, locale switching and RTL. Source-only additions do not receive weighted progress credit.
 
 ### Reference hardware
 
-Bring up the remaining Swir Phone telephony role/in-call/recent-call behavior, Messages, Camera and Backup as telephony, audio, camera, storage, sensors, power and encryption become validated for the reference device. Validate Contacts provider behavior, Recorder audio and Gallery media behavior on the same supported build before making physical-device claims.
+Bring up the remaining Swir Phone telephony role/in-call/recent-call behavior, Swir Messages default-role/provider/MMS behavior, Camera and Backup as telephony, audio, camera, storage, sensors, power and encryption become validated for the reference device. Validate Contacts provider behavior, Recorder audio and Gallery media behavior on the same supported build before making physical-device claims.
 
 ### Beta integration
 
