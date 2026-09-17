@@ -3,7 +3,6 @@ package org.swir.phoneos.messages;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
 import android.text.InputType;
@@ -41,36 +40,39 @@ public final class MainActivity extends Activity {
     private View buildUi() {
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
-        root.setPadding(dp(24), dp(24), dp(24), dp(24));
-        root.setBackgroundColor(Color.rgb(5, 13, 24));
+        int pagePadding = dim(R.dimen.swir_space_lg);
+        root.setPadding(pagePadding, pagePadding, pagePadding, pagePadding);
+        root.setBackgroundColor(getColor(R.color.swir_background));
 
-        root.addView(text(getString(R.string.eyebrow), 13, Color.rgb(74, 222, 255)), matchWrap());
-        root.addView(text(getString(R.string.title), 30, Color.WHITE), matchWrap());
-        root.addView(text(getString(R.string.subtitle), 15, Color.rgb(170, 191, 211)), matchWrap());
+        root.addView(text(getString(R.string.eyebrow), 13, getColor(R.color.swir_accent_cyan)), matchWrap());
+        root.addView(text(getString(R.string.title), 30, getColor(R.color.swir_text_primary)), matchWrap());
+        root.addView(text(getString(R.string.subtitle), 15, getColor(R.color.swir_text_secondary)), matchWrap());
 
         recipients = new EditText(this);
         recipients.setHint(R.string.recipients_hint);
-        recipients.setTextColor(Color.WHITE);
-        recipients.setHintTextColor(Color.rgb(115, 139, 160));
+        recipients.setTextColor(getColor(R.color.swir_text_primary));
+        recipients.setHintTextColor(getColor(R.color.swir_text_secondary));
         recipients.setSingleLine(true);
         recipients.setInputType(InputType.TYPE_CLASS_PHONE);
         recipients.setContentDescription(getString(R.string.recipients_content_description));
+        recipients.setMinHeight(dim(R.dimen.swir_touch_min));
         LinearLayout.LayoutParams recipientParams = new LinearLayout.LayoutParams(-1, dp(60));
-        recipientParams.topMargin = dp(22);
+        recipientParams.topMargin = dim(R.dimen.swir_space_lg);
         root.addView(recipients, recipientParams);
 
         body = new EditText(this);
         body.setHint(R.string.message_hint);
-        body.setTextColor(Color.WHITE);
-        body.setHintTextColor(Color.rgb(115, 139, 160));
+        body.setTextColor(getColor(R.color.swir_text_primary));
+        body.setHintTextColor(getColor(R.color.swir_text_secondary));
         body.setGravity(Gravity.TOP | Gravity.START);
         body.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_SENTENCES | InputType.TYPE_TEXT_FLAG_MULTI_LINE);
         body.setContentDescription(getString(R.string.message_content_description));
+        body.setMinHeight(dim(R.dimen.swir_touch_min));
         LinearLayout.LayoutParams bodyParams = new LinearLayout.LayoutParams(-1, 0, 1f);
-        bodyParams.topMargin = dp(12);
+        bodyParams.topMargin = dim(R.dimen.swir_space_sm);
         root.addView(body, bodyParams);
 
-        counter = text(getString(R.string.characters_remaining, MessagePolicy.MAX_BODY_LENGTH), 13, Color.rgb(127, 151, 173));
+        counter = text(getString(R.string.characters_remaining, MessagePolicy.MAX_BODY_LENGTH), 13, getColor(R.color.swir_text_secondary));
         counter.setGravity(Gravity.END);
         root.addView(counter, matchWrap());
 
@@ -84,7 +86,7 @@ public final class MainActivity extends Activity {
         actions.addView(handoff, weighted());
         root.addView(actions, matchWrap());
 
-        TextView notice = text(getString(R.string.handoff_notice), 13, Color.rgb(127, 151, 173));
+        TextView notice = text(getString(R.string.handoff_notice), 13, getColor(R.color.swir_text_secondary));
         notice.setGravity(Gravity.CENTER_HORIZONTAL);
         root.addView(notice, matchWrap());
 
@@ -146,18 +148,21 @@ public final class MainActivity extends Activity {
         view.setText(value);
         view.setTextSize(sp);
         view.setTextColor(color);
-        view.setPadding(0, dp(5), 0, dp(5));
+        int vertical = dim(R.dimen.swir_space_xs);
+        view.setPadding(0, vertical, 0, vertical);
         return view;
     }
 
     private Button actionButton(int textRes) {
         Button button = new Button(this);
         button.setText(textRes);
+        button.setMinHeight(dim(R.dimen.swir_touch_min));
         return button;
     }
 
     private LinearLayout.LayoutParams matchWrap() { return new LinearLayout.LayoutParams(-1, -2); }
     private LinearLayout.LayoutParams weighted() { return new LinearLayout.LayoutParams(0, -2, 1f); }
+    private int dim(int id) { return getResources().getDimensionPixelSize(id); }
     private int dp(int value) { return Math.round(value * getResources().getDisplayMetrics().density); }
 
     private static final class SimpleTextWatcher implements android.text.TextWatcher {
