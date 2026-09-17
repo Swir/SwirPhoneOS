@@ -13,6 +13,9 @@ from .build_preflight import BuildPreflightError, capture_host, evaluate_preflig
 from .cuttlefish_evidence import CuttlefishEvidenceCollector, CuttlefishEvidenceError
 from .diagnostics import DiagnosticError, ReadOnlyAdb
 from .fastboot import FastbootDiagnosticError, ReadOnlyFastboot
+from .gsi_contract import GsiContractError, public_gsi_contract_summary, validate_gsi_contract
+from .gsi_evidence import GsiEvidenceError, collect_gsi_build_evidence
+from .gsi_workspace import GsiWorkspaceError, make_gsi_workspace_plan, public_gsi_workspace_plan
 from .hardware_evidence import HardwareEvidenceError, assess_transaction_hardware, create_hardware_evidence, load_hardware_evidence, load_json_report as load_hardware_json
 from .i18n import LocalizationError, catalog_summary
 from .identity import IdentityAssessmentError, build_unified_report
@@ -36,10 +39,13 @@ def main(argv: list[str] | None = None) -> int:
     profiles=sub.add_parser("profiles",help="Validate and list metadata-only device profiles"); profiles.add_argument("--root",type=Path,default=Path("device_packs"))
     baseline=sub.add_parser("baseline",help="Validate and show the offline pinned AOSP baseline"); baseline.add_argument("--file",type=Path,default=Path("platform/aosp_baseline.json"))
     product_contract=sub.add_parser("product-contract",help="Validate the checked-in SwirPhoneOS Cuttlefish product integration contract"); product_contract.add_argument("--root",type=Path,default=Path("platform/aosp_product"))
+    gsi_contract=sub.add_parser("gsi-contract",help="Validate the checked-in SwirPhoneOS ARM64 GSI source contract without claiming compatibility"); gsi_contract.add_argument("--root",type=Path,default=Path("platform/aosp_product"))
     build_preflight=sub.add_parser("build-preflight",help="Inspect the local build host without installing/downloading/changing anything"); build_preflight.add_argument("--workspace",type=Path,default=Path.cwd())
     aosp_plan=sub.add_parser("aosp-plan",help="Generate an argv-only exact-tag AOSP sync/stage/build plan without executing it"); aosp_plan.add_argument("--workspace",type=Path,required=True); aosp_plan.add_argument("--jobs",type=int,default=8); aosp_plan.add_argument("--baseline",type=Path,default=Path("platform/aosp_baseline.json")); aosp_plan.add_argument("--product-root",type=Path,default=Path("platform/aosp_product"))
+    gsi_plan=sub.add_parser("gsi-plan",help="Generate an exact-tag ARM64 GSI sync/stage/systemimage plan without executing it"); gsi_plan.add_argument("--workspace",type=Path,required=True); gsi_plan.add_argument("--jobs",type=int,default=8); gsi_plan.add_argument("--baseline",type=Path,default=Path("platform/aosp_baseline.json")); gsi_plan.add_argument("--product-root",type=Path,default=Path("platform/aosp_product"))
     resolved_manifest=sub.add_parser("aosp-manifest",help="Validate a captured repo manifest -r snapshot and report SHA-256"); resolved_manifest.add_argument("--file",type=Path,required=True)
     build_evidence=sub.add_parser("build-evidence",help="Hash a completed local SwirPhoneOS AOSP product and bind it to the pinned manifest"); build_evidence.add_argument("--workspace",type=Path,required=True); build_evidence.add_argument("--manifest",type=Path,required=True); build_evidence.add_argument("--baseline",type=Path,default=Path("platform/aosp_baseline.json"))
+    gsi_evidence=sub.add_parser("gsi-build-evidence",help="Hash a completed local SwirPhoneOS ARM64 GSI system image and bind it to the pinned manifest"); gsi_evidence.add_argument("--workspace",type=Path,required=True); gsi_evidence.add_argument("--manifest",type=Path,required=True); gsi_evidence.add_argument("--baseline",type=Path,default=Path("platform/aosp_baseline.json"))
     evidence_bundle=sub.add_parser("evidence-bundle",help="Bind completed build evidence to completed Cuttlefish runtime evidence"); evidence_bundle.add_argument("--build",type=Path,required=True); evidence_bundle.add_argument("--runtime",type=Path,required=True)
     run_evidence=sub.add_parser("aosp-run-evidence",help="Bind preflight, source, staging, build and optional runtime/smoke evidence from one exact AOSP run"); run_evidence.add_argument("--source-commit",required=True); run_evidence.add_argument("--preflight",type=Path,required=True); run_evidence.add_argument("--plan",type=Path,required=True); run_evidence.add_argument("--manifest",type=Path,required=True); run_evidence.add_argument("--stage",type=Path,required=True); run_evidence.add_argument("--post-stage",type=Path,required=True); run_evidence.add_argument("--build",type=Path,required=True); run_evidence.add_argument("--app-manifest",type=Path,default=Path("system_apps/manifest.json")); run_evidence.add_argument("--runtime",type=Path,default=None); run_evidence.add_argument("--smoke",type=Path,default=None); run_evidence.add_argument("--bundle",type=Path,default=None)
     stage_product=sub.add_parser("stage-product",help="Plan or explicitly stage manifest-whitelisted Swir AOSP product/app source"); stage_product.add_argument("--workspace",type=Path,required=True); stage_product.add_argument("--product-root",type=Path,default=Path("platform/aosp_product")); stage_product.add_argument("--execute",action="store_true")
@@ -64,10 +70,13 @@ def main(argv: list[str] | None = None) -> int:
             registry=discover_profiles(args.root); result={"schema_version":1,"profile_count":len(registry),"profiles":[public_profile_summary(p) for p in registry],"flash_allowed":False}
         elif args.command=="baseline": result=public_baseline_summary(load_baseline(args.file))
         elif args.command=="product-contract": result=public_product_summary(validate_product_contract(args.root))
+        elif args.command=="gsi-contract": result=public_gsi_contract_summary(validate_gsi_contract(args.root))
         elif args.command=="build-preflight": result=evaluate_preflight(capture_host(args.workspace.resolve()))
         elif args.command=="aosp-plan": result=public_workspace_plan(make_workspace_plan(load_baseline(args.baseline),validate_product_contract(args.product_root),args.workspace,jobs=args.jobs))
+        elif args.command=="gsi-plan": result=public_gsi_workspace_plan(make_gsi_workspace_plan(load_baseline(args.baseline),validate_gsi_contract(args.product_root),args.workspace,jobs=args.jobs))
         elif args.command=="aosp-manifest": result=public_manifest_evidence(validate_resolved_manifest(args.file))
         elif args.command=="build-evidence": result=collect_build_evidence(args.workspace,args.manifest,args.baseline)
+        elif args.command=="gsi-build-evidence": result=collect_gsi_build_evidence(args.workspace,args.manifest,args.baseline)
         elif args.command=="evidence-bundle": result=create_evidence_bundle(load_json_report(args.build),load_json_report(args.runtime))
         elif args.command=="aosp-run-evidence": result=collect_aosp_run_evidence(source_commit=args.source_commit,preflight_path=args.preflight,plan_path=args.plan,manifest_path=args.manifest,stage_path=args.stage,post_stage_path=args.post_stage,build_path=args.build,app_manifest_path=args.app_manifest,runtime_path=args.runtime,smoke_path=args.smoke,bundle_path=args.bundle)
         elif args.command=="stage-product": validate_product_contract(args.product_root); result=stage_product_tree(args.product_root,args.workspace,execute=args.execute)
@@ -82,6 +91,6 @@ def main(argv: list[str] | None = None) -> int:
         elif args.command=="root-policy": result=public_policy_summary(load_policy(args.policy))
         else: result=evaluate(load_ledger(args.ledger))
         print(json.dumps(result,indent=2,ensure_ascii=True)); return 2 if args.command=="gate" and not result["beta_release_allowed"] else 0
-    except (AndroidAppSourceError,AospRunEvidenceError,AospWorkspaceError,BuildEvidenceError,BuildPreflightError,CuttlefishEvidenceError,DiagnosticError,FastbootDiagnosticError,HardwareEvidenceError,IdentityAssessmentError,LocalizationError,PlatformBaselineError,ProductContractError,ProfileError,SwirRootPolicyError,SystemAppRegistryError,TransactionEvidenceError,OSError,ValueError):
+    except (AndroidAppSourceError,AospRunEvidenceError,AospWorkspaceError,BuildEvidenceError,BuildPreflightError,CuttlefishEvidenceError,DiagnosticError,FastbootDiagnosticError,GsiContractError,GsiEvidenceError,GsiWorkspaceError,HardwareEvidenceError,IdentityAssessmentError,LocalizationError,PlatformBaselineError,ProductContractError,ProfileError,SwirRootPolicyError,SystemAppRegistryError,TransactionEvidenceError,OSError,ValueError):
         print("Operation failed: check project metadata or the trusted Android SDK tool path, USB mode, AOSP workspace/evidence/app source, read-only hardware/transaction evidence, host workspace and single-device connection. Raw errors are withheld for privacy.",file=sys.stderr); return 1
 if __name__=="__main__": raise SystemExit(main())
