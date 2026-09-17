@@ -1,22 +1,28 @@
 """Read-only device profile registry for SwirPhoneOS.
 
-Schema v1 is intentionally metadata-only. It cannot authorize flashing.
+Schema v1 is intentionally metadata-only. It cannot authorize flashing, claim a
+verified handset, or carry evidence that would imply a supported device. A
+future support-capable schema must be introduced explicitly together with the
+physical evidence contract that can justify those stronger claims.
 """
 from __future__ import annotations
 
 from dataclasses import dataclass
+import hashlib
 import json
 from pathlib import Path
 import re
 
 PROFILE_ID = re.compile(r"[a-z0-9][a-z0-9._-]{0,63}/[a-z0-9][a-z0-9._-]{0,63}\Z")
 TOKEN = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,127}\Z")
-ALLOWED_STATUS = {"PLANNED_NOT_SUPPORTED", "PROFILED_NOT_VERIFIED", "VERIFIED"}
+V1_ALLOWED_STATUS = {"PLANNED_NOT_SUPPORTED", "PROFILED_NOT_VERIFIED"}
 REQUIRED_KEYS = {
     "schema_version", "id", "display_name", "codename", "model_allowlist", "status",
     "flash_enabled", "firmware_baseline", "verified_partition_map", "validated_builds",
     "flash_operations", "recovery_evidence", "notes", "sources",
 }
+MAX_PROFILE_BYTES = 262_144
+MAX_PROFILE_COUNT = 256
 
 
 class ProfileError(ValueError):
@@ -36,6 +42,15 @@ class DeviceProfile:
     @property
     def flash_allowed(self) -> bool:
         return False
+
+
+def _strict_object(pairs: list[tuple[str, object]]) -> dict[str, object]:
+    result: dict[str, object] = {}
+    for key, value in pairs:
+        if key in result:
+            raise ProfileError(f"Duplicate JSON key: {key}")
+        result[key] = value
+    return result
 
 
 def _text(value: object, field: str, *, token: bool = False, limit: int = 256) -> str:
@@ -73,8 +88,8 @@ def validate_profile(data: object) -> DeviceProfile:
         raise ProfileError("model_allowlist contains duplicates.")
 
     status = _text(data["status"], "status")
-    if status not in ALLOWED_STATUS:
-        raise ProfileError("Unknown profile status.")
+    if status not in V1_ALLOWED_STATUS:
+        raise ProfileError("Schema v1 cannot claim a verified or supported device status.")
 
     if not isinstance(data["flash_enabled"], bool):
         raise ProfileError("flash_enabled must be boolean.")
@@ -87,16 +102,15 @@ def validate_profile(data: object) -> DeviceProfile:
     if baseline is not None:
         baseline = _text(baseline, "firmware_baseline", limit=256)
 
-    partition_map = data["verified_partition_map"]
-    if partition_map is not None and not isinstance(partition_map, dict):
-        raise ProfileError("verified_partition_map must be null or an object.")
-
-    for field in ("validated_builds", "recovery_evidence"):
-        value = data[field]
-        if not isinstance(value, list) or len(value) > 256:
-            raise ProfileError(f"{field} must be a bounded list.")
-        for item in value:
-            _text(item, f"{field} entry", limit=512)
+    # These field names deliberately reserve space for a later evidence-backed
+    # schema. In v1 they must remain empty so metadata cannot masquerade as
+    # physical verification or tested recovery/build support.
+    if data["verified_partition_map"] is not None:
+        raise ProfileError("Schema v1 cannot claim a verified partition map.")
+    if data["validated_builds"] != []:
+        raise ProfileError("Schema v1 cannot claim validated device builds.")
+    if data["recovery_evidence"] != []:
+        raise ProfileError("Schema v1 cannot carry recovery verification evidence.")
 
     _text(data["notes"], "notes", limit=2048)
     sources = data["sources"]
@@ -108,6 +122,8 @@ def validate_profile(data: object) -> DeviceProfile:
         if not source.startswith("https://"):
             raise ProfileError("Profile sources must use HTTPS.")
         clean_sources.append(source)
+    if len(set(clean_sources)) != len(clean_sources):
+        raise ProfileError("Profile sources contain duplicates.")
 
     return DeviceProfile(
         profile_id=profile_id,
@@ -120,30 +136,61 @@ def validate_profile(data: object) -> DeviceProfile:
     )
 
 
-def load_profile(path: Path) -> DeviceProfile:
-    if not path.is_file() or path.name != "profile.json":
-        raise ProfileError("Expected an existing profile.json file.")
+def load_profile_snapshot(path: Path) -> tuple[DeviceProfile, str]:
+    """Load one exact regular profile file and return its raw-file SHA-256.
+
+    The digest lets later evidence bind to the precise reviewed profile bytes
+    rather than only to a mutable profile id.
+    """
+    if path.name != "profile.json" or path.is_symlink() or not path.is_file():
+        raise ProfileError("Expected an existing regular non-symlink profile.json file.")
     try:
-        text = path.read_text(encoding="utf-8")
-        if len(text) > 262144:
-            raise ProfileError("Profile file is oversized.")
-        data = json.loads(text)
+        size = path.stat().st_size
+        if size <= 0 or size > MAX_PROFILE_BYTES:
+            raise ProfileError("Profile file is empty or oversized.")
+        raw = path.read_bytes()
+        if len(raw) != size:
+            raise ProfileError("Profile file changed while it was being read.")
+        text = raw.decode("utf-8")
+        data = json.loads(text, object_pairs_hook=_strict_object)
+    except ProfileError:
+        raise
     except (OSError, UnicodeError, json.JSONDecodeError) as exc:
         raise ProfileError("Profile could not be read as strict UTF-8 JSON.") from exc
-    return validate_profile(data)
+    return validate_profile(data), hashlib.sha256(raw).hexdigest()
+
+
+def load_profile(path: Path) -> DeviceProfile:
+    profile, _ = load_profile_snapshot(path)
+    return profile
 
 
 def discover_profiles(root: Path) -> list[DeviceProfile]:
-    if not root.is_dir():
-        raise ProfileError("Device profile root does not exist.")
-    profiles = [load_profile(path) for path in sorted(root.rglob("profile.json"))]
-    if not profiles:
+    if root.is_symlink() or not root.is_dir():
+        raise ProfileError("Device profile root must be an existing regular directory, not a symlink.")
+    paths = sorted(root.rglob("profile.json"))
+    if not paths:
         raise ProfileError("No device profiles were found.")
+    if len(paths) > MAX_PROFILE_COUNT:
+        raise ProfileError("Device profile registry exceeds the bounded profile count.")
+
+    profiles: list[DeviceProfile] = []
     seen_ids: set[str] = set()
-    for profile in profiles:
+    for path in paths:
+        profile = load_profile(path)
+        try:
+            relative = path.relative_to(root)
+        except ValueError as exc:
+            raise ProfileError("Device profile escaped the registry root.") from exc
+        if len(relative.parts) != 3 or relative.parts[-1] != "profile.json":
+            raise ProfileError("Device profiles must use vendor/codename/profile.json layout.")
+        expected_id = f"{relative.parts[0]}/{relative.parts[1]}"
+        if profile.profile_id != expected_id:
+            raise ProfileError("Device profile id does not match its vendor/codename registry path.")
         if profile.profile_id in seen_ids:
             raise ProfileError("Duplicate device profile id.")
         seen_ids.add(profile.profile_id)
+        profiles.append(profile)
     return profiles
 
 
