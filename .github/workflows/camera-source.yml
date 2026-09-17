@@ -25,6 +25,8 @@ jobs:
         run: python -m unittest discover -s tests -p 'test_android_i18n.py' -v
       - name: Validate Android app source regressions
         run: python -m unittest discover -s tests -p 'test_android_apps.py' -v
+      - name: Validate SwirCamera source safety contract
+        run: python -m unittest discover -s tests -p 'test_camera_source_contract.py' -v
       - name: Host-test SwirCamera capture policy
         run: |
           mkdir -p _camera-java-test
