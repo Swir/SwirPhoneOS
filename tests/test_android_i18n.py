@@ -119,6 +119,17 @@ class AndroidLocalizationTests(unittest.TestCase):
             with self.assertRaises(AndroidLocalizationError):
                 validate_android_localization(product, registry)
 
+    def test_clock_display_skeletons_are_nontranslatable_resources(self):
+        activity = Path("platform/aosp_product/apps/SwirClock/src/org/swir/phoneos/clock/MainActivity.java").read_text(encoding="utf-8")
+        invariants = Path("platform/aosp_product/apps/SwirClock/res/values/invariants.xml").read_text(encoding="utf-8")
+        self.assertNotIn('setText("00:00:00")', activity)
+        self.assertNotIn('text("00:00:00"', activity)
+        self.assertNotIn('text("--:--"', activity)
+        self.assertIn("R.string.duration_zero", activity)
+        self.assertIn("R.string.clock_placeholder", activity)
+        self.assertIn('name="duration_zero" translatable="false"', invariants)
+        self.assertIn('name="clock_placeholder" translatable="false"', invariants)
+
 
 if __name__ == "__main__":
     unittest.main()
