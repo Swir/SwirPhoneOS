@@ -29,6 +29,7 @@ class BuildEvidenceTests(unittest.TestCase):
                 "ro.build.id=CP2A.260605.016",
                 "ro.build.version.release=17",
                 "ro.build.version.sdk=37",
+                "ro.build.version.security_patch=2026-06-05",
                 "ro.build.type=userdebug",
             )) + "\n",
             encoding="utf-8",
@@ -51,12 +52,34 @@ class BuildEvidenceTests(unittest.TestCase):
             self.assertIn("boot.img", artifacts)
             self.assertEqual(artifacts["boot.img"]["sha256"], hashlib.sha256(b"boot-image").hexdigest())
             self.assertEqual(report["build"]["api_level"], "37")
+            self.assertEqual(report["build"]["security_patch"], "2026-06-05")
+            self.assertEqual(report["build"]["build_id"], report["baseline_identity"]["build_id"])
 
     def test_missing_required_image_is_rejected(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
             workspace, manifest = self._workspace(root)
             (workspace / "out" / "target" / "product" / "swirphoneos_cf_x86_64" / "boot.img").unlink()
+            with self.assertRaises(BuildEvidenceError):
+                collect_build_evidence(workspace, manifest, Path("platform/aosp_baseline.json"))
+
+    def test_wrong_build_id_is_rejected(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            workspace, manifest = self._workspace(root)
+            path = workspace / "out" / "target" / "product" / "swirphoneos_cf_x86_64" / "system" / "build.prop"
+            text = path.read_text(encoding="utf-8").replace("ro.build.id=CP2A.260605.016", "ro.build.id=WRONG.000000.000")
+            path.write_text(text, encoding="utf-8")
+            with self.assertRaises(BuildEvidenceError):
+                collect_build_evidence(workspace, manifest, Path("platform/aosp_baseline.json"))
+
+    def test_wrong_security_patch_is_rejected(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            workspace, manifest = self._workspace(root)
+            path = workspace / "out" / "target" / "product" / "swirphoneos_cf_x86_64" / "system" / "build.prop"
+            text = path.read_text(encoding="utf-8").replace("2026-06-05", "2026-05-05")
+            path.write_text(text, encoding="utf-8")
             with self.assertRaises(BuildEvidenceError):
                 collect_build_evidence(workspace, manifest, Path("platform/aosp_baseline.json"))
 
