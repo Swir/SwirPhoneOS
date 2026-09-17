@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="clock_placeholder" translatable="false">--:--</string>
+    <string name="duration_zero" translatable="false">00:00:00</string>
+</resources>
