@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+### Source-ready Swir Phone dialer
+
+Added `SwirPhone` as meaningful first-party Android source with an original dark/cyan keypad, dedicated icon, accessibility labels and EN/PL/NB/DE/ES/FR/PT/AR resources. A dependency-free `DialerPolicy` is host-tested for bounded fail-closed normalization, keypad append/erase behavior and malformed input rejection. The app is permission-free and uses the user-visible `Intent.ACTION_DIAL` hand-off rather than `CALL_PHONE` or a direct Telecom call path.
+
+Extended Android source validation with an exact Swir Phone source contract that rejects direct-call permission/path drift, preserves complete staging, and tracks `dialer` as implemented while leaving `phone:in_call` and `phone:recent_calls` explicitly unfinished. The Cuttlefish product and exact source staging now include Swir Phone. CI runs the pure-Java dial policy in both the main Linux/Python 3.14 path and a focused source check. Registry state is **15 `ANDROID_SOURCE`, 5 `HOST_CONTRACT`, 0 `ANDROID_RUNTIME`, 0 hardware-verified**.
+
+This is source-level communication-app progress only. It does not claim a default-dialer role, working in-call UI, call history, modem/IMS/telephony compatibility, AOSP build/boot or physical-device verification. Weighted progress therefore remains **2%**, 1/10 milestones, and Beta remains **0/9**.
+
 ### Swir Contacts, local Software Center and per-app capability accounting
 
 Added `SwirContacts` as meaningful Android source. It requests exactly `READ_CONTACTS`, browses/searches the local Android ContactsProvider, delegates create/edit to Android's authoritative contact UI, provides explicit user-selected vCard import hand-off and exports a selected provider vCard only to a user-selected document. It does not request `WRITE_CONTACTS`, storage or network access. A dependency-free `ContactPolicy` is host-tested for search, provider lookup-key validation and safe export naming.
