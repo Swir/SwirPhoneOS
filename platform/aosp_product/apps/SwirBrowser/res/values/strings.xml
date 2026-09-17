@@ -1,0 +1,17 @@
+<resources>
+    <string name="app_name">Swir Browser</string>
+    <string name="title">Swir Browser</string>
+    <string name="subtitle">HTTPS-first browsing with conservative privacy defaults</string>
+    <string name="address_hint">Address or search</string>
+    <string name="go">Go</string>
+    <string name="back">Back</string>
+    <string name="forward">Forward</string>
+    <string name="reload">Reload</string>
+    <string name="javascript">Enable JavaScript for this session</string>
+    <string name="clear_data">Clear</string>
+    <string name="invalid_address">Enter a valid HTTPS address or search phrase.</string>
+    <string name="privacy_on">Privacy mode: JavaScript and DOM storage are off; third-party cookies are blocked.</string>
+    <string name="privacy_off">JavaScript is enabled for this session. Third-party cookies remain blocked.</string>
+    <string name="data_cleared">Browser cache, history, cookies and web storage cleared.</string>
+    <string name="blocked_url">Blocked non-HTTPS or unsupported navigation.</string>
+</resources>

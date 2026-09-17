@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "files": [
+    {"source":"apps/SwirCamera/Android.bp","destination":"vendor/swir/apps/SwirCamera/Android.bp"},
+    {"source":"apps/SwirCamera/AndroidManifest.xml","destination":"vendor/swir/apps/SwirCamera/AndroidManifest.xml"},
+    {"source":"apps/SwirCamera/src/org/swir/phoneos/camera/CameraPolicy.java","destination":"vendor/swir/apps/SwirCamera/src/org/swir/phoneos/camera/CameraPolicy.java"},
+    {"source":"apps/SwirCamera/src/org/swir/phoneos/camera/MainActivity.java","destination":"vendor/swir/apps/SwirCamera/src/org/swir/phoneos/camera/MainActivity.java"},
+    {"source":"apps/SwirCamera/res/drawable/ic_camera.xml","destination":"vendor/swir/apps/SwirCamera/res/drawable/ic_camera.xml"},
+    {"source":"apps/SwirCamera/res/values/strings.xml","destination":"vendor/swir/apps/SwirCamera/res/values/strings.xml"},
+    {"source":"apps/SwirCamera/res/values-pl/strings.xml","destination":"vendor/swir/apps/SwirCamera/res/values-pl/strings.xml"},
+    {"source":"apps/SwirCamera/res/values-nb/strings.xml","destination":"vendor/swir/apps/SwirCamera/res/values-nb/strings.xml"},
+    {"source":"apps/SwirCamera/res/values-de/strings.xml","destination":"vendor/swir/apps/SwirCamera/res/values-de/strings.xml"},
+    {"source":"apps/SwirCamera/res/values-es/strings.xml","destination":"vendor/swir/apps/SwirCamera/res/values-es/strings.xml"},
+    {"source":"apps/SwirCamera/res/values-fr/strings.xml","destination":"vendor/swir/apps/SwirCamera/res/values-fr/strings.xml"},
+    {"source":"apps/SwirCamera/res/values-pt/strings.xml","destination":"vendor/swir/apps/SwirCamera/res/values-pt/strings.xml"},
+    {"source":"apps/SwirCamera/res/values-ar/strings.xml","destination":"vendor/swir/apps/SwirCamera/res/values-ar/strings.xml"}
+  ]
+}

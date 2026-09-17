@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "files": [
+    {"source":"apps/SwirBrowser/Android.bp","destination":"vendor/swir/apps/SwirBrowser/Android.bp"},
+    {"source":"apps/SwirBrowser/AndroidManifest.xml","destination":"vendor/swir/apps/SwirBrowser/AndroidManifest.xml"},
+    {"source":"apps/SwirBrowser/src/org/swir/phoneos/browser/BrowserPolicy.java","destination":"vendor/swir/apps/SwirBrowser/src/org/swir/phoneos/browser/BrowserPolicy.java"},
+    {"source":"apps/SwirBrowser/src/org/swir/phoneos/browser/MainActivity.java","destination":"vendor/swir/apps/SwirBrowser/src/org/swir/phoneos/browser/MainActivity.java"},
+    {"source":"apps/SwirBrowser/res/drawable/ic_browser.xml","destination":"vendor/swir/apps/SwirBrowser/res/drawable/ic_browser.xml"},
+    {"source":"apps/SwirBrowser/res/values/strings.xml","destination":"vendor/swir/apps/SwirBrowser/res/values/strings.xml"},
+    {"source":"apps/SwirBrowser/res/values-pl/strings.xml","destination":"vendor/swir/apps/SwirBrowser/res/values-pl/strings.xml"},
+    {"source":"apps/SwirBrowser/res/values-nb/strings.xml","destination":"vendor/swir/apps/SwirBrowser/res/values-nb/strings.xml"},
+    {"source":"apps/SwirBrowser/res/values-de/strings.xml","destination":"vendor/swir/apps/SwirBrowser/res/values-de/strings.xml"},
+    {"source":"apps/SwirBrowser/res/values-es/strings.xml","destination":"vendor/swir/apps/SwirBrowser/res/values-es/strings.xml"},
+    {"source":"apps/SwirBrowser/res/values-fr/strings.xml","destination":"vendor/swir/apps/SwirBrowser/res/values-fr/strings.xml"},
+    {"source":"apps/SwirBrowser/res/values-pt/strings.xml","destination":"vendor/swir/apps/SwirBrowser/res/values-pt/strings.xml"},
+    {"source":"apps/SwirBrowser/res/values-ar/strings.xml","destination":"vendor/swir/apps/SwirBrowser/res/values-ar/strings.xml"}
+  ]
+}

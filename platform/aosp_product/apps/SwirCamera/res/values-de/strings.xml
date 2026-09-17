@@ -1,0 +1,14 @@
+<resources>
+    <string name="app_name">Swir Camera</string>
+    <string name="title">Swir Camera</string>
+    <string name="subtitle">Kamerafähigkeiten prüfen und sichere Aufnahmeübergabe</string>
+    <string name="source_stage_notice">Direkte Camera2-Aufnahme wird noch nicht beansprucht. Diese Quellstufe zeigt reale Kamerafähigkeiten und öffnet die sichtbare Android-Aufnahmeoberfläche.</string>
+    <string name="refresh">Aktualisieren</string>
+    <string name="photo_handoff">Foto</string>
+    <string name="video_handoff">Video</string>
+    <string name="capability_empty">Keine Kamerafähigkeitsdaten verfügbar.</string>
+    <string name="camera_row">Kamera %1$s · %2$s</string>
+    <string name="size_row">Größtes JPEG: %1$d × %2$d · %3$s MP</string>
+    <string name="handoff_unavailable">Keine kompatible Aufnahme-App verfügbar.</string>
+    <string name="capability_error">Prüfung der Kamerafähigkeiten fehlgeschlagen.</string>
+</resources>

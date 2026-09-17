@@ -1,0 +1,14 @@
+<resources>
+    <string name="app_name">Swir Camera</string>
+    <string name="title">Swir Camera</string>
+    <string name="subtitle">فحص قدرات الكاميرا وتسليم آمن لواجهة الالتقاط</string>
+    <string name="source_stage_notice">لا ندّعي بعد الالتقاط المباشر عبر Camera2. تعرض هذه المرحلة قدرات الكاميرا الفعلية وتفتح واجهة الالتقاط المرئية في أندرويد.</string>
+    <string name="refresh">تحديث</string>
+    <string name="photo_handoff">صورة</string>
+    <string name="video_handoff">فيديو</string>
+    <string name="capability_empty">لا تتوفر بيانات عن قدرات الكاميرا.</string>
+    <string name="camera_row">الكاميرا %1$s · %2$s</string>
+    <string name="size_row">أكبر JPEG: %1$d × %2$d · %3$s MP</string>
+    <string name="handoff_unavailable">لا يتوفر تطبيق التقاط متوافق.</string>
+    <string name="capability_error">فشل فحص قدرات الكاميرا.</string>
+</resources>
