@@ -17,7 +17,9 @@ Version: **0.0.2.dev0 + unreleased Android-source/platform hardening**. Updated:
 | AOSP failure evidence | Failed runs retain bounded diagnostics and remain `FAILED_NOT_READY`; no promotion/write/root flags can become true |
 | Cuttlefish runtime evidence | Exact product/device/manufacturer/API/build-type/fingerprint/package/launcher collector exists; not yet run against a built SwirPhoneOS image |
 | Cuttlefish app launch smoke | Exact-identity emulator gate + package-local launch + resumed-activity confirmation implemented for all source-ready apps; not yet exercised against a built image |
-| Cuttlefish product | `PRODUCT_PACKAGES` now includes all 20 essential first-party apps; **not built or booted** |
+| Cuttlefish product | `PRODUCT_PACKAGES` includes all 20 essential first-party apps; **not built or booted** |
+| ARM64 GSI product | Source contract registered as `swirphoneos_gsi_arm64-aosp_current-userdebug`; standard AOSP ARM64 + GSI-release inheritance, all 20 apps, exact staging and `systemimage` plan implemented; **not built, Treble/VTS-validated or physically tested** |
+| ARM64 GSI build evidence | Manual-only self-hosted workflow and fail-closed `system.img` SHA-256/build-identity collector implemented; compatibility/install/rollback/write/release flags remain false; no successful GSI build evidence recorded |
 | Swir Phone | `ANDROID_SOURCE`; permission-free keypad + explicit `ACTION_DIAL`; in-call/default-role/recent calls open |
 | Swir Contacts | `ANDROID_SOURCE`; exactly `READ_CONTACTS`, scoped provider browse/search, Android-managed create/edit, vCard import/export; runtime unverified |
 | Swir Messages | `ANDROID_SOURCE`; permission-free local compose/draft + explicit `ACTION_SENDTO`/`smsto:`; MMS/history/runtime/carrier behavior open |
@@ -44,7 +46,8 @@ Version: **0.0.2.dev0 + unreleased Android-source/platform hardening**. Updated:
 | System apps | 20-app registry: **20 `ANDROID_SOURCE`, 0 `HOST_CONTRACT`, 0 `ANDROID_RUNTIME`, 0 hardware-verified** |
 | SwirRoot host policy | `write_operations_enabled=false`; supported root builds = 0; exploit/bypass methods forbidden |
 | Resolved full AOSP source manifest | Not captured from a real synchronized workspace |
-| Android/GSI image | Not built |
+| Android/Cuttlefish image | Not built |
+| ARM64 GSI image | Not built; source/plan/evidence tooling exists, but `gsi_validation` remains incomplete |
 | Cuttlefish boot | Not performed; no `sys.boot_completed=1` evidence |
 | Physical avicii support | Not validated; no real evidence set captured/reviewed |
 | Backup/install/recovery/stock restore | Evidence foundations and source-stage document backup exist; no verified partition map, write engine, restore orchestration or physical restore test |
@@ -52,4 +55,4 @@ Version: **0.0.2.dev0 + unreleased Android-source/platform hardening**. Updated:
 | Project ledger | **2%**, 1/10 weighted milestones; **Beta 0/9** |
 | Beta Release | Blocked; no release published |
 
-Host CI can verify Python contracts, evidence rejection logic, desktop packaging, exact staging-tree closure, read-only hardware correlation, local transaction safety, Cuttlefish smoke parsing, Android source localization, exact permission allowlists and pure-Java policies for the complete 20-app source suite. It cannot establish Android runtime compatibility, telephony/carrier delivery, direct camera capture, working root, recovery safety or hardware support. AOSP/platform credit remains blocked until the pinned source synchronizes and builds; emulator credit remains blocked until that exact image boots and reviewed runtime plus app-smoke evidence is recorded. Completing source breadth grants no weighted milestone credit.
+Host CI can verify Python contracts, evidence rejection logic, desktop packaging, exact staging-tree closure, read-only hardware correlation, local transaction safety, Cuttlefish smoke parsing, Android source localization, exact permission allowlists, ARM64 GSI source/build-evidence contracts and pure-Java policies for the complete 20-app source suite. It cannot establish Android runtime compatibility, Treble/VTS compliance, telephony/carrier delivery, direct camera capture, working root, recovery safety or hardware support. AOSP/platform credit remains blocked until the pinned source synchronizes and builds; emulator credit remains blocked until that exact image boots and reviewed runtime plus app-smoke evidence is recorded; GSI credit remains blocked until a real ARM64 image builds and relevant Treble/VTS plus compatibility evidence exists. Completing source breadth or host-only GSI tooling grants no weighted milestone credit.
