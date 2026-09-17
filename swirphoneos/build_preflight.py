@@ -1,10 +1,11 @@
 """Bounded, read-only AOSP build-host and workspace preflight.
 
-The preflight inspects local host/workspace metadata only. It never installs
-packages, downloads Android source, changes system configuration, deletes stale
-state, or starts a build. Persistent self-hosted runners are rejected when
-unreviewed Repo local manifests or stale build output could contaminate an
-evidence-producing build.
+The preflight inspects local host/workspace metadata and the installed Repo
+launcher bytes only. It never executes external commands, installs packages,
+downloads Android source, changes system configuration, deletes stale state,
+or starts a build. Persistent self-hosted runners are rejected when required
+host tooling is missing, the Repo launcher is too old/unverifiable, or
+unreviewed workspace state could contaminate an evidence-producing build.
 """
 from __future__ import annotations
 
@@ -19,10 +20,36 @@ import shutil
 MIN_FREE_BYTES = 400 * 1024**3
 MIN_RAM_BYTES = 64 * 1024**3
 MIN_GLIBC = (2, 17)
-REQUIRED_COMMANDS = ("git", "repo")
-ADVISORY_COMMANDS = ("bash", "python3", "curl", "zip", "unzip")
+MIN_REPO_LAUNCHER = (2, 4)
+MAX_REPO_LAUNCHER_BYTES = 1024 * 1024
+
+# Command counterparts for the current official AOSP Ubuntu package guidance,
+# plus Repo/Python/Bash needed by the checked-in evidence workflow. Header/dev
+# libraries from that package list cannot be proven safely by command lookup and
+# remain an explicit operator responsibility.
+REQUIRED_COMMANDS = (
+    "git",
+    "repo",
+    "bash",
+    "python3",
+    "gpg",
+    "flex",
+    "bison",
+    "gcc",
+    "g++",
+    "zip",
+    "curl",
+    "xmllint",
+    "xsltproc",
+    "unzip",
+    "fc-list",
+)
+ADVISORY_COMMANDS = ("make",)
 SUPPORTED_ARCHES = {"x86_64", "amd64"}
 VERSION = re.compile(r"([0-9]+)\.([0-9]+)")
+REPO_VERSION_ASSIGNMENT = re.compile(
+    rb"(?m)^\s*VERSION\s*=\s*\(\s*([0-9]+)\s*,\s*([0-9]+)(?:\s*,\s*[0-9]+)?\s*\)"
+)
 SOURCES = (
     "https://source.android.com/docs/setup/start",
     "https://source.android.com/docs/setup/start/requirements",
@@ -51,9 +78,10 @@ class HostSnapshot:
     out_tree_nonempty: bool = False
     vendor_swir_is_symlink: bool = False
     free_inodes: int | None = None
+    repo_launcher_version: str | None = None
 
 
-def _glibc_tuple(value: str | None) -> tuple[int, int] | None:
+def _version_tuple(value: str | None) -> tuple[int, int] | None:
     if value is None:
         return None
     match = VERSION.search(value)
@@ -111,6 +139,28 @@ def _workspace_identity(workspace: Path) -> str:
     return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
 
+def _repo_launcher_version(executable: str | None) -> str | None:
+    """Read the official Repo launcher VERSION tuple without executing Repo."""
+    if not executable:
+        return None
+    try:
+        path = Path(executable).resolve(strict=True)
+        if not path.is_file():
+            return None
+        size = path.stat().st_size
+        if size <= 0 or size > MAX_REPO_LAUNCHER_BYTES:
+            return None
+        raw = path.read_bytes()
+    except (OSError, RuntimeError, ValueError):
+        return None
+    match = REPO_VERSION_ASSIGNMENT.search(raw)
+    if match is None:
+        return None
+    major = int(match.group(1))
+    minor = int(match.group(2))
+    return f"{major}.{minor}"
+
+
 def capture_host(workspace: Path) -> HostSnapshot:
     """Capture bounded host/workspace facts without subprocesses or network access."""
     if not workspace.is_absolute():
@@ -121,7 +171,7 @@ def capture_host(workspace: Path) -> HostSnapshot:
         canonical = workspace.resolve(strict=True)
         free_bytes = shutil.disk_usage(canonical).free
     except (OSError, RuntimeError) as exc:
-        raise BuildPreflightError("Workspace disk usage could not be inspected.") from exc
+        raise BuildPreflightError("Workspace disk usage could not be inspected safely.") from exc
 
     dangerous_roots = {Path("/").resolve()}
     try:
@@ -137,10 +187,9 @@ def capture_host(workspace: Path) -> HostSnapshot:
 
     libc_name, libc_version = host_platform.libc_ver()
     glibc_version = libc_version if libc_name.lower() == "glibc" and libc_version else None
-    commands = {
-        name: shutil.which(name) is not None
-        for name in (*REQUIRED_COMMANDS, *ADVISORY_COMMANDS)
-    }
+    command_names = tuple(dict.fromkeys((*REQUIRED_COMMANDS, *ADVISORY_COMMANDS)))
+    command_paths = {name: shutil.which(name) for name in command_names}
+    commands = {name: path is not None for name, path in command_paths.items()}
     return HostSnapshot(
         system=host_platform.system().lower(),
         machine=host_platform.machine().lower(),
@@ -158,6 +207,7 @@ def capture_host(workspace: Path) -> HostSnapshot:
         out_tree_nonempty=_has_any_entry(out_tree),
         vendor_swir_is_symlink=vendor_swir.is_symlink(),
         free_inodes=_free_inodes(canonical),
+        repo_launcher_version=_repo_launcher_version(command_paths.get("repo")),
     )
 
 
@@ -165,8 +215,10 @@ def evaluate_preflight(snapshot: HostSnapshot) -> dict[str, object]:
     """Evaluate official host requirements plus clean evidence-workspace gates."""
     is_linux = snapshot.system == "linux"
     is_x86_64 = snapshot.machine in SUPPORTED_ARCHES
-    glibc = _glibc_tuple(snapshot.glibc_version)
+    glibc = _version_tuple(snapshot.glibc_version)
     glibc_ok = glibc is not None and glibc >= MIN_GLIBC
+    repo_version = _version_tuple(snapshot.repo_launcher_version)
+    repo_version_ok = repo_version is not None and repo_version >= MIN_REPO_LAUNCHER
     disk_ok = snapshot.free_bytes >= MIN_FREE_BYTES
     ram_known = snapshot.ram_bytes is not None
     ram_ok = ram_known and snapshot.ram_bytes >= MIN_RAM_BYTES
@@ -179,7 +231,15 @@ def evaluate_preflight(snapshot: HostSnapshot) -> dict[str, object]:
         and not snapshot.out_tree_nonempty
         and not snapshot.vendor_swir_is_symlink
     )
-    sync_ready = is_linux and is_x86_64 and glibc_ok and disk_ok and required_tools_ok and workspace_safe
+    sync_ready = (
+        is_linux
+        and is_x86_64
+        and glibc_ok
+        and disk_ok
+        and required_tools_ok
+        and repo_version_ok
+        and workspace_safe
+    )
     build_ready = sync_ready and ram_ok
 
     checks = [
@@ -188,15 +248,22 @@ def evaluate_preflight(snapshot: HostSnapshot) -> dict[str, object]:
         {"id": "glibc_2_17_plus", "passed": glibc_ok, "required_for": "sync+build"},
         {"id": "free_disk_400_gib", "passed": disk_ok, "required_for": "sync+build"},
         {"id": "ram_64_gib", "passed": ram_ok, "required_for": "full_build"},
-        {"id": "git", "passed": bool(snapshot.commands.get("git")), "required_for": "sync+build"},
-        {"id": "repo", "passed": bool(snapshot.commands.get("repo")), "required_for": "sync+build"},
-        {"id": "workspace_writable", "passed": snapshot.workspace_writable, "required_for": "sync+build"},
-        {"id": "workspace_not_dangerous_root", "passed": not snapshot.dangerous_workspace_root, "required_for": "sync+build"},
-        {"id": "no_repo_local_manifests", "passed": not snapshot.repo_local_manifests_present, "required_for": "sync+build"},
-        {"id": "no_legacy_repo_local_manifest", "passed": not snapshot.repo_legacy_local_manifest_present, "required_for": "sync+build"},
-        {"id": "fresh_out_tree", "passed": not snapshot.out_tree_nonempty, "required_for": "sync+build"},
-        {"id": "vendor_swir_not_symlink", "passed": not snapshot.vendor_swir_is_symlink, "required_for": "sync+build"},
     ]
+    checks.extend(
+        {"id": f"command_{name}", "passed": bool(snapshot.commands.get(name)), "required_for": "sync+build"}
+        for name in REQUIRED_COMMANDS
+    )
+    checks.extend(
+        [
+            {"id": "repo_launcher_2_4_plus", "passed": repo_version_ok, "required_for": "sync+build"},
+            {"id": "workspace_writable", "passed": snapshot.workspace_writable, "required_for": "sync+build"},
+            {"id": "workspace_not_dangerous_root", "passed": not snapshot.dangerous_workspace_root, "required_for": "sync+build"},
+            {"id": "no_repo_local_manifests", "passed": not snapshot.repo_local_manifests_present, "required_for": "sync+build"},
+            {"id": "no_legacy_repo_local_manifest", "passed": not snapshot.repo_legacy_local_manifest_present, "required_for": "sync+build"},
+            {"id": "fresh_out_tree", "passed": not snapshot.out_tree_nonempty, "required_for": "sync+build"},
+            {"id": "vendor_swir_not_symlink", "passed": not snapshot.vendor_swir_is_symlink, "required_for": "sync+build"},
+        ]
+    )
     advisory = [
         {"id": name, "available": bool(snapshot.commands.get(name))}
         for name in ADVISORY_COMMANDS
@@ -214,6 +281,7 @@ def evaluate_preflight(snapshot: HostSnapshot) -> dict[str, object]:
             "ram_bytes": snapshot.ram_bytes,
             "free_bytes": snapshot.free_bytes,
             "free_inodes": snapshot.free_inodes,
+            "repo_launcher_version": snapshot.repo_launcher_version,
         },
         "workspace": {
             "identity_sha256": snapshot.workspace_identity_sha256,
@@ -230,11 +298,15 @@ def evaluate_preflight(snapshot: HostSnapshot) -> dict[str, object]:
             "minimum_free_bytes": MIN_FREE_BYTES,
             "minimum_ram_bytes": MIN_RAM_BYTES,
             "minimum_glibc": "2.17",
+            "minimum_repo_launcher": "2.4",
+            "required_command_checks": list(REQUIRED_COMMANDS),
         },
         "checks": checks,
         "advisory_commands": advisory,
         "warnings": [
             "Passing this preflight is not evidence of a successful AOSP build.",
+            "The Repo launcher version is parsed from bounded launcher bytes; Repo is not executed by this preflight.",
+            "Observable command checks cannot prove that every required development header/library package is installed.",
             "The evidence workflow requires a clean out/ tree; this preflight never deletes stale output automatically.",
             "Repo local manifests are rejected so persistent runners cannot silently add unreviewed source projects.",
             "Existing regular vendor/swir content is validated later by exact staging-tree closure; symlinked vendor/swir is rejected here.",
