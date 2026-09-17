@@ -2,11 +2,19 @@
 
 ## Unreleased
 
+### Safe source-ready Swir Messages composer
+
+Added `SwirMessages` as meaningful permission-free first-party Android source with an original dark/cyan UI and icon, app-private draft persistence, EN/PL/NB/DE/ES/FR/PT/AR resources, RTL-aware layout and exact AOSP/Cuttlefish product staging. A dependency-free `MessagePolicy` is host-tested for bounded recipient normalization, duplicate-recipient handling, body normalization/length limits and explicit hand-off readiness.
+
+The app deliberately does not request `SEND_SMS`, `READ_SMS`, `RECEIVE_SMS`, contacts, storage or network permissions. It never invokes `SmsManager` or a silent send/read path. A valid owner-entered draft is handed to an installed Android messaging app using `Intent.ACTION_SENDTO` with a `smsto:` URI and `sms_body`, so the final send remains user-visible. Source validation rejects direct SMS permission/API drift; `messages:sms` now means safe compose/handoff source functionality only, while `messages:mms` and `messages:conversation_history` remain explicitly unfinished.
+
+The registry is now **16 `ANDROID_SOURCE`, 4 `HOST_CONTRACT`, 0 `ANDROID_RUNTIME`, 0 hardware-verified**. All sixteen source-ready apps have the current eight localization catalogs. This does not claim default-SMS role, carrier delivery, Android runtime, physical telephony support or reference-device verification. Weighted progress remains **2%**, 1/10 milestones, and Beta remains **0/9**.
+
 ### Source-ready Swir Phone dialer
 
 Added `SwirPhone` as meaningful first-party Android source with an original dark/cyan keypad, dedicated icon, accessibility labels and EN/PL/NB/DE/ES/FR/PT/AR resources. A dependency-free `DialerPolicy` is host-tested for bounded fail-closed normalization, keypad append/erase behavior and malformed input rejection. The app is permission-free and uses the user-visible `Intent.ACTION_DIAL` hand-off rather than `CALL_PHONE` or a direct Telecom call path.
 
-Extended Android source validation with an exact Swir Phone source contract that rejects direct-call permission/path drift, preserves complete staging, and tracks `dialer` as implemented while leaving `phone:in_call` and `phone:recent_calls` explicitly unfinished. The Cuttlefish product and exact source staging now include Swir Phone. CI runs the pure-Java dial policy in both the main Linux/Python 3.14 path and a focused source check. Registry state is **15 `ANDROID_SOURCE`, 5 `HOST_CONTRACT`, 0 `ANDROID_RUNTIME`, 0 hardware-verified**.
+Extended Android source validation with an exact Swir Phone source contract that rejects direct-call permission/path drift, preserves complete staging, and tracks `dialer` as implemented while leaving `phone:in_call` and `phone:recent_calls` explicitly unfinished. The Cuttlefish product and exact source staging now include Swir Phone. CI runs the pure-Java dial policy in both the main Linux/Python 3.14 path and a focused source check. Registry state is **15 `ANDROID_SOURCE`, 5 `HOST_CONTRACT`, 0 `ANDROID_RUNTIME`, 0 hardware-verified`**.
 
 This is source-level communication-app progress only. It does not claim a default-dialer role, working in-call UI, call history, modem/IMS/telephony compatibility, AOSP build/boot or physical-device verification. Weighted progress therefore remains **2%**, 1/10 milestones, and Beta remains **0/9**.
 
@@ -16,7 +24,7 @@ Added `SwirContacts` as meaningful Android source. It requests exactly `READ_CON
 
 Added `SwirApps` as a permission-free local Software Center foundation. It enumerates visible launchable applications with PackageManager, exposes package/version information and bounded signing-certificate SHA-256 provenance, launches selected apps and opens Android's authoritative app-details screen. No remote catalog, download or install path exists; `update_status` remains explicitly unfinished. Both new apps include original SwirPhoneOS icons, EN/PL/NB/DE/ES/FR/PT/AR resources, RTL-aware configuration, reviewed AOSP staging and Cuttlefish product integration.
 
-Upgraded Android source reporting to schema v3 with per-app missing capability tracking. Shared capability names can no longer hide another app's unfinished work: Contacts implements its provider bridge while `calendar:provider_bridge` stays open, and `apps:update_status` stays open. CI compiles and executes both new pure-Java policy tests on Linux/Python 3.14. Registry state is now **14 `ANDROID_SOURCE`, 6 `HOST_CONTRACT`, 0 `ANDROID_RUNTIME`, 0 hardware-verified**. This is source-level progress only; no AOSP build/boot or physical-device claim is made, so weighted progress remains **2%** and Beta remains **0/9**.
+Upgraded Android source reporting to schema v3 with per-app missing capability tracking. Shared capability names can no longer hide another app's unfinished work: Contacts implements its provider bridge while `calendar:provider_bridge` stays open, and `apps:update_status` stays open. CI compiles and executes both new pure-Java policy tests on Linux/Python 3.14. Registry state is now **14 `ANDROID_SOURCE`, 6 `HOST_CONTRACT`, 0 `ANDROID_RUNTIME`, 0 hardware-verified`**. This is source-level progress only; no AOSP build/boot or physical-device claim is made, so weighted progress remains **2%** and Beta remains **0/9**.
 
 ### Exact AOSP staging-tree closure
 
@@ -32,7 +40,7 @@ Added `SwirGallery` as meaningful Android source using the least-privilege `READ
 
 Added `SwirRecorder` as meaningful foreground-only Android source using exactly `RECORD_AUDIO`. It records AAC audio in an MPEG-4 container to app-private storage, supports pause/resume/stop and local playback, exposes framework microphone mute state, requires confirmation for local deletion and exports only through a user-selected `ACTION_CREATE_DOCUMENT` destination. Active recording is deliberately stopped when the activity leaves the foreground; no background recording service exists in this source stage. Exact-device microphone/audio behavior remains unverified.
 
-Refactored Android source validation from a blanket zero-permission rule to exact per-app permission allowlists while retaining global rejection of network, broad-storage and process-execution primitives. Permission-free apps remain permission-free. Gallery and Recorder gained pure-Java policy host tests, original SwirPhoneOS icons, EN/PL/NB/DE/ES/FR/PT/AR resources with RTL, AOSP product/staging integration and CI compilation. The registry became **12 `ANDROID_SOURCE`, 8 `HOST_CONTRACT`, 0 `ANDROID_RUNTIME`, 0 hardware-verified**. No AOSP build/boot or physical audio/media verification was claimed, so weighted progress remained **2%** and Beta **0/9**.
+Refactored Android source validation from a blanket zero-permission rule to exact per-app permission allowlists while retaining global rejection of network, broad-storage and process-execution primitives. Permission-free apps remain permission-free. Gallery and Recorder gained pure-Java policy host tests, original SwirPhoneOS icons, EN/PL/NB/DE/ES/FR/PT/AR resources with RTL, AOSP product/staging integration and CI compilation. The registry became **12 `ANDROID_SOURCE`, 8 `HOST_CONTRACT`, 0 `ANDROID_RUNTIME`, 0 hardware-verified`**. No AOSP build/boot or physical audio/media verification was claimed, so weighted progress remained **2%** and Beta **0/9**.
 
 ### Complete AOSP run evidence chain and exact builder gate
 
