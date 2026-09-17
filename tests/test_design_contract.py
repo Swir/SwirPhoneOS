@@ -25,6 +25,9 @@ class DesignContractTests(unittest.TestCase):
         self.assertEqual(summary["integrated_system_app_count"], 20)
         self.assertEqual(summary["expected_system_app_count"], 20)
         self.assertTrue(summary["all_system_apps_integrated"])
+        self.assertEqual(summary["tokenized_apps"], ["phone", "messages", "camera"])
+        self.assertEqual(summary["tokenized_app_count"], 3)
+        self.assertTrue(summary["hardcoded_color_free_pilot_verified"])
         self.assertTrue(summary["day_night_tokens_declared"])
         self.assertEqual(summary["minimum_touch_target_token_dp"], 48)
         self.assertFalse(summary["android_build_verified"])
@@ -61,6 +64,22 @@ class DesignContractTests(unittest.TestCase):
         with temp:
             manifest = root / "apps/SwirRoot/AndroidManifest.xml"
             manifest.write_text(manifest.read_text(encoding="utf-8").replace("@style/Theme.SwirPhoneOS", "@android:style/Theme.Material.NoActionBar", 1), encoding="utf-8")
+            with self.assertRaises(DesignContractError):
+                validate_design_contract(root)
+
+    def test_tokenized_pilot_rejects_direct_color_literals(self):
+        temp, root = self._fixture()
+        with temp:
+            source = root / "apps/SwirPhone/src/org/swir/phoneos/phone/MainActivity.java"
+            source.write_text(source.read_text(encoding="utf-8").replace("import android.content.Intent;", "import android.content.Intent;\nimport android.graphics.Color;", 1), encoding="utf-8")
+            with self.assertRaises(DesignContractError):
+                validate_design_contract(root)
+
+    def test_tokenized_pilot_requires_shared_touch_target_reference(self):
+        temp, root = self._fixture()
+        with temp:
+            source = root / "apps/SwirMessages/src/org/swir/phoneos/messages/MainActivity.java"
+            source.write_text(source.read_text(encoding="utf-8").replace("R.dimen.swir_touch_min", "R.dimen.swir_space_lg"), encoding="utf-8")
             with self.assertRaises(DesignContractError):
                 validate_design_contract(root)
 
