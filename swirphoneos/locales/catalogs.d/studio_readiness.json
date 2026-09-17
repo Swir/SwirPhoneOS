@@ -1,0 +1,78 @@
+{
+  "schema_version": 1,
+  "source_locale": "en",
+  "strings": {
+    "en": {
+      "review_readiness": "Review SwirRoot evidence…",
+      "readiness_failed": "SwirRoot readiness evidence is invalid or unsupported. No device action was attempted.",
+      "readiness_loaded": "SwirRoot readiness evidence loaded — review only; writes remain blocked.",
+      "readiness_summary": "SwirRoot readiness review\nAction: {action}\nProfile: {profile}\nTarget build: {build}\nTransaction: {transaction}\nMissing gates: {missing}\nPolicy backend available: {backend}\nTransition ready: {transition}\nDevice writes allowed: {writes}",
+      "yes": "Yes",
+      "no": "No",
+      "none": "None"
+    },
+    "pl": {
+      "review_readiness": "Sprawdź dowód SwirRoot…",
+      "readiness_failed": "Dowód gotowości SwirRoot jest nieprawidłowy lub nieobsługiwany. Nie wykonano żadnej operacji na urządzeniu.",
+      "readiness_loaded": "Wczytano dowód gotowości SwirRoot — tylko do wglądu; zapis pozostaje zablokowany.",
+      "readiness_summary": "Przegląd gotowości SwirRoot\nAkcja: {action}\nProfil: {profile}\nDocelowy build: {build}\nTransakcja: {transaction}\nBrakujące warunki: {missing}\nBackend polityki dostępny: {backend}\nPrzejście gotowe: {transition}\nZapis na urządzeniu dozwolony: {writes}",
+      "yes": "Tak",
+      "no": "Nie",
+      "none": "Brak"
+    },
+    "nb": {
+      "review_readiness": "Se gjennom SwirRoot-bevis…",
+      "readiness_failed": "SwirRoot-beredskapsbeviset er ugyldig eller støttes ikke. Ingen enhetshandling ble forsøkt.",
+      "readiness_loaded": "SwirRoot-beredskapsbevis er lastet — kun for gjennomgang; skriving forblir blokkert.",
+      "readiness_summary": "SwirRoot-beredskap\nHandling: {action}\nProfil: {profile}\nMålbuild: {build}\nTransaksjon: {transaction}\nManglende krav: {missing}\nPolicy-backend tilgjengelig: {backend}\nOvergang klar: {transition}\nSkriving til enheten tillatt: {writes}",
+      "yes": "Ja",
+      "no": "Nei",
+      "none": "Ingen"
+    },
+    "de": {
+      "review_readiness": "SwirRoot-Nachweis prüfen…",
+      "readiness_failed": "Der SwirRoot-Bereitschaftsnachweis ist ungültig oder wird nicht unterstützt. Es wurde keine Geräteaktion versucht.",
+      "readiness_loaded": "SwirRoot-Bereitschaftsnachweis geladen — nur zur Prüfung; Schreibzugriffe bleiben gesperrt.",
+      "readiness_summary": "SwirRoot-Bereitschaftsprüfung\nAktion: {action}\nProfil: {profile}\nZiel-Build: {build}\nTransaktion: {transaction}\nFehlende Bedingungen: {missing}\nPolicy-Backend verfügbar: {backend}\nÜbergang bereit: {transition}\nGeräteschreibzugriff erlaubt: {writes}",
+      "yes": "Ja",
+      "no": "Nein",
+      "none": "Keine"
+    },
+    "es": {
+      "review_readiness": "Revisar evidencia de SwirRoot…",
+      "readiness_failed": "La evidencia de preparación de SwirRoot no es válida o no está admitida. No se intentó ninguna acción sobre el dispositivo.",
+      "readiness_loaded": "Evidencia de preparación de SwirRoot cargada — solo revisión; las escrituras siguen bloqueadas.",
+      "readiness_summary": "Revisión de preparación de SwirRoot\nAcción: {action}\nPerfil: {profile}\nCompilación objetivo: {build}\nTransacción: {transaction}\nRequisitos pendientes: {missing}\nBackend de política disponible: {backend}\nTransición preparada: {transition}\nEscrituras en el dispositivo permitidas: {writes}",
+      "yes": "Sí",
+      "no": "No",
+      "none": "Ninguno"
+    },
+    "fr": {
+      "review_readiness": "Examiner la preuve SwirRoot…",
+      "readiness_failed": "La preuve de préparation SwirRoot est invalide ou non prise en charge. Aucune action sur l’appareil n’a été tentée.",
+      "readiness_loaded": "Preuve de préparation SwirRoot chargée — consultation uniquement ; les écritures restent bloquées.",
+      "readiness_summary": "Examen de préparation SwirRoot\nAction : {action}\nProfil : {profile}\nBuild cible : {build}\nTransaction : {transaction}\nConditions manquantes : {missing}\nBackend de politique disponible : {backend}\nTransition prête : {transition}\nÉcritures sur l’appareil autorisées : {writes}",
+      "yes": "Oui",
+      "no": "Non",
+      "none": "Aucune"
+    },
+    "pt": {
+      "review_readiness": "Revisar evidência do SwirRoot…",
+      "readiness_failed": "A evidência de prontidão do SwirRoot é inválida ou não é compatível. Nenhuma ação no dispositivo foi tentada.",
+      "readiness_loaded": "Evidência de prontidão do SwirRoot carregada — somente revisão; as gravações continuam bloqueadas.",
+      "readiness_summary": "Revisão de prontidão do SwirRoot\nAção: {action}\nPerfil: {profile}\nBuild de destino: {build}\nTransação: {transaction}\nRequisitos ausentes: {missing}\nBackend de política disponível: {backend}\nTransição pronta: {transition}\nGravações no dispositivo permitidas: {writes}",
+      "yes": "Sim",
+      "no": "Não",
+      "none": "Nenhum"
+    },
+    "ar": {
+      "review_readiness": "مراجعة دليل SwirRoot…",
+      "readiness_failed": "دليل جاهزية SwirRoot غير صالح أو غير مدعوم. لم تتم محاولة أي إجراء على الجهاز.",
+      "readiness_loaded": "تم تحميل دليل جاهزية SwirRoot — للمراجعة فقط؛ تظل عمليات الكتابة محظورة.",
+      "readiness_summary": "مراجعة جاهزية SwirRoot\nالإجراء: {action}\nالملف: {profile}\nالإصدار الهدف: {build}\nالمعاملة: {transaction}\nالشروط الناقصة: {missing}\nخلفية السياسة متاحة: {backend}\nالانتقال جاهز: {transition}\nالكتابة على الجهاز مسموحة: {writes}",
+      "yes": "نعم",
+      "no": "لا",
+      "none": "لا يوجد"
+    }
+  }
+}
