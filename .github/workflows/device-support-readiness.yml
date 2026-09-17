@@ -7,10 +7,13 @@ on:
       - 'swirphoneos/profiles.py'
       - 'swirphoneos/device_support_readiness.py'
       - 'swirphoneos/device_support_readiness_cli.py'
+      - 'swirphoneos/device_physical_validation.py'
+      - 'swirphoneos/device_physical_validation_cli.py'
       - 'swirphoneos/hardware_evidence.py'
       - 'swirphoneos/journal_evidence.py'
       - 'tests/test_profiles.py'
       - 'tests/test_device_support_readiness.py'
+      - 'tests/test_device_physical_validation.py'
       - '.github/workflows/device-support-readiness.yml'
   pull_request:
     paths:
@@ -18,10 +21,13 @@ on:
       - 'swirphoneos/profiles.py'
       - 'swirphoneos/device_support_readiness.py'
       - 'swirphoneos/device_support_readiness_cli.py'
+      - 'swirphoneos/device_physical_validation.py'
+      - 'swirphoneos/device_physical_validation_cli.py'
       - 'swirphoneos/hardware_evidence.py'
       - 'swirphoneos/journal_evidence.py'
       - 'tests/test_profiles.py'
       - 'tests/test_device_support_readiness.py'
+      - 'tests/test_device_physical_validation.py'
       - '.github/workflows/device-support-readiness.yml'
   workflow_dispatch:
 permissions:
@@ -41,11 +47,17 @@ jobs:
         with:
           python-version: '3.14'
       - name: Compile readiness sources
-        run: python -m compileall -q swirphoneos tests/test_profiles.py tests/test_device_support_readiness.py
+        run: >-
+          python -m compileall -q swirphoneos
+          tests/test_profiles.py
+          tests/test_device_support_readiness.py
+          tests/test_device_physical_validation.py
       - name: Test metadata profile fail-closed rules
         run: python -m unittest discover -s tests -p 'test_profiles.py' -v
       - name: Test device support readiness evidence
         run: python -m unittest discover -s tests -p 'test_device_support_readiness.py' -v
+      - name: Test exact-device physical validation evidence
+        run: python -m unittest discover -s tests -p 'test_device_physical_validation.py' -v
       - name: Validate checked-in device registry
         run: python -m swirphoneos profiles --root device_packs
       - name: Enforce read-only readiness implementation
@@ -55,6 +67,8 @@ jobs:
           files = [
               Path('swirphoneos/device_support_readiness.py'),
               Path('swirphoneos/device_support_readiness_cli.py'),
+              Path('swirphoneos/device_physical_validation.py'),
+              Path('swirphoneos/device_physical_validation_cli.py'),
           ]
           forbidden = (
               'subprocess', 'os.system', 'Popen(', 'run(',
@@ -66,4 +80,4 @@ jobs:
           hits = [token for token in forbidden if token in text]
           if hits:
               raise SystemExit(f'Forbidden device-write/process primitive in readiness tooling: {hits}')
-          print('Readiness tooling remains host-only and process-free.')
+          print('Readiness and physical-validation tooling remain host-only and process-free.')
