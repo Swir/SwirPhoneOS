@@ -4,7 +4,7 @@ from copy import deepcopy
 import json
 from pathlib import Path
 import unittest
-from swirphoneos.system_apps import REQUIRED_APP_IDS, SystemAppRegistryError, load_registry, public_registry_summary, validate_registry
+from swirphoneos.system_apps import EXPECTED_DESIGN_CONTRACT, REQUIRED_APP_IDS, SystemAppRegistryError, load_registry, public_registry_summary, validate_registry
 
 MANIFEST = Path("system_apps/manifest.json")
 
@@ -12,7 +12,7 @@ MANIFEST = Path("system_apps/manifest.json")
 class SystemAppRegistryTests(unittest.TestCase):
     def setUp(self): self.data = json.loads(MANIFEST.read_text(encoding="utf-8"))
     def test_repository_manifest_contains_exact_essential_suite(self):
-        registry = load_registry(MANIFEST); self.assertEqual(registry.app_ids, REQUIRED_APP_IDS); self.assertEqual(len(registry.apps), 20)
+        registry = load_registry(MANIFEST); self.assertEqual(registry.app_ids, REQUIRED_APP_IDS); self.assertEqual(len(registry.apps), 20); self.assertEqual(registry.design_contract, EXPECTED_DESIGN_CONTRACT)
     def test_source_ready_is_distinct_from_android_runtime(self):
         summary = public_registry_summary(load_registry(MANIFEST)); self.assertEqual(summary["source_ready"], 20); self.assertEqual(summary["runtime_implemented"], 0); self.assertEqual(summary["hardware_verified"], 0); self.assertGreaterEqual(summary["beta_critical_count"], 5); self.assertEqual(summary["beta_critical_runtime_implemented"], 0)
     def test_all_essential_apps_are_source_ready_but_below_runtime(self):
@@ -20,6 +20,9 @@ class SystemAppRegistryTests(unittest.TestCase):
         for app_id in REQUIRED_APP_IDS: self.assertEqual(states[app_id], "ANDROID_SOURCE")
     def test_unique_packages(self):
         registry = load_registry(MANIFEST); self.assertEqual(len({app.package for app in registry.apps}), len(registry.apps))
+    def test_stale_design_contract_identity_is_rejected(self):
+        bad = deepcopy(self.data); bad["design_contract"] = "swirphoneos-design-v3"
+        with self.assertRaises(SystemAppRegistryError): validate_registry(bad)
     def test_missing_essential_app_is_rejected(self):
         bad = deepcopy(self.data); bad["apps"] = [app for app in bad["apps"] if app["id"] != "settings"]
         with self.assertRaises(SystemAppRegistryError): validate_registry(bad)
