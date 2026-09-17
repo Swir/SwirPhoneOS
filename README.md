@@ -20,7 +20,7 @@
 | --- | --- | --- | --- |
 | 1 | 9 | 10 | 2% |
 
-The canonical ledger is [`project.json`](project.json). Host tests, desktop packaging, Android source and local transaction preparation do not complete build, boot or hardware gates. **Beta: 0/9 gates passed.**
+The canonical ledger is [`project.json`](project.json). Host tests, desktop packaging, Android source, read-only hardware correlation and local transaction preparation do not complete build, boot or hardware gates. **Beta: 0/9 gates passed.**
 
 ## What works now
 
@@ -28,7 +28,9 @@ The canonical ledger is [`project.json`](project.json). Host tests, desktop pack
 
 The `swirphoneos` Python package provides strictly read-only ADB and Fastboot/FastbootD diagnostics. SwirPhoneStudio adds a multilingual dark/blue desktop UI, explicit trusted-tool selection, asynchronous inspection, immutable report export and Windows x64/Python 3.14 developer packaging. No unlock, erase, boot, flash, root, relock or restore control is enabled.
 
-A new local-only transaction evidence layer prepares the recovery side of future installation work without contacting a phone. Schema v1 binds one exact profile/current-build/target-build tuple to explicit target and rollback files, verifies each file's size and SHA-256 under a confined local root, rejects traversal/symlinks/duplicate keys/unknown fields, and can persist a create-only fsynced recovery journal. Accepted plans require rollback and explicit owner confirmation, but the journal deliberately records `owner_confirmation_recorded=false` and `write_allowed=false`. It contains no executable device commands or partition instructions, so it does not make the current `avicii` profile supported or complete the install/restore milestone.
+Physical-device evidence gathering is now more useful without becoming more permissive. ADB can record exact firmware fingerprint, board/hardware, slot and verified-boot/VBMeta hints. Fastboot can optionally record bounded `has-slot` and `partition-size` hints for reviewed partition names without using `getvar all`. Saved ADB and Fastboot observations can be correlated only when profile/model/codename/build and non-conflicting slot/bootloader hints agree. The integrity-hashed result remains explicitly `CORRELATED_READ_ONLY_NOT_VERIFIED`: it cannot claim support, verify hardware or enable writes, flashing, root or restore. Cross-transport correlation is not cryptographic proof that both reports came from the same physical phone.
+
+A local-only transaction evidence layer prepares the recovery side of future installation work without contacting a phone. Schema v1 binds one exact profile/current-build/target-build tuple to explicit target and rollback files, verifies each file's size and SHA-256 under a confined local root, rejects traversal/symlinks/duplicate keys/unknown fields, and can persist a create-only fsynced recovery journal. Accepted plans require rollback and explicit owner confirmation, but the journal deliberately records `owner_confirmation_recorded=false` and `write_allowed=false`. A new read-only transaction/device check can require the plan's profile, codename, model and exact current build fingerprint to match correlated observations while still keeping writes disabled. None of this makes the current `avicii` profile supported or completes the install/restore milestone.
 
 ### Android 17 platform foundation
 
@@ -84,7 +86,11 @@ python -m swirphoneos build-evidence --workspace /path/to/aosp --manifest /path/
 python -m swirphoneos cuttlefish-evidence --adb /absolute/path/to/adb > runtime-evidence.json
 python -m swirphoneos.cuttlefish_smoke --adb /absolute/path/to/adb > app-smoke-evidence.json
 python -m swirphoneos evidence-bundle --build build-evidence.json --runtime runtime-evidence.json
+python -m swirphoneos inspect-device --transport adb --tool /absolute/path/to/adb > adb-observation.json
+python -m swirphoneos inspect-device --transport fastboot --tool /absolute/path/to/fastboot --partitions > fastboot-observation.json
+python -m swirphoneos hardware-evidence --adb-report adb-observation.json --fastboot-report fastboot-observation.json > hardware-evidence.json
 python -m swirphoneos transaction-plan --file /absolute/path/to/plan.json
+python -m swirphoneos transaction-device-check --plan /absolute/path/to/plan.json --hardware /absolute/path/to/hardware-evidence.json
 python -m swirphoneos transaction-evidence --plan /absolute/path/to/plan.json --artifacts /absolute/path/to/artifacts
 python -m swirphoneos i18n
 python -m swirphoneos apps
@@ -92,7 +98,7 @@ python -m swirphoneos root-policy
 python -m swirphoneos.studio
 ```
 
-`gate` intentionally exits blocked while mandatory beta evidence is missing. `android-apps` validates checked-in source only. `transaction-plan` and `transaction-evidence` validate local preparation evidence only and cannot authorize phone writes. Build/runtime/app-smoke evidence remains emulator/build evidence, not physical-device compatibility proof.
+`gate` intentionally exits blocked while mandatory beta evidence is missing. `android-apps` validates checked-in source only. Hardware correlation and transaction matching are read-only evidence/preparation surfaces and cannot authorize phone writes. Build/runtime/app-smoke evidence remains emulator/build evidence, not physical-device compatibility proof.
 
 ## Product direction
 
@@ -112,7 +118,7 @@ The first planned reference device is OnePlus Nord AC2003 (`avicii`), currently 
 
 A beta Release requires a reproducible OS build, real boot path, safe install/rollback/recovery, at least one physically verified phone profile, usable core system functionality and verified release artifacts/checksums. Telephony, camera and SwirRoot are stated per exact tested device/build. **No beta is published now.**
 
-[Architecture](ARCHITECTURE.md) · [Roadmap](ROADMAP.md) · [Build status](BUILD_STATUS.md) · [System Apps](docs/SYSTEM_APPS.md) · [Global i18n](docs/I18N.md) · [AOSP workspace](docs/AOSP_BUILD_WORKSPACE.md) · [Runtime evidence](docs/AOSP_RUNTIME_EVIDENCE.md) · [Recovery transactions](docs/RECOVERY_TRANSACTIONS.md) · [SwirRoot](docs/SWIRROOT.md) · [Changelog](CHANGELOG.md)
+[Architecture](ARCHITECTURE.md) · [Roadmap](ROADMAP.md) · [Build status](BUILD_STATUS.md) · [System Apps](docs/SYSTEM_APPS.md) · [Global i18n](docs/I18N.md) · [AOSP workspace](docs/AOSP_BUILD_WORKSPACE.md) · [Runtime evidence](docs/AOSP_RUNTIME_EVIDENCE.md) · [Hardware evidence](docs/HARDWARE_EVIDENCE.md) · [Recovery transactions](docs/RECOVERY_TRANSACTIONS.md) · [SwirRoot](docs/SWIRROOT.md) · [Changelog](CHANGELOG.md)
 
 ---
 **by Swir** · [GitHub](https://github.com/Swir)
