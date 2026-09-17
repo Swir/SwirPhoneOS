@@ -37,13 +37,14 @@ Theme inheritance alone is not enough to produce a coherent product if individua
 - Swir Messages
 - Swir Camera
 - Swir Settings
+- Swir Files
 - Swir Update
 - Swir Privacy
 - Swir Device Care
 
-These activities now use shared Swir background/text/accent/surface resources and the common 48 dp minimum touch-target token instead of direct `android.graphics.Color` literals for their primary UI surfaces. Their existing functional and safety behavior remains unchanged: Phone still performs explicit `ACTION_DIAL`, Messages still performs explicit `ACTION_SENDTO`, Camera keeps its existing source-stage capability/capture behavior, Settings and Privacy still route only to reviewed Android settings actions, Update remains read-only with package installation disabled, and Device Care remains a permission-free framework diagnostics surface.
+These activities now use shared Swir background/text/accent/surface resources and the common 48 dp minimum touch-target token instead of direct `android.graphics.Color` literals for their primary UI surfaces. Their existing functional and safety behavior remains unchanged: Phone still performs explicit `ACTION_DIAL`, Messages still performs explicit `ACTION_SENDTO`, Camera keeps its existing source-stage capability/capture behavior, Settings and Privacy still route only to reviewed Android settings actions, Update remains read-only with package installation disabled, Device Care remains a permission-free framework diagnostics surface, and Files remains a Storage Access Framework manager limited to user-granted document trees.
 
-Four of the five beta-critical core applications are now directly tokenized: Settings, Update, Privacy and Device Care. Swir Files already inherits the shared theme but still contains legacy view-level color literals, so `all_core_apps_tokenized=false` remains truthful until that larger activity is migrated and reviewed. The remaining applications also stay theme-integrated but are not claimed as fully tokenized.
+All five beta-critical core applications are now directly tokenized at source stage: Settings, Files, Update, Privacy and Device Care. This satisfies the source-only `all_core_apps_tokenized=true` design-contract condition, but it does **not** grant Android runtime, visual-review, accessibility, emulator, device-support or beta milestone credit. The remaining applications stay theme-integrated but are not claimed as fully tokenized unless they belong to the explicit direct-token cohort above.
 
 ## Visual tokens
 
@@ -68,7 +69,7 @@ The six reviewed design-source files are included in `stage_manifest.d/design.js
 
 ## Fail-closed host contract
 
-`swirphoneos.design_contract.validate_design_contract()` now uses design contract v3 and verifies:
+`swirphoneos.design_contract.validate_design_contract()` uses design contract v4 and verifies:
 
 1. the exact SwirDesign module identity and build properties;
 2. day/night token parity;
@@ -76,11 +77,17 @@ The six reviewed design-source files are included in `stage_manifest.d/design.js
 4. the shared theme/style inventory;
 5. static-library linkage from all twenty system applications;
 6. exact `Theme.SwirPhoneOS` manifest usage for all twenty applications;
-7. direct shared-token usage and no `android.graphics.Color` literals across the seven-app tokenized cohort;
-8. explicit accounting of tokenized beta-core applications, so Files cannot be silently counted as migrated;
+7. direct shared-token usage and no `android.graphics.Color` literals across the eight-app tokenized cohort;
+8. complete source-stage token coverage of all five beta-critical core applications, including Swir Files;
 9. exact staging-file and destination inventory with duplicate-key rejection.
 
-Its public summary separates complete source-stage theme integration, the seven-app direct-token cohort and beta-core token coverage. Android build, runtime visual review, accessibility review and device-write authorization remain false.
+Its public summary separates complete source-stage theme integration, the eight-app direct-token cohort and the now-complete five-app beta-core token cohort. Android build, runtime visual review, accessibility review and device-write authorization remain false.
+
+## Swir Files migration boundary
+
+Swir Files is a larger activity than the earlier Settings/Update/Privacy/Device Care token pilots, so its migration is intentionally limited to presentation and accessibility geometry. The Storage Access Framework tree grant, persisted URI permission, browse/search, copy/move, rename, create-folder, share/open and owner-confirmed delete flows are unchanged. The migration replaces activity-owned day/night assumptions with shared theme colors, adds the shared 48 dp minimum height to the search field and generated action/file-row buttons, and keeps locale-direction handling through `LAYOUT_DIRECTION_LOCALE`.
+
+The host contract now fails if Swir Files regresses to direct `android.graphics.Color` use or stops referencing the common touch-target token. These checks are source guards only; they cannot prove provider-specific runtime behavior, screen-reader quality or rendering on a built image.
 
 ## Runtime review still required
 
