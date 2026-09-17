@@ -13,12 +13,14 @@ class AospWorkflowRuntimeToolGuardTests(unittest.TestCase):
             "SWIR_ADB_PATH: ${{ inputs.adb_path }}",
             "python -m swirphoneos.runtime_tool_evidence capture",
             "python -m swirphoneos.runtime_tool_evidence verify",
+            "python -m swirphoneos.runtime_trust_bundle",
             'repo sync -c --no-tags --optimized-fetch --prune -j"$SWIR_REQUESTED_JOBS"',
             'm -j"$SWIR_REQUESTED_JOBS"',
             '--adb "$SWIR_ADB_PATH"',
             "runtime-tool-evidence.json",
             "runtime-tool-prelaunch-verification.json",
             "runtime-tool-post-verification.json",
+            "runtime-trust-bundle.json",
         )
         for marker in required:
             with self.subTest(marker=marker):
@@ -43,6 +45,7 @@ class AospWorkflowRuntimeToolGuardTests(unittest.TestCase):
             "runtime-tool-evidence.json",
             "runtime-tool-prelaunch-verification.json",
             "runtime-tool-post-verification.json",
+            "runtime-trust-bundle.json",
         ):
             self.assertIn(name, upload)
         self.assertNotIn("flash ", workflow)
