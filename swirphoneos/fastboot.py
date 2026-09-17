@@ -7,11 +7,13 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from pathlib import Path
+import hashlib
 import os
 import re
 import subprocess
 
 SERIAL = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,255}\Z")
+SHA256 = re.compile(r"[0-9a-f]{64}\Z")
 GETVARS = (
     "product",
     "current-slot",
@@ -79,6 +81,31 @@ def _clean_value(value: str) -> str | None:
     return value
 
 
+def _digest_value(value: str | None, field: str) -> str | None:
+    if value is None:
+        return None
+    if not isinstance(value, str) or not SHA256.fullmatch(value):
+        raise FastbootDiagnosticError(f"{field} must be a lowercase SHA-256 digest.")
+    return value
+
+
+def _serial_sha256(serial: str) -> str:
+    if not SERIAL.fullmatch(serial):
+        raise FastbootDiagnosticError("Fastboot serial format changed during inspection.")
+    return hashlib.sha256(serial.encode("utf-8")).hexdigest()
+
+
+def _file_sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    try:
+        with path.open("rb") as handle:
+            while chunk := handle.read(1024 * 1024):
+                digest.update(chunk)
+    except OSError as exc:
+        raise FastbootDiagnosticError("Trusted Fastboot executable could not be hashed.") from exc
+    return digest.hexdigest()
+
+
 def _allowed_getvar(name: str) -> bool:
     return name in GETVARS or name in PARTITION_GETVARS
 
@@ -137,7 +164,12 @@ def _partition_hints(values: dict[str, str | None]) -> list[dict[str, object]]:
     return hints
 
 
-def summarize_fastboot(values: dict[str, str | None]) -> dict[str, object]:
+def summarize_fastboot(
+    values: dict[str, str | None],
+    *,
+    transport_serial_sha256: str | None = None,
+    tool_sha256: str | None = None,
+) -> dict[str, object]:
     is_userspace = values.get("is-userspace")
     unlocked = values.get("unlocked")
     slot_count_raw = values.get("slot-count")
@@ -148,8 +180,10 @@ def summarize_fastboot(values: dict[str, str | None]) -> dict[str, object]:
     if slot_count is not None and not 0 <= slot_count <= 8:
         slot_count = None
     return {
-        "schema_version": 2,
+        "schema_version": 3,
         "source": "fastboot_reported_getvars_not_hardware_verification",
+        "transport_serial_sha256": _digest_value(transport_serial_sha256, "transport_serial_sha256"),
+        "tool_sha256": _digest_value(tool_sha256, "tool_sha256"),
         "product_reported": values.get("product"),
         "transport_mode_reported": {
             "yes": "fastbootd",
@@ -174,11 +208,61 @@ def summarize_fastboot(values: dict[str, str | None]) -> dict[str, object]:
         "swirphoneos_support": "NOT_VALIDATED",
         "flash_allowed": False,
         "warnings": [
-            "Fastboot getvars are device-reported hints, not proof of model identity or compatibility.",
-            "Partition size/slot hints are read-only device reports, not a verified partition map.",
+            "Fastboot getvars and transport identifiers are device-reported hints, not proof of model identity or compatibility.",
+            "The USB serial is not stored; only its SHA-256 digest is retained for cross-transport correlation.",
             "No reboot, unlock, erase, flash, format, boot, relock or restore command was attempted.",
         ],
     }
+
+
+def validate_fastboot_report(report: object, *, require_provenance: bool = False) -> dict[str, object]:
+    expected = summarize_fastboot({})
+    if not isinstance(report, dict) or set(report) != set(expected):
+        raise FastbootDiagnosticError("Fastboot report does not match schema v3 exactly.")
+    if report["schema_version"] != 3 or report["source"] != expected["source"]:
+        raise FastbootDiagnosticError("Fastboot report provenance is invalid.")
+    if report["swirphoneos_support"] != "NOT_VALIDATED" or report["flash_allowed"] is not False:
+        raise FastbootDiagnosticError("Fastboot report cannot authorize SwirPhoneOS support or flashing.")
+    if report["warnings"] != expected["warnings"]:
+        raise FastbootDiagnosticError("Fastboot report warnings were modified.")
+    for key in ("transport_serial_sha256", "tool_sha256"):
+        value = report[key]
+        if value is not None and (not isinstance(value, str) or not SHA256.fullmatch(value)):
+            raise FastbootDiagnosticError("Fastboot provenance digest is invalid.")
+        if require_provenance and value is None:
+            raise FastbootDiagnosticError("Fastboot provenance digest is required for cross-transport evidence.")
+    for key in ("product_reported", "current_slot_reported", "secure_reported"):
+        value = report[key]
+        if value is not None and (
+            not isinstance(value, str) or not value or len(value) > 256
+            or not value.isascii() or any(ord(c) < 32 or ord(c) == 127 for c in value)
+        ):
+            raise FastbootDiagnosticError("Fastboot reported text value is invalid.")
+    if report["transport_mode_reported"] not in ("fastbootd", "bootloader-fastboot", "unknown"):
+        raise FastbootDiagnosticError("Fastboot transport mode is invalid.")
+    if report["bootloader_reported"] not in ("locked", "unlocked", "unknown"):
+        raise FastbootDiagnosticError("Fastboot bootloader state is invalid.")
+    slot_count = report["slot_count_reported"]
+    if slot_count is not None and (type(slot_count) is not int or not 0 <= slot_count <= 8):
+        raise FastbootDiagnosticError("Fastboot slot count is invalid.")
+    hints = report["partition_hints_reported"]
+    if not isinstance(hints, list) or len(hints) > len(PARTITIONS):
+        raise FastbootDiagnosticError("Fastboot partition hints are invalid.")
+    seen: set[str] = set()
+    for item in hints:
+        if not isinstance(item, dict) or set(item) != {"name", "has_slot_reported", "size_bytes_reported"}:
+            raise FastbootDiagnosticError("Fastboot partition hint schema is invalid.")
+        name = item["name"]
+        has_slot = item["has_slot_reported"]
+        size = item["size_bytes_reported"]
+        if name not in PARTITIONS or name in seen:
+            raise FastbootDiagnosticError("Fastboot partition hint name is invalid or duplicated.")
+        seen.add(name)
+        if has_slot is not None and type(has_slot) is not bool:
+            raise FastbootDiagnosticError("Fastboot partition slot hint is invalid.")
+        if size is not None and (type(size) is not int or not 0 < size <= 16 * 1024**4):
+            raise FastbootDiagnosticError("Fastboot partition size hint is invalid.")
+    return report
 
 
 class ReadOnlyFastboot:
@@ -231,10 +315,12 @@ class ReadOnlyFastboot:
         return result.returncode, result.stdout, result.stderr
 
     def inspect(self, *, include_partitions: bool = False) -> dict[str, object]:
+        tool_sha256 = _file_sha256(self.executable)
         code, stdout, _ = self._run(("devices",))
         if code != 0:
             raise FastbootDiagnosticError("Fastboot device listing failed; raw output is withheld for privacy.")
         device = select_fastboot_device(parse_fastboot_devices(stdout))
+        transport_serial_sha256 = _serial_sha256(device.serial)
 
         names = (*GETVARS, *PARTITION_GETVARS) if include_partitions else GETVARS
         values: dict[str, str | None] = {}
@@ -248,4 +334,10 @@ class ReadOnlyFastboot:
         after = select_fastboot_device(parse_fastboot_devices(after_stdout))
         if after != device:
             raise FastbootDiagnosticError("Fastboot device identity changed during inspection.")
-        return summarize_fastboot(values)
+        if _file_sha256(self.executable) != tool_sha256:
+            raise FastbootDiagnosticError("Trusted Fastboot executable changed during inspection.")
+        return summarize_fastboot(
+            values,
+            transport_serial_sha256=transport_serial_sha256,
+            tool_sha256=tool_sha256,
+        )
