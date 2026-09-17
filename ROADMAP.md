@@ -10,6 +10,8 @@
 
 **2% — weighted engineering milestones.**
 
+<img width="100%" src="assets/readme/progress-mini.svg" alt="SwirPhoneOS roadmap progress: 2% weighted engineering progress, 1 of 10 milestones complete, beta gates 0 of 9" />
+
 `[--------------------] 2%`
 
 | Completed milestones | Remaining | Total | Weighted progress |

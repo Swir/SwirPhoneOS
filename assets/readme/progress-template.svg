@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="180" viewBox="0 0 1200 180" role="img" aria-labelledby="title desc">
+  <title id="title">SWIR progress card template — not project data</title>
+  <desc id="desc">Reusable SWIR Progress SVG PRO template. Values are intentionally N/A and must not be presented as live project progress.</desc>
+  <defs>
+    <linearGradient id="swir-progress" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#0088FF"/>
+      <stop offset="1" stop-color="#62E5FF"/>
+    </linearGradient>
+    <pattern id="swir-grid" width="32" height="32" patternUnits="userSpaceOnUse">
+      <path d="M 32 0 L 0 0 0 32" fill="none" stroke="#143044" stroke-width="1" opacity="0.22"/>
+    </pattern>
+    <filter id="swir-glow" x="-20%" y="-200%" width="140%" height="500%">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <rect x="1" y="1" width="1198" height="178" rx="22" fill="#02050A" stroke="#17364A" stroke-width="2"/>
+  <rect x="2" y="2" width="1196" height="176" rx="21" fill="url(#swir-grid)" opacity="0.55"/>
+  <text x="50" y="34" fill="#62E5FF" font-size="15" font-family="Segoe UI, Arial, sans-serif" font-weight="700" letter-spacing="1.6">SWIR PROGRESS SVG PRO • TEMPLATE / NOT PROJECT DATA</text>
+  <text x="50" y="68" fill="#F4FAFF" font-size="24" font-family="Segoe UI, Arial, sans-serif" font-weight="700">Authoritative measured scope goes here</text>
+  <text x="1150" y="68" text-anchor="end" fill="#F4FAFF" font-size="32" font-family="Segoe UI, Arial, sans-serif" font-weight="800">N/A</text>
+  <text x="50" y="92" fill="#8DA8B8" font-size="14" font-family="Segoe UI, Arial, sans-serif">PLANNING • bind this template to verified project data before use</text>
+  <rect id="progress-track" x="50" y="104" width="1100" height="18" rx="9" fill="#07111C" stroke="#1D4258"/>
+  <text x="50" y="151" fill="#F4FAFF" font-size="15" font-family="Segoe UI, Arial, sans-serif">Counter: N/A</text>
+  <text x="1150" y="151" text-anchor="end" fill="#8DA8B8" font-size="15" font-family="Segoe UI, Arial, sans-serif">Release readiness: N/A</text>
+</svg>
