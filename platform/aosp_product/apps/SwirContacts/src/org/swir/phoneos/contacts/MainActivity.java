@@ -64,19 +64,43 @@ public final class MainActivity extends Activity {
         search.addTextChangedListener(new SimpleTextWatcher(this::filter));
         add.setOnClickListener(v -> createContact());
         imported.setOnClickListener(v -> pickVcard());
-        list.setOnItemClickListener((p,v,pos,id) -> editContact(shown.get(pos)));
-        list.setOnItemLongClickListener((p,v,pos,id) -> { confirmExport(shown.get(pos)); return true; });
+        list.setOnItemClickListener((parent, view, position, id) -> {
+            if (position < shown.size()) editContact(shown.get(position));
+        });
+        list.setOnItemLongClickListener((parent, view, position, id) -> {
+            if (position < shown.size()) confirmExport(shown.get(position));
+            return true;
+        });
         ensurePermission();
     }
 
-    private TextView text(int id, int sp) { TextView v = new TextView(this); v.setText(id); v.setTextSize(sp); v.setTextColor(Color.WHITE); v.setPadding(0, 6, 0, 10); return v; }
-    private Button button(int id) { Button b = new Button(this); b.setText(id); return b; }
+    private TextView text(int id, int sp) {
+        TextView view = new TextView(this);
+        view.setText(id);
+        view.setTextSize(sp);
+        view.setTextColor(Color.WHITE);
+        view.setPadding(0, 6, 0, 10);
+        return view;
+    }
+
+    private Button button(int id) {
+        Button button = new Button(this);
+        button.setText(id);
+        return button;
+    }
 
     private void ensurePermission() {
-        if (checkSelfPermission(Manifest.permission.READ_CONTACTS) == PackageManager.PERMISSION_GRANTED) loadContacts();
-        else new AlertDialog.Builder(this).setTitle(R.string.permission_title).setMessage(R.string.permission_body)
-                .setPositiveButton(R.string.permission_grant, (d,w) -> requestPermissions(new String[]{Manifest.permission.READ_CONTACTS}, PERMISSION_CONTACTS))
-                .setNegativeButton(android.R.string.cancel, null).show();
+        if (checkSelfPermission(Manifest.permission.READ_CONTACTS) == PackageManager.PERMISSION_GRANTED) {
+            loadContacts();
+            return;
+        }
+        new AlertDialog.Builder(this)
+                .setTitle(R.string.permission_title)
+                .setMessage(R.string.permission_body)
+                .setPositiveButton(R.string.permission_grant, (dialog, which) ->
+                        requestPermissions(new String[]{Manifest.permission.READ_CONTACTS}, PERMISSION_CONTACTS))
+                .setNegativeButton(android.R.string.cancel, null)
+                .show();
     }
 
     @Override public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] results) {
@@ -87,12 +111,17 @@ public final class MainActivity extends Activity {
     private void loadContacts() {
         all.clear();
         ContentResolver resolver = getContentResolver();
-        String[] cols = {ContactsContract.Contacts._ID, ContactsContract.Contacts.LOOKUP_KEY, ContactsContract.Contacts.DISPLAY_NAME_PRIMARY};
-        try (Cursor cursor = resolver.query(ContactsContract.Contacts.CONTENT_URI, cols, null, null, ContactsContract.Contacts.DISPLAY_NAME_PRIMARY + " COLLATE LOCALIZED ASC")) {
-            if (cursor != null) while (cursor.moveToNext()) {
-                long id = cursor.getLong(0); String lookup = cursor.getString(1); String name = cursor.getString(2);
-                String phone = firstPhone(resolver, id);
-                if (ContactPolicy.validLookupKey(lookup)) all.add(new ContactRow(id, lookup, name == null ? "" : name, phone));
+        String[] columns = {ContactsContract.Contacts._ID, ContactsContract.Contacts.LOOKUP_KEY, ContactsContract.Contacts.DISPLAY_NAME_PRIMARY};
+        try (Cursor cursor = resolver.query(ContactsContract.Contacts.CONTENT_URI, columns, null, null,
+                ContactsContract.Contacts.DISPLAY_NAME_PRIMARY + " COLLATE LOCALIZED ASC")) {
+            if (cursor != null) {
+                while (cursor.moveToNext()) {
+                    long id = cursor.getLong(0);
+                    String lookup = cursor.getString(1);
+                    String name = cursor.getString(2);
+                    String phone = firstPhone(resolver, id);
+                    if (ContactPolicy.validLookupKey(lookup)) all.add(new ContactRow(id, lookup, name == null ? "" : name, phone));
+                }
             }
         }
         filter();
@@ -100,43 +129,127 @@ public final class MainActivity extends Activity {
 
     private String firstPhone(ContentResolver resolver, long contactId) {
         String selection = ContactsContract.CommonDataKinds.Phone.CONTACT_ID + "=?";
-        try (Cursor c = resolver.query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI, new String[]{ContactsContract.CommonDataKinds.Phone.NUMBER}, selection, new String[]{Long.toString(contactId)}, null)) {
-            return c != null && c.moveToFirst() ? c.getString(0) : "";
+        try (Cursor cursor = resolver.query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+                new String[]{ContactsContract.CommonDataKinds.Phone.NUMBER}, selection,
+                new String[]{Long.toString(contactId)}, null)) {
+            return cursor != null && cursor.moveToFirst() ? cursor.getString(0) : "";
         }
     }
 
     private void filter() {
-        String q = search == null ? "" : search.getText().toString(); shown.clear(); ArrayList<String> labels = new ArrayList<>();
-        for (ContactRow row : all) if (ContactPolicy.matches(row.name, row.phone, q)) { shown.add(row); labels.add(row.phone.isEmpty() ? row.name : row.name + "\n" + row.phone); }
+        String query = search == null ? "" : search.getText().toString();
+        shown.clear();
+        ArrayList<String> labels = new ArrayList<>();
+        for (ContactRow row : all) {
+            if (ContactPolicy.matches(row.name, row.phone, query)) {
+                shown.add(row);
+                labels.add(row.phone.isEmpty() ? row.name : row.name + "\n" + row.phone);
+            }
+        }
         if (labels.isEmpty()) labels.add(getString(R.string.no_contacts));
-        adapter.clear(); adapter.addAll(labels); adapter.notifyDataSetChanged();
+        adapter.clear();
+        adapter.addAll(labels);
+        adapter.notifyDataSetChanged();
     }
 
-    private Uri contactUri(ContactRow row) { return ContactsContract.Contacts.getLookupUri(row.id, row.lookupKey); }
-    private void createContact() { Intent intent = new Intent(Intent.ACTION_INSERT); intent.setType(ContactsContract.RawContacts.CONTENT_TYPE); launch(intent); }
-    private void editContact(ContactRow row) { Intent intent = new Intent(Intent.ACTION_EDIT, contactUri(row)); intent.putExtra("finishActivityOnSaveCompleted", true); launch(intent); }
-    private void pickVcard() { Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT); intent.setType("text/vcard"); intent.addCategory(Intent.CATEGORY_OPENABLE); startActivityForResult(intent, IMPORT_VCARD); }
-    private void confirmExport(ContactRow row) { pendingExport = row; new AlertDialog.Builder(this).setTitle(R.string.export_contact).setMessage(row.name).setPositiveButton(R.string.export_contact, (d,w) -> pickExportTarget()).setNegativeButton(android.R.string.cancel, null).show(); }
-    private void pickExportTarget() { if (pendingExport == null) return; Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT); intent.setType("text/vcard"); intent.putExtra(Intent.EXTRA_TITLE, ContactPolicy.vcardFileName(pendingExport.name)); startActivityForResult(intent, EXPORT_VCARD); }
+    private Uri contactUri(ContactRow row) {
+        return ContactsContract.Contacts.getLookupUri(row.id, row.lookupKey);
+    }
+
+    private void createContact() {
+        Intent intent = new Intent(Intent.ACTION_INSERT);
+        intent.setType(ContactsContract.RawContacts.CONTENT_TYPE);
+        launch(intent);
+    }
+
+    private void editContact(ContactRow row) {
+        Intent intent = new Intent(Intent.ACTION_EDIT, contactUri(row));
+        intent.putExtra("finishActivityOnSaveCompleted", true);
+        launch(intent);
+    }
+
+    private void pickVcard() {
+        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+        intent.setType("text/vcard");
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        startActivityForResult(intent, IMPORT_VCARD);
+    }
+
+    private void confirmExport(ContactRow row) {
+        pendingExport = row;
+        new AlertDialog.Builder(this)
+                .setTitle(R.string.export_contact)
+                .setMessage(row.name)
+                .setPositiveButton(R.string.export_contact, (dialog, which) -> pickExportTarget())
+                .setNegativeButton(android.R.string.cancel, null)
+                .show();
+    }
+
+    private void pickExportTarget() {
+        if (pendingExport == null) return;
+        Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
+        intent.setType("text/vcard");
+        intent.putExtra(Intent.EXTRA_TITLE, ContactPolicy.vcardFileName(pendingExport.name));
+        startActivityForResult(intent, EXPORT_VCARD);
+    }
 
     @Override protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (resultCode != RESULT_OK || data == null || data.getData() == null) return;
-        if (requestCode == IMPORT_VCARD) { Intent view = new Intent(Intent.ACTION_VIEW, data.getData()); view.setDataAndType(data.getData(), "text/vcard"); view.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION); launch(view); }
-        else if (requestCode == EXPORT_VCARD && pendingExport != null) exportVcard(pendingExport, data.getData());
+        if (requestCode == IMPORT_VCARD) {
+            Intent view = new Intent(Intent.ACTION_VIEW, data.getData());
+            view.setDataAndType(data.getData(), "text/vcard");
+            view.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            launch(view);
+        } else if (requestCode == EXPORT_VCARD && pendingExport != null) {
+            exportVcard(pendingExport, data.getData());
+        }
     }
 
     private void exportVcard(ContactRow row, Uri destination) {
         Uri source = Uri.withAppendedPath(ContactsContract.Contacts.CONTENT_VCARD_URI, row.lookupKey);
-        try (InputStream in = getContentResolver().openInputStream(source); OutputStream out = getContentResolver().openOutputStream(destination, "w")) {
-            if (in == null || out == null) throw new IllegalStateException(); byte[] buffer = new byte[8192]; int read;
-            while ((read = in.read(buffer)) != -1) out.write(buffer, 0, read); out.flush();
-        } catch (Exception error) { Toast.makeText(this, R.string.error_export, Toast.LENGTH_LONG).show(); }
-        finally { pendingExport = null; }
+        try (InputStream input = getContentResolver().openInputStream(source);
+             OutputStream output = getContentResolver().openOutputStream(destination, "w")) {
+            if (input == null || output == null) throw new IllegalStateException();
+            byte[] buffer = new byte[8192];
+            int read;
+            while ((read = input.read(buffer)) != -1) output.write(buffer, 0, read);
+            output.flush();
+        } catch (Exception error) {
+            Toast.makeText(this, R.string.error_export, Toast.LENGTH_LONG).show();
+        } finally {
+            pendingExport = null;
+        }
     }
 
-    private void launch(Intent intent) { if (intent.resolveActivity(getPackageManager()) != null) startActivity(intent); else Toast.makeText(this, R.string.error_no_handler, Toast.LENGTH_LONG).show(); }
-    @Override protected void onResume() { super.onResume(); if (search != null && checkSelfPermission(Manifest.permission.READ_CONTACTS) == PackageManager.PERMISSION_GRANTED) loadContacts(); }
-    private record ContactRow(long id, String lookupKey, String name, String phone) {}
-    private static final class SimpleTextWatcher implements android.text.TextWatcher { private final Runnable action; SimpleTextWatcher(Runnable action) { this.action = action; } public void beforeTextChanged(CharSequence s,int st,int c,int a) {} public void onTextChanged(CharSequence s,int st,int b,int c) { action.run(); } public void afterTextChanged(android.text.Editable e) {} }
+    private void launch(Intent intent) {
+        if (intent.resolveActivity(getPackageManager()) != null) startActivity(intent);
+        else Toast.makeText(this, R.string.error_no_handler, Toast.LENGTH_LONG).show();
+    }
+
+    @Override protected void onResume() {
+        super.onResume();
+        if (search != null && checkSelfPermission(Manifest.permission.READ_CONTACTS) == PackageManager.PERMISSION_GRANTED) loadContacts();
+    }
+
+    private static final class ContactRow {
+        final long id;
+        final String lookupKey;
+        final String name;
+        final String phone;
+        ContactRow(long id, String lookupKey, String name, String phone) {
+            this.id = id;
+            this.lookupKey = lookupKey;
+            this.name = name;
+            this.phone = phone == null ? "" : phone;
+        }
+    }
+
+    private static final class SimpleTextWatcher implements android.text.TextWatcher {
+        private final Runnable action;
+        SimpleTextWatcher(Runnable action) { this.action = action; }
+        public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+        public void onTextChanged(CharSequence s, int start, int before, int count) { action.run(); }
+        public void afterTextChanged(android.text.Editable editable) {}
+    }
 }
