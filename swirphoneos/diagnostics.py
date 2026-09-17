@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from pathlib import Path
+import hashlib
 import os
 import re
 import subprocess
@@ -16,6 +17,7 @@ PROPERTIES = (
     "ro.build.version.release", "ro.build.version.security_patch",
 )
 SERIAL = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:-]{0,255}\Z")
+SHA256 = re.compile(r"[0-9a-f]{64}\Z")
 
 
 class DiagnosticError(RuntimeError):
@@ -68,13 +70,45 @@ def _value(raw: str) -> str | None:
     return value
 
 
-def summarize(properties: dict[str, str]) -> dict[str, object]:
+def _digest_value(value: str | None, field: str) -> str | None:
+    if value is None:
+        return None
+    if not isinstance(value, str) or not SHA256.fullmatch(value):
+        raise DiagnosticError(f"{field} must be a lowercase SHA-256 digest.")
+    return value
+
+
+def _serial_sha256(serial: str) -> str:
+    if not SERIAL.fullmatch(serial):
+        raise DiagnosticError("Device serial format changed during inspection.")
+    return hashlib.sha256(serial.encode("utf-8")).hexdigest()
+
+
+def _file_sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    try:
+        with path.open("rb") as handle:
+            while chunk := handle.read(1024 * 1024):
+                digest.update(chunk)
+    except OSError as exc:
+        raise DiagnosticError("Trusted ADB executable could not be hashed.") from exc
+    return digest.hexdigest()
+
+
+def summarize(
+    properties: dict[str, str],
+    *,
+    transport_serial_sha256: str | None = None,
+    tool_sha256: str | None = None,
+) -> dict[str, object]:
     values = {key: _value(properties.get(key, "")) for key in PROPERTIES}
     locked = values["ro.boot.flash.locked"]
     treble = values["ro.treble.enabled"]
     return {
-        "schema_version": 1,
+        "schema_version": 2,
         "source": "adb_reported_properties_not_hardware_verification",
+        "transport_serial_sha256": _digest_value(transport_serial_sha256, "transport_serial_sha256"),
+        "tool_sha256": _digest_value(tool_sha256, "tool_sha256"),
         "manufacturer": values["ro.product.manufacturer"],
         "model": values["ro.product.model"],
         "codename": values["ro.product.device"],
@@ -94,11 +128,53 @@ def summarize(properties: dict[str, str]) -> dict[str, object]:
         "swirphoneos_support": "NOT_VALIDATED",
         "flash_allowed": False,
         "warnings": [
-            "Properties may be missing or spoofed; this is not a flashing authorization.",
-            "No device, firmware baseline or partition layout is certified by this report.",
+            "Properties and transport identifiers may be missing or spoofed; this is not a flashing authorization.",
+            "The USB serial is not stored; only its SHA-256 digest is retained for cross-transport correlation.",
             "No backup, unlock, reboot, root, erase, flash or restore was attempted.",
         ],
     }
+
+
+def validate_adb_report(report: object, *, require_provenance: bool = False) -> dict[str, object]:
+    """Validate the exact exported ADB observation schema.
+
+    `require_provenance=True` is reserved for evidence that must bind the
+    observation to one enumerated transport identifier and one exact adb binary.
+    Synthetic/source-only callers may leave the two digest fields unknown.
+    """
+    expected = summarize({})
+    if not isinstance(report, dict) or set(report) != set(expected):
+        raise DiagnosticError("ADB report does not match schema v2 exactly.")
+    if report["schema_version"] != 2 or report["source"] != expected["source"]:
+        raise DiagnosticError("ADB report provenance is invalid.")
+    if report["swirphoneos_support"] != "NOT_VALIDATED" or report["flash_allowed"] is not False:
+        raise DiagnosticError("ADB report cannot authorize SwirPhoneOS support or flashing.")
+    if report["warnings"] != expected["warnings"]:
+        raise DiagnosticError("ADB report warnings were modified.")
+    for key in ("transport_serial_sha256", "tool_sha256"):
+        value = report[key]
+        if value is not None and (not isinstance(value, str) or not SHA256.fullmatch(value)):
+            raise DiagnosticError("ADB provenance digest is invalid.")
+        if require_provenance and value is None:
+            raise DiagnosticError("ADB provenance digest is required for cross-transport evidence.")
+    for key in ("treble_reported", "dynamic_partitions_reported"):
+        if report[key] is not None and type(report[key]) is not bool:
+            raise DiagnosticError("ADB reported boolean is invalid.")
+    if report["bootloader_reported"] not in ("locked", "unlocked", "unknown"):
+        raise DiagnosticError("ADB reported bootloader state is invalid.")
+    for key in (
+        "manufacturer", "model", "codename", "abi", "board_reported", "hardware_reported",
+        "android_release", "build_fingerprint_reported", "reported_security_patch",
+        "verified_boot_state_reported", "vbmeta_device_state_reported", "slot_reported",
+        "slot_suffix_reported",
+    ):
+        value = report[key]
+        if value is not None and (
+            not isinstance(value, str) or not value or len(value) > 256
+            or not value.isascii() or any(ord(c) < 32 or ord(c) == 127 for c in value)
+        ):
+            raise DiagnosticError("ADB reported text value is invalid.")
+    return report
 
 
 class ReadOnlyAdb:
@@ -143,7 +219,9 @@ class ReadOnlyAdb:
         return result.stdout
 
     def inspect(self) -> dict[str, object]:
+        tool_sha256 = _file_sha256(self.executable)
         device = select_device(parse_devices(self._run(("devices", "-l"))))
+        transport_serial_sha256 = _serial_sha256(device.serial)
         properties = {
             key: self._run(("-s", device.serial, "shell", "getprop", key))
             for key in PROPERTIES
@@ -151,4 +229,10 @@ class ReadOnlyAdb:
         after = select_device(parse_devices(self._run(("devices", "-l"))))
         if after != device:
             raise DiagnosticError("Device identity changed during inspection.")
-        return summarize(properties)
+        if _file_sha256(self.executable) != tool_sha256:
+            raise DiagnosticError("Trusted ADB executable changed during inspection.")
+        return summarize(
+            properties,
+            transport_serial_sha256=transport_serial_sha256,
+            tool_sha256=tool_sha256,
+        )
