@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Swir Messages</string>
+    <string name="eyebrow">SWIRPHONEOS • الرسائل</string>
+    <string name="title">اكتب بخصوصية</string>
+    <string name="subtitle">اكتب الرسالة محليًا ثم مررها إلى تطبيق رسائل Android لإجراء الإرسال النهائي.</string>
+    <string name="recipients_hint">رقم المستلم</string>
+    <string name="recipients_content_description">رقم هاتف مستلم الرسالة</string>
+    <string name="message_hint">الرسالة</string>
+    <string name="message_content_description">محتوى الرسالة</string>
+    <string name="characters_remaining">متبقي %1$d حرفًا</string>
+    <string name="clear_draft">مسح المسودة</string>
+    <string name="continue_to_messages">المتابعة إلى الرسائل</string>
+    <string name="handoff_notice">لا يرسل Swir Messages رسائل SMS بصمت أبدًا. يتولى تطبيق الرسائل في النظام الإرسال النهائي. سجل المحادثات ورسائل MMS غير منفذة بعد.</string>
+    <string name="invalid_message">أدخل مستلمًا صالحًا ورسالة غير فارغة.</string>
+    <string name="no_messaging_app">لا يتوفر تطبيق رسائل متوافق.</string>
+    <string name="draft_cleared">تم مسح المسودة.</string>
+</resources>
