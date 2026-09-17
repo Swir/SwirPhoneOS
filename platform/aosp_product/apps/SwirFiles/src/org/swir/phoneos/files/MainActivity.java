@@ -5,7 +5,6 @@ import android.app.AlertDialog;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.database.Cursor;
-import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.DocumentsContract;
@@ -44,8 +43,8 @@ public final class MainActivity extends Activity {
     @Override
     protected void onCreate(Bundle state) {
         super.onCreate(state);
-        getWindow().setStatusBarColor(Color.rgb(4, 11, 23));
-        getWindow().setNavigationBarColor(Color.rgb(4, 11, 23));
+        getWindow().setStatusBarColor(getColor(R.color.swir_background));
+        getWindow().setNavigationBarColor(getColor(R.color.swir_background));
         setContentView(buildUi());
         String persisted = getPreferences(MODE_PRIVATE).getString(PREF_TREE, null);
         if (persisted != null) {
@@ -62,16 +61,16 @@ public final class MainActivity extends Activity {
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
         root.setPadding(dp(18), dp(18), dp(18), dp(18));
-        root.setBackgroundColor(Color.rgb(7, 18, 34));
+        root.setBackgroundColor(getColor(R.color.swir_background));
         root.setLayoutDirection(View.LAYOUT_DIRECTION_LOCALE);
 
-        TextView title = text(R.string.app_name, 26, Color.rgb(105, 216, 255));
+        TextView title = text(R.string.app_name, 26, getColor(R.color.swir_accent_cyan));
         root.addView(title, matchWrap());
-        TextView subtitle = text(R.string.subtitle, 14, Color.rgb(180, 198, 217));
+        TextView subtitle = text(R.string.subtitle, 14, getColor(R.color.swir_text_secondary));
         subtitle.setPadding(0, dp(4), 0, dp(10));
         root.addView(subtitle, matchWrap());
 
-        location = text(R.string.no_folder, 13, Color.rgb(150, 172, 194));
+        location = text(R.string.no_folder, 13, getColor(R.color.swir_text_secondary));
         root.addView(location, matchWrap());
 
         LinearLayout toolbar = new LinearLayout(this);
@@ -83,7 +82,7 @@ public final class MainActivity extends Activity {
         toolbar.addView(actionButton(R.string.new_folder, v -> createFolder()), weighted());
         root.addView(toolbar, matchWrap());
 
-        clipboardState = text(R.string.clipboard_empty, 12, Color.rgb(150, 172, 194));
+        clipboardState = text(R.string.clipboard_empty, 12, getColor(R.color.swir_text_secondary));
         root.addView(clipboardState, matchWrap());
         Button paste = actionButton(R.string.paste_here, v -> pasteHere());
         paste.setContentDescription(getString(R.string.paste_here));
@@ -92,10 +91,11 @@ public final class MainActivity extends Activity {
         search = new EditText(this);
         search.setSingleLine(true);
         search.setHint(R.string.search_hint);
-        search.setTextColor(Color.WHITE);
-        search.setHintTextColor(Color.rgb(130, 150, 171));
-        search.setBackgroundColor(Color.rgb(13, 34, 55));
+        search.setTextColor(getColor(R.color.swir_text_primary));
+        search.setHintTextColor(getColor(R.color.swir_text_secondary));
+        search.setBackgroundColor(getColor(R.color.swir_surface));
         search.setPadding(dp(14), dp(12), dp(14), dp(12));
+        search.setMinHeight(touchMin());
         search.setContentDescription(getString(R.string.search_hint));
         search.addTextChangedListener(new TextWatcher() {
             @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
@@ -236,7 +236,7 @@ public final class MainActivity extends Activity {
             TextView empty = text(
                     currentDirUri == null ? R.string.choose_folder_prompt : R.string.no_results,
                     15,
-                    Color.rgb(180, 198, 217));
+                    getColor(R.color.swir_text_secondary));
             empty.setPadding(dp(4), dp(18), dp(4), dp(18));
             rows.addView(empty, matchWrap());
         }
@@ -408,9 +408,10 @@ public final class MainActivity extends Activity {
         button.setAllCaps(false);
         button.setText(label);
         button.setTextSize(15);
-        button.setTextColor(Color.WHITE);
+        button.setTextColor(getColor(R.color.swir_text_primary));
         button.setGravity(Gravity.START | Gravity.CENTER_VERTICAL);
-        button.setBackgroundColor(Color.rgb(17, 45, 71));
+        button.setBackgroundColor(getColor(R.color.swir_surface_alt));
+        button.setMinHeight(touchMin());
         button.setOnClickListener(listener);
         return button;
     }
@@ -432,6 +433,10 @@ public final class MainActivity extends Activity {
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
         params.setMargins(dp(2), 0, dp(2), 0);
         return params;
+    }
+
+    private int touchMin() {
+        return getResources().getDimensionPixelSize(R.dimen.swir_touch_min);
     }
 
     private int dp(int value) {
