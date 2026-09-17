@@ -38,6 +38,8 @@ def _strict_object(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
 
 
 def _canonical_tool(path: Path) -> tuple[Path, os.stat_result]:
+    if os.name != "posix":
+        raise RuntimeToolEvidenceError("Runtime tool trust capture is supported only on the Linux/POSIX AOSP builder.")
     if not path.is_absolute():
         raise RuntimeToolEvidenceError("Runtime tool path must be absolute.")
     try:
