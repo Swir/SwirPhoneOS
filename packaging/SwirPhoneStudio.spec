@@ -14,6 +14,7 @@ a = Analysis(
     binaries=[],
     datas=[
         (str(ROOT / "swirphoneos" / "locales" / "catalogs.json"), "swirphoneos/locales"),
+        (str(ROOT / "swirphoneos" / "locales" / "catalogs.d"), "swirphoneos/locales/catalogs.d"),
         (str(ROOT / "device_packs"), "device_packs"),
     ],
     hiddenimports=[],

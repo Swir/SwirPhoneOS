@@ -1,16 +1,35 @@
 """Catalog completeness and native locale fallback checks."""
+from string import Formatter
 from unittest.mock import patch
 import unittest
+
 from swirphoneos.i18n import CATALOGS, detect_language, language_code, translate
+
+
+def _format_values(template: str) -> dict[str, object]:
+    """Build deterministic dummy values for exactly the placeholders in a source string."""
+    values: dict[str, object] = {}
+    for _, field_name, format_spec, _ in Formatter().parse(template):
+        if not field_name:
+            continue
+        name = field_name.split(".", 1)[0].split("[", 1)[0]
+        # Existing elapsed-time UI expects a number; textual readiness fields do
+        # not use numeric format specs. Keep numeric specs future-safe too.
+        if name == "seconds" or format_spec.endswith(("d", "f", "g")):
+            values[name] = 1
+        else:
+            values[name] = "test"
+    return values
 
 
 class LanguageTests(unittest.TestCase):
     def test_catalogs_complete(self):
+        source = CATALOGS["en"]
         for language, catalog in CATALOGS.items():
             with self.subTest(language=language):
-                self.assertEqual(set(catalog), set(CATALOGS["en"]))
+                self.assertEqual(set(catalog), set(source))
                 for key in catalog:
-                    self.assertTrue(translate(language, key, seconds=1))
+                    self.assertTrue(translate(language, key, **_format_values(source[key])))
 
     def test_polish_locale(self):
         self.assertEqual(language_code("pl_PL.UTF-8"), "pl")

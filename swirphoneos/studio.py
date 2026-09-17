@@ -10,6 +10,7 @@ import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
 from .i18n import CATALOGS, detect_language, translate
+from .studio_evidence import StudioEvidenceError, load_public_swirroot_readiness_summary
 from .studio_icon import ICON_PNG
 from .studio_state import DiagnosticSession, UnifiedDiagnosticSession, save_report
 
@@ -30,6 +31,7 @@ class Studio:
         self.status_key = "ready"
         self.started = 0.0
         self.closed = False
+        self.readiness_summary: dict[str, object] | None = None
         self._labels: list[tuple[tk.Widget, str]] = []
         self._wrapped: list[ttk.Label] = []
         root.title("SwirPhoneOS · Flash Studio")
@@ -90,8 +92,10 @@ class Studio:
         self.scan = self.button(actions, "scan", self.start_scan)
         self.scan.pack(side="left", padx=(0, 8))
         self.save = self.button(actions, "save", self.export_report)
-        self.save.pack(side="left")
+        self.save.pack(side="left", padx=(0, 8))
         self.save.state(["disabled"])
+        self.readiness = self.button(actions, "review_readiness", self.open_root_readiness)
+        self.readiness.pack(side="left")
         self.status = ttk.Label(outer, text=self.tr("ready"), wraplength=700)
         self._wrapped.append(self.status)
         self.status.grid(row=4, column=0, sticky="ew")
@@ -118,6 +122,7 @@ class Studio:
         root.bind("<Configure>", self.resize)
         root.bind("<Control-o>", lambda _: self.choose_tool())
         root.bind("<Control-s>", lambda _: self.export_report())
+        root.bind("<Control-r>", lambda _: self.open_root_readiness())
         self.after_id = root.after(80, self.poll)
 
     def tr(self, key: str, **values: object) -> str:
@@ -148,7 +153,9 @@ class Studio:
         for widget, key in self._labels:
             widget.configure(text=self.tr(key))
         self.update_status()
-        if self.session.report is None:
+        if self.readiness_summary is not None:
+            self.show_report(self.render_readiness(self.readiness_summary))
+        elif self.session.report is None:
             self.show_report(self.tr("empty"))
 
     def refresh_transport(self) -> None:
@@ -158,6 +165,7 @@ class Studio:
         self.status_key = "ready"
         self.save.state(["disabled"])
         self.session.report = None
+        self.readiness_summary = None
         self.show_report(self.tr("empty"))
         self.update_status()
 
@@ -181,6 +189,51 @@ class Studio:
         """Compatibility alias for the previous ADB-only GUI API."""
         self.choose_tool()
 
+    def render_readiness(self, summary: dict[str, object]) -> str:
+        missing = summary["missing_requirements"]
+        missing_text = (
+            ", ".join(self.tr(f"readiness_gate_{item}") for item in missing)
+            if missing
+            else self.tr("none")
+        )
+        action = self.tr(f"readiness_action_{summary['action']}")
+        yes = self.tr("yes")
+        no = self.tr("no")
+        return self.tr(
+            "readiness_summary",
+            action=action,
+            profile=summary["profile_id"],
+            build=summary["exact_build"],
+            transaction=summary["transaction_id"],
+            missing=missing_text,
+            backend=yes if summary["policy_backend_available"] is True else no,
+            transition=yes if summary["transition_ready"] is True else no,
+            writes=yes if summary["device_write_allowed"] is True else no,
+        )
+
+    def open_root_readiness(self) -> None:
+        if self.session.busy:
+            return
+        path = filedialog.askopenfilename(
+            parent=self.root,
+            title=self.tr("review_readiness"),
+            filetypes=[("JSON", "*.json")],
+        )
+        if not path:
+            return
+        try:
+            # Do not resolve here: resolving could turn a selected symlink into
+            # its regular target and bypass the evidence loader's symlink gate.
+            summary = load_public_swirroot_readiness_summary(Path(path))
+        except (OSError, StudioEvidenceError, ValueError):
+            messagebox.showerror("SwirPhoneOS", self.tr("readiness_failed"), parent=self.root)
+            return
+        self.readiness_summary = summary
+        self.status_key = "readiness_loaded"
+        self.save.state(["disabled"])
+        self.show_report(self.render_readiness(summary))
+        self.update_status()
+
     def start_scan(self) -> None:
         executable = Path(self.tool_path.get())
         if isinstance(self.session, UnifiedDiagnosticSession):
@@ -191,7 +244,8 @@ class Studio:
             return
         self.started = time.monotonic()
         self.status_key = "running"
-        for widget in (self.entry, self.browse, self.scan, self.save, self.transport_selector):
+        self.readiness_summary = None
+        for widget in (self.entry, self.browse, self.scan, self.save, self.readiness, self.transport_selector):
             widget.state(["disabled"])
         self.show_report(self.tr("empty"))
         self.progress.start(15)
@@ -203,10 +257,11 @@ class Studio:
         result = self.session.poll()
         if result is not None:
             self.progress.stop()
-            for widget in (self.entry, self.browse, self.scan, self.transport_selector):
+            for widget in (self.entry, self.browse, self.scan, self.readiness, self.transport_selector):
                 widget.state(["!disabled"])
             if result.report_json is not None:
                 self.status_key = "done"
+                self.readiness_summary = None
                 self.show_report(result.report_json)
                 self.save.state(["!disabled"])
             else:
@@ -216,7 +271,7 @@ class Studio:
         self.after_id = self.root.after(80, self.poll)
 
     def export_report(self) -> None:
-        if self.session.busy or self.session.report is None:
+        if self.session.busy or self.session.report is None or self.readiness_summary is not None:
             return
         path = filedialog.asksaveasfilename(parent=self.root, title=self.tr("save"),
                                            defaultextension=".json", initialfile="swirphoneos-report.json",
