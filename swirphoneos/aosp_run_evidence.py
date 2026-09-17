@@ -18,6 +18,7 @@ from .cuttlefish_evidence import (
     EXPECTED_BUILD_TYPE,
     EXPECTED_PRODUCT,
 )
+from .system_apps import SystemAppRegistryError, load_registry
 
 
 class AospRunEvidenceError(ValueError):
@@ -25,6 +26,7 @@ class AospRunEvidenceError(ValueError):
 
 
 _MAX_REPORT_BYTES = 16 * 1024 * 1024
+_MAX_APP_MANIFEST_BYTES = 2 * 1024 * 1024
 _HEX40 = re.compile(r"[0-9a-f]{40}\Z")
 _HEX64 = re.compile(r"[0-9a-f]{64}\Z")
 _EXPECTED_LUNCH = f"{EXPECTED_PRODUCT}-aosp_current-userdebug"
@@ -53,6 +55,22 @@ def _load_report(path: Path) -> tuple[dict[str, object], str]:
     if not isinstance(value, dict):
         raise AospRunEvidenceError("Evidence input root must be an object.")
     return value, hashlib.sha256(raw).hexdigest()
+
+
+def _load_app_registry_identity(path: Path) -> tuple[list[str], str]:
+    if not path.is_file() or path.is_symlink():
+        raise AospRunEvidenceError("System-app manifest is missing or is not a regular file.")
+    raw = path.read_bytes()
+    if not raw or len(raw) > _MAX_APP_MANIFEST_BYTES:
+        raise AospRunEvidenceError("System-app manifest has an invalid size.")
+    try:
+        registry = load_registry(path)
+    except (SystemAppRegistryError, OSError, ValueError) as exc:
+        raise AospRunEvidenceError("System-app manifest could not be validated.") from exc
+    packages = sorted(app.package for app in registry.apps if app.source_ready)
+    if not packages or len(packages) != len(set(packages)):
+        raise AospRunEvidenceError("System-app manifest has no unique source-ready package set.")
+    return packages, hashlib.sha256(raw).hexdigest()
 
 
 def _require_hex64(value: object, field: str) -> str:
@@ -234,10 +252,11 @@ def _validate_build_chain(
 def _validate_runtime_chain(
     build: dict[str, object],
     fingerprint: str,
+    expected_packages: list[str],
     runtime: dict[str, object],
     smoke: dict[str, object],
     bundle: dict[str, object],
-) -> list[str]:
+) -> None:
     if runtime.get("schema_version") != 3 or runtime.get("runtime_evidence_complete") is not True:
         raise AospRunEvidenceError("Cuttlefish runtime evidence is incomplete.")
     _require_no_write(runtime)
@@ -257,11 +276,13 @@ def _validate_runtime_chain(
     if runtime.get("build_fingerprint_sha256") != expected_fingerprint_digest:
         raise AospRunEvidenceError("Runtime fingerprint digest is inconsistent with the build fingerprint.")
     required_packages = _unique_strings(runtime.get("required_source_ready_packages"), "required_source_ready_packages")
+    if sorted(required_packages) != expected_packages:
+        raise AospRunEvidenceError("Runtime source-ready package set does not match the checked-in system-app manifest.")
     if runtime.get("missing_required_packages") != [] or runtime.get("missing_launchable_packages") != []:
         raise AospRunEvidenceError("Runtime evidence still reports missing source-ready packages or launchers.")
-    if sorted(runtime.get("present_required_packages", [])) != sorted(required_packages):
+    if sorted(runtime.get("present_required_packages", [])) != expected_packages:
         raise AospRunEvidenceError("Runtime package presence does not cover the full source-ready set.")
-    if sorted(runtime.get("present_launchable_packages", [])) != sorted(required_packages):
+    if sorted(runtime.get("present_launchable_packages", [])) != expected_packages:
         raise AospRunEvidenceError("Runtime launcher presence does not cover the full source-ready set.")
 
     if smoke.get("schema_version") != 1 or smoke.get("app_smoke_complete") is not True:
@@ -277,10 +298,10 @@ def _validate_runtime_chain(
     ):
         raise AospRunEvidenceError("Application smoke evidence belongs to a different build.")
     tested_packages = _unique_strings(smoke.get("tested_packages"), "tested_packages")
-    if sorted(tested_packages) != sorted(required_packages):
-        raise AospRunEvidenceError("Application smoke did not exercise the exact source-ready package set.")
+    if sorted(tested_packages) != expected_packages:
+        raise AospRunEvidenceError("Application smoke did not exercise the checked-in source-ready package set.")
     launch_results = smoke.get("launch_results")
-    if not isinstance(launch_results, list) or len(launch_results) != len(required_packages):
+    if not isinstance(launch_results, list) or len(launch_results) != len(expected_packages):
         raise AospRunEvidenceError("Application smoke launch-result count is invalid.")
     launched: set[str] = set()
     for item in launch_results:
@@ -288,7 +309,7 @@ def _validate_runtime_chain(
             raise AospRunEvidenceError("Application smoke launch result is invalid.")
         package = item.get("package")
         component = item.get("component")
-        if package not in required_packages or package in launched:
+        if package not in expected_packages or package in launched:
             raise AospRunEvidenceError("Application smoke launch package is invalid or duplicated.")
         if not isinstance(component, str) or not component.startswith(str(package) + "/"):
             raise AospRunEvidenceError("Application smoke launcher escaped the expected package.")
@@ -316,7 +337,6 @@ def _validate_runtime_chain(
     ).hexdigest()
     if bundle_digest != expected_bundle_digest:
         raise AospRunEvidenceError("Build/runtime evidence bundle canonical digest is invalid.")
-    return sorted(required_packages)
 
 
 def collect_aosp_run_evidence(
@@ -328,11 +348,13 @@ def collect_aosp_run_evidence(
     stage_path: Path,
     post_stage_path: Path,
     build_path: Path,
+    app_manifest_path: Path,
     runtime_path: Path | None = None,
     smoke_path: Path | None = None,
     bundle_path: Path | None = None,
 ) -> dict[str, object]:
     """Validate one complete build run and optionally its exact runtime/smoke chain."""
+    expected_packages, app_manifest_sha = _load_app_registry_identity(app_manifest_path)
     paths = {
         "builder_preflight": preflight_path,
         "aosp_plan": plan_path,
@@ -365,12 +387,12 @@ def collect_aosp_run_evidence(
         reports["build_evidence"],
     )
 
-    packages: list[str] = []
     runtime_complete = False
     if supplied_runtime:
-        packages = _validate_runtime_chain(
+        _validate_runtime_chain(
             reports["build_evidence"],
             fingerprint,
+            expected_packages,
             reports["runtime"],
             reports["smoke"],
             reports["bundle"],
@@ -387,7 +409,8 @@ def collect_aosp_run_evidence(
         "staged_content_sha256": stage_digest,
         "build_fingerprint": fingerprint,
         "build_fingerprint_sha256": hashlib.sha256(fingerprint.encode("ascii")).hexdigest(),
-        "source_ready_packages": packages,
+        "app_manifest_sha256": app_manifest_sha,
+        "source_ready_packages": expected_packages,
         "report_file_sha256": {name: raw_hashes[name] for name in sorted(raw_hashes)},
         "build_chain_complete": True,
         "runtime_chain_complete": runtime_complete,
