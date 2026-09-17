@@ -1,3 +1,4 @@
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -8,7 +9,7 @@ from unittest.mock import patch
 
 from swirphoneos.diagnostics import (
     Device, DiagnosticError, PROPERTIES, ReadOnlyAdb,
-    parse_devices, select_device, summarize,
+    parse_devices, select_device, summarize, validate_adb_report,
 )
 
 
@@ -82,6 +83,17 @@ class ParsingTests(unittest.TestCase):
             with self.subTest(value=value), self.assertRaises(DiagnosticError):
                 summarize({"ro.product.model": value})
 
+    def test_provenance_validator_rejects_bad_digest(self):
+        report = summarize({}, transport_serial_sha256="a" * 64, tool_sha256="b" * 64)
+        validate_adb_report(report, require_provenance=True)
+        report["tool_sha256"] = "BAD"
+        with self.assertRaises(DiagnosticError):
+            validate_adb_report(report, require_provenance=True)
+
+    def test_provenance_validator_requires_digests_for_evidence(self):
+        with self.assertRaises(DiagnosticError):
+            validate_adb_report(summarize({}), require_provenance=True)
+
 
 class TransportTests(unittest.TestCase):
     def setUp(self):
@@ -150,6 +162,9 @@ class TransportTests(unittest.TestCase):
         self.assertEqual(run.call_count, len(PROPERTIES) + 2)
         self.assertFalse(report["flash_allowed"])
         self.assertNotIn("PRIVATE123", json.dumps(report))
+        self.assertEqual(report["transport_serial_sha256"], hashlib.sha256(b"PRIVATE123").hexdigest())
+        self.assertEqual(report["tool_sha256"], hashlib.sha256(self.path.read_bytes()).hexdigest())
+        validate_adb_report(report, require_provenance=True)
         for call in run.call_args_list[1:-1]:
             self.assertEqual(call.args[0][2:4], ("shell", "getprop"))
 
@@ -157,6 +172,14 @@ class TransportTests(unittest.TestCase):
         outputs = ["List of devices attached\nFIRST device\n"] + [""] * len(PROPERTIES)
         outputs += ["List of devices attached\nSECOND device\n"]
         with patch.object(self.adb, "_run", side_effect=outputs), self.assertRaises(DiagnosticError):
+            self.adb.inspect()
+
+    def test_tool_binary_change_is_rejected(self):
+        outputs = ["List of devices attached\nPRIVATE123 device\n"] + [""] * len(PROPERTIES)
+        outputs += ["List of devices attached\nPRIVATE123 device\n"]
+        with patch.object(self.adb, "_run", side_effect=outputs), patch(
+            "swirphoneos.diagnostics._file_sha256", side_effect=["a" * 64, "b" * 64]
+        ), self.assertRaises(DiagnosticError):
             self.adb.inspect()
 
 
