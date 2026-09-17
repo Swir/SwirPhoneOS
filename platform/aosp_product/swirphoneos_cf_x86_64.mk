@@ -13,17 +13,21 @@ PRODUCT_MODEL := SwirPhoneOS Cuttlefish Developer
 PRODUCT_PACKAGES += \
     SwirPhone \
     SwirMessages \
+    SwirCamera \
     SwirCalculator \
     SwirSettings \
     SwirFiles \
+    SwirBrowser \
     SwirDeviceCare \
     SwirUpdate \
     SwirPrivacy \
     SwirClock \
     SwirNotes \
     SwirCalendar \
+    SwirWeather \
     SwirGallery \
     SwirRecorder \
     SwirContacts \
+    SwirBackup \
     SwirApps \
     SwirRoot
