@@ -63,9 +63,18 @@ class SwirRootPolicy:
         return self.write_operations_enabled and bool(self.supported_builds)
 
 
+def _strict_object(pairs: list[tuple[str, object]]) -> dict[str, object]:
+    result: dict[str, object] = {}
+    for key, value in pairs:
+        if key in result:
+            raise SwirRootPolicyError(f"Duplicate JSON key: {key}")
+        result[key] = value
+    return result
+
+
 def _load_json(path: Path) -> object:
-    if not path.is_file():
-        raise SwirRootPolicyError("SwirRoot policy file does not exist.")
+    if not path.is_file() or path.is_symlink():
+        raise SwirRootPolicyError("SwirRoot policy file must be an existing regular file, not a symlink.")
     try:
         text = path.read_text(encoding="utf-8")
     except (OSError, UnicodeError) as exc:
@@ -73,7 +82,9 @@ def _load_json(path: Path) -> object:
     if len(text) > 131_072:
         raise SwirRootPolicyError("SwirRoot policy file is oversized.")
     try:
-        return json.loads(text)
+        return json.loads(text, object_pairs_hook=_strict_object)
+    except SwirRootPolicyError:
+        raise
     except json.JSONDecodeError as exc:
         raise SwirRootPolicyError("SwirRoot policy file is invalid JSON.") from exc
 
@@ -153,6 +164,8 @@ def validate_policy(data: object) -> SwirRootPolicy:
     for build in supported_builds:
         if not isinstance(build, str) or not build.strip() or len(build) > 128:
             raise SwirRootPolicyError("supported_builds contains an invalid build id.")
+        if any(ord(char) < 32 or ord(char) == 127 for char in build) or not build.isascii():
+            raise SwirRootPolicyError("supported_builds contains unsafe characters.")
         if build in clean_builds:
             raise SwirRootPolicyError("supported_builds contains duplicates.")
         clean_builds.append(build)

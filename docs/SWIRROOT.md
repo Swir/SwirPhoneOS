@@ -1,6 +1,6 @@
 # SwirRoot engineering contract
 
-SwirRoot is the first-party root manager planned for explicitly supported SwirPhoneOS builds. The repository now contains a meaningful **Android source-stage** SwirRoot application in addition to the host policy validator: an original localized owner UI, a non-exported status/diagnostic service, a bounded app-private review audit and a pure-Java transition policy.
+SwirRoot is the first-party root manager planned for explicitly supported SwirPhoneOS builds. The repository contains a meaningful **Android source-stage** SwirRoot application plus host-side safety policy and readiness-evidence tooling: an original localized owner UI, a non-exported status/diagnostic service, a bounded app-private review audit, a pure-Java transition policy and a fail-closed binder between recovery and read-only hardware evidence.
 
 It is still **not a working root implementation**. The checked-in Android service hard-disables the mutation backend and supported-build switch, reports `UNAVAILABLE`, and contains no boot-image patcher, bootloader unlocker, process-execution path, partition writer or exploit/bypass mechanism. The UI can review enable/unroot prerequisites after explicit owner confirmation, but it cannot execute those transitions.
 
@@ -49,6 +49,16 @@ Passing the pure-Java policy returns only an eligible `TRANSITION` plan. The cur
 
 The unroot path must know and verify the expected non-root state, require owner confirmation, retain rollback material and use the same durable transaction journal. Unroot is considered implemented only after exact-build physical validation demonstrates enable → reboot → use → disable → reboot/recovery behavior and verifies that the expected non-root boot/system state was restored.
 
+## Readiness evidence binding
+
+`swirphoneos.swirroot_readiness` now binds an existing create-only recovery journal to the existing cross-transport read-only hardware evidence and one exact requested SwirPhoneOS build. It requires matching profile, model, codename, current firmware fingerprint and journal target build, then reports which SwirRoot policy gates remain missing.
+
+This evidence class is intentionally **non-authorizing**. The current hardware report type is only `CORRELATED_READ_ONLY_NOT_VERIFIED`, so `hardware_root_authorized=false`, `transition_ready=false`, `device_write_allowed=false`, `root_operation_executed=false` and `status_promotion_performed=false` are mandatory. A future physically authoritative support/root evidence type must be designed explicitly; the current read-only report can never be silently reinterpreted as root permission.
+
+The host policy loader was also hardened to reject symlinked policy files, duplicate JSON keys and unsafe control characters in supported-build identifiers. This prevents ambiguous policy parsing from becoming a future authorization boundary.
+
+See [`SWIRROOT_READINESS_EVIDENCE.md`](SWIRROOT_READINESS_EVIDENCE.md) for the evidence schema and CLI workflow.
+
 ## Authorization model
 
 Future per-app root grants are deny-by-default, individually revocable and auditable. An emergency global disable path is mandatory. Root enablement must never silently grant unrestricted background root to every installed package.
@@ -68,6 +78,16 @@ The Android source validator also scans all production Java files and rejects pr
 ```sh
 python -m swirphoneos root-policy
 python -m swirphoneos android-apps
+```
+
+Readiness binding is available separately so it cannot be mistaken for an execution command:
+
+```sh
+python -m swirphoneos.root_readiness_cli \
+  --action enable \
+  --exact-build '<exact SwirPhoneOS build identity>' \
+  --journal /absolute/path/to/recovery-journal.json \
+  --hardware /absolute/path/to/hardware-evidence.json
 ```
 
 At the current development stage host policy `write_operations_enabled` is `false`, its `supported_builds` list is empty, Android `WRITE_BACKEND_ENABLED` is `false`, Android `SUPPORTED_BUILD` is `false`, and root availability is therefore false. The pure-Java `RootPolicyHostTest` exercises the decision gates without performing any Android or device write.
