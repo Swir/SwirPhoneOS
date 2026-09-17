@@ -11,15 +11,20 @@ from __future__ import annotations
 import hashlib
 import json
 from pathlib import Path
+import re
 from typing import Iterable
 
+from .diagnostics import DiagnosticError, validate_adb_report
+from .fastboot import FastbootDiagnosticError, validate_fastboot_report
 from .identity import IdentityAssessmentError, validate_unified_report
 from .profiles import DeviceProfile
 from .transaction_evidence import TransactionPlan
 
 MAX_JSON_BYTES = 1024 * 1024
+SHA256 = re.compile(r"[0-9a-f]{64}\Z")
 REPORT_KEYS = {
     "schema_version", "source", "state", "profile_id", "profile_status",
+    "transport_serial_sha256", "adb_tool_sha256", "fastboot_tool_sha256",
     "adb_model_reported", "adb_codename_reported", "adb_build_fingerprint_reported",
     "adb_slot_reported", "fastboot_product_reported", "fastboot_slot_reported",
     "partition_hints_reported", "correlations", "hardware_verified",
@@ -67,6 +72,12 @@ def _text(value: object, field: str, *, optional: bool = False, limit: int = 512
         raise HardwareEvidenceError(f"{field} has an invalid value.")
     if any(ord(char) < 32 or ord(char) == 127 for char in value):
         raise HardwareEvidenceError(f"{field} contains control characters.")
+    return value
+
+
+def _sha256(value: object, field: str) -> str:
+    if not isinstance(value, str) or not SHA256.fullmatch(value):
+        raise HardwareEvidenceError(f"{field} must be a lowercase SHA-256 digest.")
     return value
 
 
@@ -148,6 +159,18 @@ def create_hardware_evidence(
     fastboot = fastboot_unified.get("transport_report")
     if not isinstance(adb, dict) or not isinstance(fastboot, dict):
         raise HardwareEvidenceError("Nested transport reports are missing.")
+    try:
+        validate_adb_report(adb, require_provenance=True)
+        validate_fastboot_report(fastboot, require_provenance=True)
+    except (DiagnosticError, FastbootDiagnosticError) as exc:
+        raise HardwareEvidenceError("Transport report provenance failed exact validation.") from exc
+
+    adb_serial_sha = _sha256(adb.get("transport_serial_sha256"), "ADB transport serial digest")
+    fastboot_serial_sha = _sha256(fastboot.get("transport_serial_sha256"), "Fastboot transport serial digest")
+    if adb_serial_sha != fastboot_serial_sha:
+        raise HardwareEvidenceError("ADB and Fastboot transport serial digests do not match.")
+    adb_tool_sha = _sha256(adb.get("tool_sha256"), "ADB tool digest")
+    fastboot_tool_sha = _sha256(fastboot.get("tool_sha256"), "Fastboot tool digest")
 
     model = _text(adb.get("model"), "ADB model", limit=128)
     codename = _text(adb.get("codename"), "ADB codename", limit=128)
@@ -175,6 +198,8 @@ def create_hardware_evidence(
     hints = _partition_hints(fastboot.get("partition_hints_reported"))
     correlations = [
         "profile_id_matches_across_transports",
+        "transport_serial_sha256_matches_across_transports",
+        "trusted_transport_tool_sha256_recorded",
         "adb_model_matches_profile_allowlist",
         "adb_codename_matches_profile_codename",
         "fastboot_product_matches_profile_codename",
@@ -188,11 +213,14 @@ def create_hardware_evidence(
         correlations.append("fastboot_partition_hints_recorded")
 
     core: dict[str, object] = {
-        "schema_version": 1,
+        "schema_version": 2,
         "source": "swirphoneos_cross_transport_read_only_hardware_evidence",
         "state": "CORRELATED_READ_ONLY_NOT_VERIFIED",
         "profile_id": profile.profile_id,
         "profile_status": profile.status,
+        "transport_serial_sha256": adb_serial_sha,
+        "adb_tool_sha256": adb_tool_sha,
+        "fastboot_tool_sha256": fastboot_tool_sha,
         "adb_model_reported": model,
         "adb_codename_reported": codename,
         "adb_build_fingerprint_reported": fingerprint,
@@ -207,7 +235,7 @@ def create_hardware_evidence(
         "flash_allowed": False,
         "root_allowed": False,
         "warnings": [
-            "Cross-transport correlation is not cryptographic proof that both reports came from the same physical phone.",
+            "Matching transport-serial SHA-256 strengthens session correlation but is not cryptographic hardware identity proof.",
             "Fastboot partition values are device-reported hints, not a verified partition map or restore recipe.",
             "No installation, root, unlock, reboot, erase, flash, relock or restore operation is authorized by this evidence.",
         ],
@@ -221,8 +249,8 @@ def create_hardware_evidence(
 
 def validate_hardware_evidence(report: object) -> dict[str, object]:
     if not isinstance(report, dict) or set(report) != REPORT_KEYS:
-        raise HardwareEvidenceError("Hardware evidence must match schema v1 exactly.")
-    if report["schema_version"] != 1 or report["source"] != "swirphoneos_cross_transport_read_only_hardware_evidence":
+        raise HardwareEvidenceError("Hardware evidence must match schema v2 exactly.")
+    if report["schema_version"] != 2 or report["source"] != "swirphoneos_cross_transport_read_only_hardware_evidence":
         raise HardwareEvidenceError("Hardware evidence provenance is invalid.")
     if report["state"] != "CORRELATED_READ_ONLY_NOT_VERIFIED":
         raise HardwareEvidenceError("Hardware evidence state is invalid.")
@@ -235,16 +263,35 @@ def validate_hardware_evidence(report: object) -> dict[str, object]:
         _text(report[key], key, limit=512)
     _text(report["adb_slot_reported"], "adb_slot_reported", optional=True, limit=16)
     _text(report["fastboot_slot_reported"], "fastboot_slot_reported", optional=True, limit=16)
+    for key in ("transport_serial_sha256", "adb_tool_sha256", "fastboot_tool_sha256"):
+        _sha256(report[key], key)
     _partition_hints(report["partition_hints_reported"])
     correlations = report["correlations"]
-    if not isinstance(correlations, list) or not 5 <= len(correlations) <= 16 or not all(isinstance(item, str) and item for item in correlations):
+    required = {
+        "profile_id_matches_across_transports",
+        "transport_serial_sha256_matches_across_transports",
+        "trusted_transport_tool_sha256_recorded",
+        "adb_model_matches_profile_allowlist",
+        "adb_codename_matches_profile_codename",
+        "fastboot_product_matches_profile_codename",
+        "adb_build_fingerprint_recorded",
+    }
+    if (
+        not isinstance(correlations, list) or not 7 <= len(correlations) <= 16
+        or not all(isinstance(item, str) and item for item in correlations)
+        or len(set(correlations)) != len(correlations)
+        or not required.issubset(correlations)
+    ):
         raise HardwareEvidenceError("Correlation evidence is incomplete.")
     warnings = report["warnings"]
-    if not isinstance(warnings, list) or len(warnings) != 3 or not all(isinstance(item, str) and item for item in warnings):
+    expected_warnings = [
+        "Matching transport-serial SHA-256 strengthens session correlation but is not cryptographic hardware identity proof.",
+        "Fastboot partition values are device-reported hints, not a verified partition map or restore recipe.",
+        "No installation, root, unlock, reboot, erase, flash, relock or restore operation is authorized by this evidence.",
+    ]
+    if warnings != expected_warnings:
         raise HardwareEvidenceError("Hardware evidence warnings are invalid.")
-    digest = _text(report["evidence_sha256"], "evidence_sha256", limit=64)
-    if digest is None or len(digest) != 64 or any(char not in "0123456789abcdef" for char in digest):
-        raise HardwareEvidenceError("Hardware evidence SHA-256 is invalid.")
+    digest = _sha256(report["evidence_sha256"], "evidence_sha256")
     core = {key: value for key, value in report.items() if key != "evidence_sha256"}
     expected = hashlib.sha256(json.dumps(core, sort_keys=True, separators=(",", ":"), ensure_ascii=True).encode()).hexdigest()
     if digest != expected:
