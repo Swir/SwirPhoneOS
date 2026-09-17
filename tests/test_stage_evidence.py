@@ -147,6 +147,18 @@ class StageEvidenceTests(unittest.TestCase):
             with self.assertRaises(StageEvidenceError):
                 verify_post_build_stage(report, workspace)
 
+    @unittest.skipIf(os.name == "nt", "hard-link creation is not reliably available on Windows CI")
+    def test_hard_linked_staged_file_is_rejected(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            workspace, report = self._fixture(root)
+            target = workspace / "vendor/swir/products/AndroidProducts.mk"
+            alias = root / "outside-hardlink.mk"
+            os.link(target, alias)
+            self.assertGreater(target.stat().st_nlink, 1)
+            with self.assertRaises(StageEvidenceError):
+                verify_post_build_stage(report, workspace)
+
     @unittest.skipIf(os.name == "nt", "symlink creation is not reliably available on Windows CI")
     def test_symlinked_staged_file_is_rejected(self):
         with tempfile.TemporaryDirectory() as temp:
