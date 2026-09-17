@@ -32,10 +32,26 @@ jobs:
     runs-on: [self-hosted, linux, x64, swir-aosp-builder]
     timeout-minutes: 720
     steps:
+      - name: Initialize bounded run diagnostics
+        shell: bash
+        env:
+          SWIR_REQUESTED_JOBS: ${{ inputs.jobs }}
+          SWIR_COLLECT_RUNTIME: ${{ inputs.collect_runtime }}
+        run: |
+          set -euo pipefail
+          printf '%s\n' "BOOTSTRAP" > "$GITHUB_WORKSPACE/aosp-phase.txt"
+          {
+            printf 'source_commit=%s\n' "$GITHUB_SHA"
+            printf 'requested_jobs=%s\n' "$SWIR_REQUESTED_JOBS"
+            printf 'collect_runtime=%s\n' "$SWIR_COLLECT_RUNTIME"
+          } > "$GITHUB_WORKSPACE/aosp-run-context.txt"
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           path: tools
           persist-credentials: false
+      - name: Mark toolchain setup phase
+        shell: bash
+        run: printf '%s\n' "TOOLCHAIN" > "$GITHUB_WORKSPACE/aosp-phase.txt"
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: '3.14'
@@ -43,6 +59,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          printf '%s\n' "PREFLIGHT" > "$GITHUB_WORKSPACE/aosp-phase.txt"
           : "${SWIR_AOSP_WORKSPACE:?Set SWIR_AOSP_WORKSPACE on the dedicated self-hosted runner}"
           test "${{ inputs.jobs }}" -ge 1
           test "${{ inputs.jobs }}" -le 256
@@ -79,6 +96,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          printf '%s\n' "SOURCE_SYNC" > "$GITHUB_WORKSPACE/aosp-phase.txt"
           cd "$SWIR_AOSP_WORKSPACE"
           repo init -u https://android.googlesource.com/platform/manifest -b android-17.0.0_r1
           repo sync -c --no-tags --optimized-fetch --prune -j"${{ inputs.jobs }}"
@@ -88,6 +106,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          printf '%s\n' "SOURCE_STAGE" > "$GITHUB_WORKSPACE/aosp-phase.txt"
           PYTHONPATH="$GITHUB_WORKSPACE/tools" python -m swirphoneos stage-product --workspace "$SWIR_AOSP_WORKSPACE" --product-root "$GITHUB_WORKSPACE/tools/platform/aosp_product" --execute > "$GITHUB_WORKSPACE/stage-report.json"
           python - "$GITHUB_WORKSPACE/stage-report.json" <<'PY'
           import json
@@ -111,19 +130,29 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          printf '%s\n' "BUILD" > "$GITHUB_WORKSPACE/aosp-phase.txt"
           cd "$SWIR_AOSP_WORKSPACE"
           source build/envsetup.sh
           lunch swirphoneos_cf_x86_64-aosp_current-userdebug
-          m -j"${{ inputs.jobs }}"
+          BUILD_LOG="$GITHUB_WORKSPACE/aosp-build-full.log"
+          rm -f "$BUILD_LOG" "$GITHUB_WORKSPACE/aosp-build-tail.log"
+          if ! m -j"${{ inputs.jobs }}" 2>&1 | tee "$BUILD_LOG"; then
+            tail -c 262144 "$BUILD_LOG" > "$GITHUB_WORKSPACE/aosp-build-tail.log" || true
+            rm -f "$BUILD_LOG"
+            exit 1
+          fi
+          rm -f "$BUILD_LOG" "$GITHUB_WORKSPACE/aosp-build-tail.log"
       - name: Re-verify exact staged source bytes after build
         shell: bash
         run: |
           set -euo pipefail
+          printf '%s\n' "POST_BUILD_STAGE" > "$GITHUB_WORKSPACE/aosp-phase.txt"
           PYTHONPATH="$GITHUB_WORKSPACE/tools" python -m swirphoneos.stage_evidence --report "$GITHUB_WORKSPACE/stage-report.json" --workspace "$SWIR_AOSP_WORKSPACE" > "$GITHUB_WORKSPACE/post-build-stage-evidence.json"
       - name: Capture build provenance
         shell: bash
         run: |
           set -euo pipefail
+          printf '%s\n' "BUILD_EVIDENCE" > "$GITHUB_WORKSPACE/aosp-phase.txt"
           PYTHONPATH="$GITHUB_WORKSPACE/tools" python -m swirphoneos build-evidence --workspace "$SWIR_AOSP_WORKSPACE" --manifest "$SWIR_AOSP_WORKSPACE/swirphoneos-pinned-manifest.xml" --baseline "$GITHUB_WORKSPACE/tools/platform/aosp_baseline.json" > "$GITHUB_WORKSPACE/build-evidence.json"
       - name: Launch exact built Cuttlefish product
         if: ${{ inputs.collect_runtime }}
@@ -132,6 +161,7 @@ jobs:
           SWIR_CVD_HOME: ${{ github.workspace }}/cuttlefish-home
         run: |
           set -euo pipefail
+          printf '%s\n' "RUNTIME_LAUNCH" > "$GITHUB_WORKSPACE/aosp-phase.txt"
           rm -rf "$SWIR_CVD_HOME"
           mkdir -p "$SWIR_CVD_HOME"
           cd "$SWIR_AOSP_WORKSPACE"
@@ -147,6 +177,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          printf '%s\n' "RUNTIME_WAIT" > "$GITHUB_WORKSPACE/aosp-phase.txt"
           rm -f "$GITHUB_WORKSPACE/runtime-evidence.json" "$GITHUB_WORKSPACE/runtime-evidence.tmp"
           ready=0
           for attempt in $(seq 1 180); do
@@ -172,17 +203,20 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          printf '%s\n' "APP_SMOKE" > "$GITHUB_WORKSPACE/aosp-phase.txt"
           PYTHONPATH="$GITHUB_WORKSPACE/tools" python -m swirphoneos.cuttlefish_smoke --adb "${{ inputs.adb_path }}" --manifest "$GITHUB_WORKSPACE/tools/system_apps/manifest.json" > "$GITHUB_WORKSPACE/app-smoke-evidence.json"
       - name: Bind build and runtime evidence
         if: ${{ inputs.collect_runtime }}
         shell: bash
         run: |
           set -euo pipefail
+          printf '%s\n' "RUNTIME_BIND" > "$GITHUB_WORKSPACE/aosp-phase.txt"
           PYTHONPATH="$GITHUB_WORKSPACE/tools" python -m swirphoneos evidence-bundle --build "$GITHUB_WORKSPACE/build-evidence.json" --runtime "$GITHUB_WORKSPACE/runtime-evidence.json" > "$GITHUB_WORKSPACE/evidence-bundle.json"
       - name: Bind complete AOSP run evidence chain
         shell: bash
         run: |
           set -euo pipefail
+          printf '%s\n' "RUN_BIND" > "$GITHUB_WORKSPACE/aosp-phase.txt"
           args=(
             --source-commit "$GITHUB_SHA"
             --preflight "$GITHUB_WORKSPACE/builder-preflight.json"
@@ -217,6 +251,42 @@ jobs:
             "$STOP_CVD"
           fi
           exit 0
+      - name: Collect bounded failure evidence
+        if: ${{ failure() }}
+        shell: bash
+        run: |
+          set +e
+          if test -f "$GITHUB_WORKSPACE/aosp-build-full.log"; then
+            tail -c 262144 "$GITHUB_WORKSPACE/aosp-build-full.log" > "$GITHUB_WORKSPACE/aosp-build-tail.log" || true
+            rm -f "$GITHUB_WORKSPACE/aosp-build-full.log"
+          fi
+          phase="BOOTSTRAP"
+          if test -f "$GITHUB_WORKSPACE/aosp-phase.txt"; then
+            phase="$(head -n 1 "$GITHUB_WORKSPACE/aosp-phase.txt" | tr -d '\r\n')"
+          fi
+          PYTHONPATH="$GITHUB_WORKSPACE/tools" python -m swirphoneos.aosp_failure_cli \
+            --source-commit "$GITHUB_SHA" \
+            --phase "$phase" \
+            --baseline "$GITHUB_WORKSPACE/tools/platform/aosp_baseline.json" \
+            --run-context "$GITHUB_WORKSPACE/aosp-run-context.txt" \
+            --preflight "$GITHUB_WORKSPACE/builder-preflight.json" \
+            --plan "$GITHUB_WORKSPACE/aosp-plan.json" \
+            --manifest "$GITHUB_WORKSPACE/resolved-manifest.json" \
+            --stage "$GITHUB_WORKSPACE/stage-report.json" \
+            --post-stage "$GITHUB_WORKSPACE/post-build-stage-evidence.json" \
+            --build "$GITHUB_WORKSPACE/build-evidence.json" \
+            --runtime "$GITHUB_WORKSPACE/runtime-evidence.json" \
+            --smoke "$GITHUB_WORKSPACE/app-smoke-evidence.json" \
+            --bundle "$GITHUB_WORKSPACE/evidence-bundle.json" \
+            --run-evidence "$GITHUB_WORKSPACE/aosp-run-evidence.json" \
+            --diagnostic-log "$GITHUB_WORKSPACE/aosp-build-tail.log" \
+            > "$GITHUB_WORKSPACE/aosp-failure-evidence.json"
+          status=$?
+          if test "$status" -ne 0; then
+            rm -f "$GITHUB_WORKSPACE/aosp-failure-evidence.json"
+            printf 'Failure evidence generator exited with status %s; inspect immutable run context and GitHub step logs.\n' "$status" > "$GITHUB_WORKSPACE/aosp-failure-evidence-error.txt"
+          fi
+          exit 0
       - name: Upload immutable evidence files
         if: ${{ always() }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -225,6 +295,8 @@ jobs:
           if-no-files-found: error
           retention-days: 30
           path: |
+            aosp-run-context.txt
+            aosp-phase.txt
             builder-preflight.json
             aosp-plan.json
             resolved-manifest.json
@@ -235,3 +307,6 @@ jobs:
             app-smoke-evidence.json
             evidence-bundle.json
             aosp-run-evidence.json
+            aosp-build-tail.log
+            aosp-failure-evidence.json
+            aosp-failure-evidence-error.txt
