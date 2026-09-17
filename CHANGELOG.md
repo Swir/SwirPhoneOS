@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+### Complete AOSP run evidence chain and exact builder gate
+
+Fixed a real fail-closed orchestration defect in the manual self-hosted AOSP workflow: `build-preflight` emits mandatory checks as `checks[].id` / `checks[].passed`, while the workflow had been reading non-existent `name` / `ok` fields. The builder gate now consumes the actual schema, rejects missing check inventories and also rejects an internally inconsistent report before `repo init` / `repo sync`.
+
+Strengthened `build-evidence` so a completed product is accepted only when its `system/build.prop` matches the pinned Android baseline for release, API level, build ID, security patch level and `userdebug` build type. Added `swirphoneos.aosp_run_evidence` plus the `aosp-run-evidence` CLI surface to bind one exact workflow source commit to builder preflight, AOSP plan, resolved manifest, pre-build staging, post-build staged-source re-verification and hashed build output. Optional Cuttlefish runtime, app-launch smoke and build/runtime bundle evidence is all-or-nothing and must use the same exact fingerprint/package set.
+
+The workflow now emits `aosp-run-evidence.json` after a successful build chain and includes it with the immutable evidence artifact set. Regression coverage rejects build-ID/security-patch drift, preflight schema drift, cross-run stage hashes, runtime/smoke package mismatch, partial runtime groups, duplicate JSON keys and mixed build/runtime bundles. No real AOSP build or boot is claimed by these host-side changes, so weighted progress remains **2%** and Beta remains **0/9**.
+
 ### Cross-transport read-only hardware evidence
 
 Expanded the physical-device diagnostics path without adding any write capability. ADB observations now include exact build fingerprint, board/hardware, slot and verified-boot/VBMeta state hints. Fastboot can optionally query only bounded `has-slot:<partition>` and `partition-size:<partition>` variables for a reviewed partition-name allowlist; `getvar all` and every mutating Fastboot command remain unavailable.
