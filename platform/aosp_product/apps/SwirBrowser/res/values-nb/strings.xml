@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Swir Browser</string>
+    <string name="title">Swir Browser</string>
+    <string name="subtitle">En fokusert nettleser med tydelige lokale personvernkontroller.</string>
+    <string name="address_hint">Søk eller skriv inn adresse</string>
+    <string name="go">Gå</string>
+    <string name="back">Tilbake</string>
+    <string name="forward">Frem</string>
+    <string name="reload">Last inn på nytt</string>
+    <string name="share">Del</string>
+    <string name="clear_data">Personvern</string>
+    <string name="status_ready">Klar</string>
+    <string name="status_loading">Laster…</string>
+    <string name="status_blocked">Usikker navigering ble blokkert</string>
+    <string name="error_invalid">Denne adressen kan ikke åpnes trygt.</string>
+    <string name="clear_confirm_title">Tømme nettleserdata?</string>
+    <string name="clear_confirm_message">Informasjonskapsler, nettlagring, hurtigbuffer og lokal historikk fjernes fra Swir Browser.</string>
+    <string name="clear_confirm">Tøm data</string>
+    <string name="cancel">Avbryt</string>
+    <string name="toast_cleared">Nettleserdata er tømt</string>
+</resources>
