@@ -45,6 +45,14 @@ class SwirCameraSourceContractTests(unittest.TestCase):
         self.assertNotIn("MediaStore.ACTION_IMAGE_CAPTURE", activity)
         self.assertNotIn("MediaStore.ACTION_VIDEO_CAPTURE", activity)
 
+    def test_video_lifecycle_keeps_pending_media_cleanup_and_java_valid_multicatch(self):
+        activity = (ROOT / "src/org/swir/phoneos/camera/MainActivity.java").read_text(encoding="utf-8")
+        self.assertIn("videoStarting", activity)
+        self.assertIn("abortPendingVideo()", activity)
+        self.assertIn("getContentResolver().delete(pendingVideoUri", activity)
+        self.assertNotIn("IllegalStateException | RuntimeException", activity)
+        self.assertNotIn("RuntimeException | IllegalStateException", activity)
+
 
 if __name__ == "__main__":
     unittest.main()
