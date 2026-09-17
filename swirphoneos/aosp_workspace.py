@@ -230,13 +230,16 @@ def _prepare_destination(target_root: Path, destination: PurePosixPath) -> Path:
     destination_path = target_root / relative
     if destination_path.is_symlink():
         raise AospWorkspaceError("AOSP stage destination must not be a symlink.")
-    if destination_path.exists() and not destination_path.is_file():
-        raise AospWorkspaceError("AOSP stage destination must be a regular file.")
+    if destination_path.exists():
+        if not destination_path.is_file():
+            raise AospWorkspaceError("AOSP stage destination must be a regular file.")
+        if destination_path.stat().st_nlink != 1:
+            raise AospWorkspaceError("AOSP stage destination must not be a hard-linked file.")
     return destination_path
 
 
 def _inventory_stage_tree(target_root: Path) -> set[str]:
-    """Return the exact regular-file inventory under vendor/swir without following symlinks."""
+    """Return the exact regular-file inventory under vendor/swir without following links."""
     vendor = target_root / "vendor"
     stage_root = vendor / "swir"
     if vendor.is_symlink():
@@ -268,6 +271,8 @@ def _inventory_stage_tree(target_root: Path) -> set[str]:
             child = current / name
             if child.is_symlink() or not child.is_file():
                 raise AospWorkspaceError("AOSP vendor/swir contains an unsafe file entry.")
+            if child.stat().st_nlink != 1:
+                raise AospWorkspaceError("AOSP vendor/swir contains a hard-linked file entry.")
             relative = child.relative_to(target_root).as_posix()
             if relative in files:
                 raise AospWorkspaceError("AOSP vendor/swir contains a duplicate file identity.")
@@ -352,8 +357,8 @@ def stage_product_tree(
             src = source / Path(*entry.source.parts)
             dst = _prepare_destination(target_root, entry.destination)
             shutil.copy2(src, dst)
-            if not dst.is_file() or dst.is_symlink():
-                raise AospWorkspaceError("Staged AOSP destination is not a regular file.")
+            if not dst.is_file() or dst.is_symlink() or dst.stat().st_nlink != 1:
+                raise AospWorkspaceError("Staged AOSP destination is not a unique regular file.")
             if dst.stat().st_size != record["size"] or _sha256_file(dst) != record["sha256"]:
                 raise AospWorkspaceError("Staged AOSP destination content verification failed.")
             record["copy_verified"] = True
@@ -376,9 +381,9 @@ def stage_product_tree(
         "executed": execute,
         "device_write_allowed": False,
         "note": (
-            "Stages only manifest-whitelisted Swir AOSP product/app source, rejects stale or "
-            "unreviewed vendor/swir files, records exact size/SHA-256 evidence, verifies copied "
-            "bytes and proves exact destination-tree closure; it does not build Android or write "
+            "Stages only manifest-whitelisted Swir AOSP product/app source, rejects stale, linked "
+            "or unreviewed vendor/swir files, records exact size/SHA-256 evidence, verifies copied "
+            "bytes and proves exact destination-file closure; it does not build Android or write "
             "to a phone."
         ),
     }
