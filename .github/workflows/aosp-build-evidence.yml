@@ -110,6 +110,11 @@ jobs:
           source build/envsetup.sh
           lunch swirphoneos_cf_x86_64-aosp_current-userdebug
           m -j"${{ inputs.jobs }}"
+      - name: Re-verify exact staged source bytes after build
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH="$GITHUB_WORKSPACE/tools" python -m swirphoneos.stage_evidence --report "$GITHUB_WORKSPACE/stage-report.json" --workspace "$SWIR_AOSP_WORKSPACE" > "$GITHUB_WORKSPACE/post-build-stage-evidence.json"
       - name: Capture build provenance
         shell: bash
         run: |
@@ -197,6 +202,7 @@ jobs:
             aosp-plan.json
             resolved-manifest.json
             stage-report.json
+            post-build-stage-evidence.json
             build-evidence.json
             runtime-evidence.json
             app-smoke-evidence.json

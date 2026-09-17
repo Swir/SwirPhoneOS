@@ -25,10 +25,19 @@ class AospWorkflowContractTests(unittest.TestCase):
         self.assertIn('report.get("schema_version") != 4', self.text)
         self.assertIn("staged_content_sha256", self.text)
 
+    def test_post_build_stage_reverification_precedes_build_provenance(self):
+        build = self.text.index("m -j")
+        reverify = self.text.index("python -m swirphoneos.stage_evidence")
+        build_evidence = self.text.index("python -m swirphoneos build-evidence")
+        self.assertLess(build, reverify)
+        self.assertLess(reverify, build_evidence)
+        self.assertIn("post-build-stage-evidence.json", self.text)
+
     def test_preflight_and_stage_reports_are_uploaded_even_on_failure(self):
         self.assertIn("if: ${{ always() }}", self.text)
         self.assertIn("builder-preflight.json", self.text)
         self.assertIn("stage-report.json", self.text)
+        self.assertIn("post-build-stage-evidence.json", self.text)
         self.assertIn("if-no-files-found: error", self.text)
 
 
