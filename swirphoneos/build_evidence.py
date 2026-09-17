@@ -8,8 +8,13 @@ import re
 from typing import Any
 
 from .aosp_workspace import AospWorkspaceError, validate_resolved_manifest
-from .cuttlefish_evidence import EXPECTED_PRODUCT
-from .platform import load_baseline
+from .cuttlefish_evidence import (
+    EXPECTED_ANDROID_RELEASE,
+    EXPECTED_API_LEVEL,
+    EXPECTED_BUILD_TYPE,
+    EXPECTED_PRODUCT,
+)
+from .platform import PlatformBaseline, load_baseline
 
 
 class BuildEvidenceError(ValueError):
@@ -31,6 +36,14 @@ _OPTIONAL_ARTIFACTS = (
     "module-info.json",
 )
 _BUILD_PROP_CANDIDATES = (Path("system/build.prop"), Path("system/system/build.prop"))
+_REQUIRED_BUILD_PROPERTIES = (
+    "ro.build.fingerprint",
+    "ro.build.id",
+    "ro.build.version.release",
+    "ro.build.version.sdk",
+    "ro.build.version.security_patch",
+    "ro.build.type",
+)
 _MAX_JSON_BYTES = 4 * 1024 * 1024
 _MAX_BUILD_PROP_BYTES = 2 * 1024 * 1024
 _HEX64 = re.compile(r"[0-9a-f]{64}\Z")
@@ -65,10 +78,26 @@ def _read_build_properties(product_out: Path) -> dict[str, str]:
         if key in props:
             raise BuildEvidenceError("system build.prop contains a duplicate key.")
         props[key] = value
-    required = ("ro.build.fingerprint", "ro.build.id", "ro.build.version.release", "ro.build.version.sdk", "ro.build.type")
-    if any(not props.get(key) for key in required):
+    if any(not props.get(key) for key in _REQUIRED_BUILD_PROPERTIES):
         raise BuildEvidenceError("system build.prop is missing required build identity.")
-    return {key: props[key] for key in required}
+    return {key: props[key] for key in _REQUIRED_BUILD_PROPERTIES}
+
+
+def _validate_build_identity(props: dict[str, str], baseline: PlatformBaseline) -> None:
+    expected = {
+        "ro.build.id": baseline.candidate_build_id,
+        "ro.build.version.release": EXPECTED_ANDROID_RELEASE,
+        "ro.build.version.sdk": EXPECTED_API_LEVEL,
+        "ro.build.version.security_patch": baseline.security_patch_level,
+        "ro.build.type": EXPECTED_BUILD_TYPE,
+    }
+    mismatches = [key for key, value in expected.items() if props.get(key) != value]
+    if mismatches:
+        raise BuildEvidenceError(
+            "Built product identity does not match the pinned Android baseline: "
+            + ", ".join(sorted(mismatches))
+            + "."
+        )
 
 
 def _artifact_record(path: Path, product_out: Path) -> dict[str, object]:
@@ -105,11 +134,19 @@ def collect_build_evidence(workspace: Path, resolved_manifest: Path, baseline_pa
         raise BuildEvidenceError("Required core AOSP image artifact is missing.")
     artifacts = [_artifact_record(path, product_out) for path in paths]
     props = _read_build_properties(product_out)
+    _validate_build_identity(props, baseline)
     report: dict[str, object] = {
         "schema_version": 1,
         "source": "local_aosp_build_output",
         "expected_product": EXPECTED_PRODUCT,
         "baseline_revision": baseline.repo_init_revision,
+        "baseline_identity": {
+            "build_id": baseline.candidate_build_id,
+            "android_release": EXPECTED_ANDROID_RELEASE,
+            "api_level": EXPECTED_API_LEVEL,
+            "security_patch": baseline.security_patch_level,
+            "build_type": EXPECTED_BUILD_TYPE,
+        },
         "resolved_manifest": {
             "project_count": manifest.project_count,
             "unique_path_count": manifest.unique_path_count,
@@ -121,6 +158,7 @@ def collect_build_evidence(workspace: Path, resolved_manifest: Path, baseline_pa
             "build_id": props["ro.build.id"],
             "android_release": props["ro.build.version.release"],
             "api_level": props["ro.build.version.sdk"],
+            "security_patch": props["ro.build.version.security_patch"],
             "build_type": props["ro.build.type"],
         },
         "artifacts": artifacts,
@@ -130,6 +168,7 @@ def collect_build_evidence(workspace: Path, resolved_manifest: Path, baseline_pa
         "status_promotion_performed": False,
         "warnings": [
             "Artifact hashes prove file identity, not hardware compatibility.",
+            "Build identity is required to match the exact pinned Android release/build/security-patch baseline.",
             "This report does not launch Cuttlefish or promote Android runtime status.",
         ],
     }
