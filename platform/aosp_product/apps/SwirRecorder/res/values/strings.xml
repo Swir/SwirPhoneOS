@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Swir Recorder</string>
+    <string name="title">Swir Recorder</string>
+    <string name="subtitle">Private local voice recording with explicit export.</string>
+    <string name="status_idle">Microphone ready</string>
+    <string name="status_recording">Recording</string>
+    <string name="status_ready">Recording saved locally</string>
+    <string name="status_playing">Playing recording</string>
+    <string name="duration_zero">00:00:00</string>
+    <string name="duration_value">Duration: %1$s</string>
+    <string name="start_recording">Start recording</string>
+    <string name="stop_recording">Stop recording</string>
+    <string name="play">Play</string>
+    <string name="stop_playback">Stop</string>
+    <string name="export">Export</string>
+    <string name="delete">Delete</string>
+    <string name="privacy_note">Recordings stay in private app storage until you explicitly export them.</string>
+    <string name="recording_failed">Recording could not be saved. Try again after a short pause.</string>
+    <string name="saved">Recording saved locally</string>
+    <string name="no_recording">There is no saved recording yet.</string>
+    <string name="playback_failed">The recording could not be played.</string>
+    <string name="export_success">Recording exported</string>
+    <string name="export_failed">The recording could not be exported.</string>
+    <string name="delete_title">Delete recording?</string>
+    <string name="delete_message">This removes the private local recording from Swir Recorder.</string>
+    <string name="delete_confirm">Delete</string>
+    <string name="cancel">Cancel</string>
+    <string name="microphone_permission_denied">Microphone permission is required to record audio.</string>
+</resources>
