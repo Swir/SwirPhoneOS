@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Swir Phone</string>
+    <string name="subtitle">A simple owner-controlled dial pad</string>
+    <string name="number_hint">Phone number</string>
+    <string name="dial">Continue to call</string>
+    <string name="backspace">Backspace</string>
+    <string name="clear">Clear</string>
+    <string name="open_contacts">Open Swir Contacts</string>
+    <string name="invalid_number">Enter a valid phone number.</string>
+    <string name="dial_unavailable">No system dialer is available.</string>
+    <string name="contacts_unavailable">Swir Contacts is not available.</string>
+    <string name="handoff_note">Calls are handed to Android’s visible dialer screen. This source stage does not place calls silently.</string>
+    <string name="footer">by Swir · GitHub</string>
+</resources>
