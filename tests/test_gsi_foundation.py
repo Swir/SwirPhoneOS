@@ -46,7 +46,10 @@ class GsiFoundationTests(unittest.TestCase):
         self.assertEqual(plan.revision, "android-17.0.0_r1")
         self.assertEqual(plan.lunch_choice, "swirphoneos_gsi_arm64-aosp_current-userdebug")
         self.assertIn("systemimage", plan.commands[-1][-1])
-        self.assertTrue(str(plan.expected_system_image).endswith("out/target/product/generic_arm64/system.img"))
+        self.assertEqual(
+            plan.expected_system_image.parts[-5:],
+            ("out", "target", "product", "generic_arm64", "system.img"),
+        )
         self.assertFalse(summary["build_verified"])
         self.assertFalse(summary["treble_vts_verified"])
         self.assertFalse(summary["physical_device_compatibility_verified"])
