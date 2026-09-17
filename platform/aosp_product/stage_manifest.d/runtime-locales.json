@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "files": [
+    {"source":"apps/SwirPhone/res/xml/locales_config.xml","destination":"vendor/swir/apps/SwirPhone/res/xml/locales_config.xml"},
+    {"source":"apps/SwirContacts/res/xml/locales_config.xml","destination":"vendor/swir/apps/SwirContacts/res/xml/locales_config.xml"},
+    {"source":"apps/SwirMessages/res/xml/locales_config.xml","destination":"vendor/swir/apps/SwirMessages/res/xml/locales_config.xml"},
+    {"source":"apps/SwirCamera/res/xml/locales_config.xml","destination":"vendor/swir/apps/SwirCamera/res/xml/locales_config.xml"},
+    {"source":"apps/SwirGallery/res/xml/locales_config.xml","destination":"vendor/swir/apps/SwirGallery/res/xml/locales_config.xml"},
+    {"source":"apps/SwirFiles/res/xml/locales_config.xml","destination":"vendor/swir/apps/SwirFiles/res/xml/locales_config.xml"},
+    {"source":"apps/SwirSettings/res/xml/locales_config.xml","destination":"vendor/swir/apps/SwirSettings/res/xml/locales_config.xml"},
+    {"source":"apps/SwirBrowser/res/xml/locales_config.xml","destination":"vendor/swir/apps/SwirBrowser/res/xml/locales_config.xml"},
+    {"source":"apps/SwirClock/res/xml/locales_config.xml","destination":"vendor/swir/apps/SwirClock/res/xml/locales_config.xml"},
+    {"source":"apps/SwirCalculator/res/xml/locales_config.xml","destination":"vendor/swir/apps/SwirCalculator/res/xml/locales_config.xml"},
+    {"source":"apps/SwirNotes/res/xml/locales_config.xml","destination":"vendor/swir/apps/SwirNotes/res/xml/locales_config.xml"},
+    {"source":"apps/SwirRecorder/res/xml/locales_config.xml","destination":"vendor/swir/apps/SwirRecorder/res/xml/locales_config.xml"},
+    {"source":"apps/SwirCalendar/res/xml/locales_config.xml","destination":"vendor/swir/apps/SwirCalendar/res/xml/locales_config.xml"},
+    {"source":"apps/SwirWeather/res/xml/locales_config.xml","destination":"vendor/swir/apps/SwirWeather/res/xml/locales_config.xml"},
+    {"source":"apps/SwirUpdate/res/xml/locales_config.xml","destination":"vendor/swir/apps/SwirUpdate/res/xml/locales_config.xml"},
+    {"source":"apps/SwirBackup/res/xml/locales_config.xml","destination":"vendor/swir/apps/SwirBackup/res/xml/locales_config.xml"},
+    {"source":"apps/SwirPrivacy/res/xml/locales_config.xml","destination":"vendor/swir/apps/SwirPrivacy/res/xml/locales_config.xml"},
+    {"source":"apps/SwirDeviceCare/res/xml/locales_config.xml","destination":"vendor/swir/apps/SwirDeviceCare/res/xml/locales_config.xml"},
+    {"source":"apps/SwirApps/res/xml/locales_config.xml","destination":"vendor/swir/apps/SwirApps/res/xml/locales_config.xml"},
+    {"source":"apps/SwirRoot/res/xml/locales_config.xml","destination":"vendor/swir/apps/SwirRoot/res/xml/locales_config.xml"}
+  ]
+}
