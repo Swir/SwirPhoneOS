@@ -1,0 +1,69 @@
+name: Device support readiness checks
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'device_packs/**'
+      - 'swirphoneos/profiles.py'
+      - 'swirphoneos/device_support_readiness.py'
+      - 'swirphoneos/device_support_readiness_cli.py'
+      - 'swirphoneos/hardware_evidence.py'
+      - 'swirphoneos/journal_evidence.py'
+      - 'tests/test_profiles.py'
+      - 'tests/test_device_support_readiness.py'
+      - '.github/workflows/device-support-readiness.yml'
+  pull_request:
+    paths:
+      - 'device_packs/**'
+      - 'swirphoneos/profiles.py'
+      - 'swirphoneos/device_support_readiness.py'
+      - 'swirphoneos/device_support_readiness_cli.py'
+      - 'swirphoneos/hardware_evidence.py'
+      - 'swirphoneos/journal_evidence.py'
+      - 'tests/test_profiles.py'
+      - 'tests/test_device_support_readiness.py'
+      - '.github/workflows/device-support-readiness.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: device-support-readiness-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  readiness:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.14'
+      - name: Compile readiness sources
+        run: python -m compileall -q swirphoneos tests/test_profiles.py tests/test_device_support_readiness.py
+      - name: Test metadata profile fail-closed rules
+        run: python -m unittest discover -s tests -p 'test_profiles.py' -v
+      - name: Test device support readiness evidence
+        run: python -m unittest discover -s tests -p 'test_device_support_readiness.py' -v
+      - name: Validate checked-in device registry
+        run: python -m swirphoneos profiles --root device_packs
+      - name: Enforce read-only readiness implementation
+        shell: python
+        run: |
+          from pathlib import Path
+          files = [
+              Path('swirphoneos/device_support_readiness.py'),
+              Path('swirphoneos/device_support_readiness_cli.py'),
+          ]
+          forbidden = (
+              'subprocess', 'os.system', 'Popen(', 'run(',
+              'fastboot flash', 'fastboot erase', 'fastboot reboot',
+              'adb reboot', 'adb root', 'adb remount',
+              'bootctl', 'dd if=', 'su ',
+          )
+          text = '\n'.join(path.read_text(encoding='utf-8') for path in files)
+          hits = [token for token in forbidden if token in text]
+          if hits:
+              raise SystemExit(f'Forbidden device-write/process primitive in readiness tooling: {hits}')
+          print('Readiness tooling remains host-only and process-free.')
