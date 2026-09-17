@@ -1,0 +1,31 @@
+<resources>
+    <string name="app_name">Swir Camera</string>
+    <string name="status_waiting">Venter på kamera</string>
+    <string name="status_permission_required">Kameratilgang kreves</string>
+    <string name="status_permission_granted">Kameratilgang gitt</string>
+    <string name="status_permission_denied">Kameratilgang avslått</string>
+    <string name="status_opening">Åpner kamera</string>
+    <string name="status_open_failed">Kunne ikke åpne kamera</string>
+    <string name="status_ready">Kamera klart</string>
+    <string name="status_disconnected">Kamera frakoblet</string>
+    <string name="status_camera_error">Kamerafeil %1$d</string>
+    <string name="status_preview_failed">Forhåndsvisning kunne ikke starte</string>
+    <string name="status_not_ready">Kamera er ikke klart</string>
+    <string name="status_capturing_photo">Tar bilde</string>
+    <string name="status_photo_saved">Bilde lagret i SwirPhoneOS Bilder</string>
+    <string name="status_photo_failed">Bildet kunne ikke lagres</string>
+    <string name="status_recording">Tar opp video uten lyd</string>
+    <string name="status_video_saved">Video lagret i SwirPhoneOS Filmer</string>
+    <string name="status_video_failed">Videoen kunne ikke lagres</string>
+    <string name="status_video_too_short">Ta opp minst et halvt sekund før stopp</string>
+    <string name="take_photo">Bilde</string>
+    <string name="start_video">Video</string>
+    <string name="stop_video">Stopp</string>
+    <string name="switch_camera">Bytt</string>
+    <string name="capability_waiting">Kamerarapport vises etter åpning</string>
+    <string name="capability_report">%1$d kameraer · %2$s · HW %3$d · Bilde %4$dx%5$d · Video %6$dx%7$d</string>
+    <string name="lens_back">bak</string>
+    <string name="lens_front">foran</string>
+    <string name="lens_external">eksternt</string>
+    <string name="lens_unknown">ukjent objektiv</string>
+</resources>

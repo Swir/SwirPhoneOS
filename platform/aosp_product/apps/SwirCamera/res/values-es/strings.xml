@@ -1,0 +1,31 @@
+<resources>
+    <string name="app_name">Swir Camera</string>
+    <string name="status_waiting">Esperando la cámara</string>
+    <string name="status_permission_required">Se requiere permiso de cámara</string>
+    <string name="status_permission_granted">Permiso de cámara concedido</string>
+    <string name="status_permission_denied">Permiso de cámara denegado</string>
+    <string name="status_opening">Abriendo la cámara</string>
+    <string name="status_open_failed">No se pudo abrir la cámara</string>
+    <string name="status_ready">Cámara lista</string>
+    <string name="status_disconnected">Cámara desconectada</string>
+    <string name="status_camera_error">Error de cámara %1$d</string>
+    <string name="status_preview_failed">No se pudo iniciar la vista previa</string>
+    <string name="status_not_ready">La cámara no está lista</string>
+    <string name="status_capturing_photo">Capturando foto</string>
+    <string name="status_photo_saved">Foto guardada en Imágenes de SwirPhoneOS</string>
+    <string name="status_photo_failed">No se pudo guardar la foto</string>
+    <string name="status_recording">Grabando vídeo sin audio</string>
+    <string name="status_video_saved">Vídeo guardado en Películas de SwirPhoneOS</string>
+    <string name="status_video_failed">No se pudo guardar el vídeo</string>
+    <string name="status_video_too_short">Graba al menos medio segundo antes de detener</string>
+    <string name="take_photo">Foto</string>
+    <string name="start_video">Vídeo</string>
+    <string name="stop_video">Detener</string>
+    <string name="switch_camera">Cambiar</string>
+    <string name="capability_waiting">El informe de cámara aparecerá después de abrirla</string>
+    <string name="capability_report">%1$d cámaras · %2$s · HW %3$d · Foto %4$dx%5$d · Vídeo %6$dx%7$d</string>
+    <string name="lens_back">trasera</string>
+    <string name="lens_front">frontal</string>
+    <string name="lens_external">externa</string>
+    <string name="lens_unknown">lente desconocida</string>
+</resources>

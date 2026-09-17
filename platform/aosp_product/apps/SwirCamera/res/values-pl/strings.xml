@@ -1,0 +1,31 @@
+<resources>
+    <string name="app_name">Swir Camera</string>
+    <string name="status_waiting">Oczekiwanie na aparat</string>
+    <string name="status_permission_required">Wymagane jest uprawnienie do aparatu</string>
+    <string name="status_permission_granted">Przyznano uprawnienie do aparatu</string>
+    <string name="status_permission_denied">Odmówiono uprawnienia do aparatu</string>
+    <string name="status_opening">Otwieranie aparatu</string>
+    <string name="status_open_failed">Nie udało się otworzyć aparatu</string>
+    <string name="status_ready">Aparat gotowy</string>
+    <string name="status_disconnected">Aparat rozłączony</string>
+    <string name="status_camera_error">Błąd aparatu %1$d</string>
+    <string name="status_preview_failed">Nie udało się uruchomić podglądu</string>
+    <string name="status_not_ready">Aparat nie jest gotowy</string>
+    <string name="status_capturing_photo">Robienie zdjęcia</string>
+    <string name="status_photo_saved">Zdjęcie zapisano w obrazach SwirPhoneOS</string>
+    <string name="status_photo_failed">Nie udało się zapisać zdjęcia</string>
+    <string name="status_recording">Nagrywanie filmu bez dźwięku</string>
+    <string name="status_video_saved">Film zapisano w filmach SwirPhoneOS</string>
+    <string name="status_video_failed">Nie udało się zapisać filmu</string>
+    <string name="status_video_too_short">Nagrywaj co najmniej pół sekundy przed zatrzymaniem</string>
+    <string name="take_photo">Zdjęcie</string>
+    <string name="start_video">Film</string>
+    <string name="stop_video">Stop</string>
+    <string name="switch_camera">Przełącz</string>
+    <string name="capability_waiting">Raport możliwości aparatu pojawi się po otwarciu</string>
+    <string name="capability_report">Aparaty: %1$d · %2$s · HW %3$d · Zdjęcie %4$dx%5$d · Film %6$dx%7$d</string>
+    <string name="lens_back">tylny</string>
+    <string name="lens_front">przedni</string>
+    <string name="lens_external">zewnętrzny</string>
+    <string name="lens_unknown">nieznany obiektyw</string>
+</resources>

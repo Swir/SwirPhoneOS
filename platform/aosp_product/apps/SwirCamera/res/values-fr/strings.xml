@@ -1,0 +1,31 @@
+<resources>
+    <string name="app_name">Swir Camera</string>
+    <string name="status_waiting">En attente de la caméra</string>
+    <string name="status_permission_required">Autorisation de caméra requise</string>
+    <string name="status_permission_granted">Autorisation de caméra accordée</string>
+    <string name="status_permission_denied">Autorisation de caméra refusée</string>
+    <string name="status_opening">Ouverture de la caméra</string>
+    <string name="status_open_failed">Impossible d’ouvrir la caméra</string>
+    <string name="status_ready">Caméra prête</string>
+    <string name="status_disconnected">Caméra déconnectée</string>
+    <string name="status_camera_error">Erreur caméra %1$d</string>
+    <string name="status_preview_failed">Impossible de démarrer l’aperçu</string>
+    <string name="status_not_ready">La caméra n’est pas prête</string>
+    <string name="status_capturing_photo">Capture de la photo</string>
+    <string name="status_photo_saved">Photo enregistrée dans Images SwirPhoneOS</string>
+    <string name="status_photo_failed">Impossible d’enregistrer la photo</string>
+    <string name="status_recording">Enregistrement vidéo sans son</string>
+    <string name="status_video_saved">Vidéo enregistrée dans Films SwirPhoneOS</string>
+    <string name="status_video_failed">Impossible d’enregistrer la vidéo</string>
+    <string name="status_video_too_short">Enregistrez au moins une demi-seconde avant l’arrêt</string>
+    <string name="take_photo">Photo</string>
+    <string name="start_video">Vidéo</string>
+    <string name="stop_video">Arrêter</string>
+    <string name="switch_camera">Changer</string>
+    <string name="capability_waiting">Le rapport caméra apparaîtra après l’ouverture</string>
+    <string name="capability_report">%1$d caméras · %2$s · HW %3$d · Photo %4$dx%5$d · Vidéo %6$dx%7$d</string>
+    <string name="lens_back">arrière</string>
+    <string name="lens_front">avant</string>
+    <string name="lens_external">externe</string>
+    <string name="lens_unknown">objectif inconnu</string>
+</resources>

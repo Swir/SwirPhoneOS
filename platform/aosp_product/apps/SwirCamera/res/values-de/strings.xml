@@ -1,0 +1,31 @@
+<resources>
+    <string name="app_name">Swir Camera</string>
+    <string name="status_waiting">Warte auf Kamera</string>
+    <string name="status_permission_required">Kameraberechtigung ist erforderlich</string>
+    <string name="status_permission_granted">Kameraberechtigung erteilt</string>
+    <string name="status_permission_denied">Kameraberechtigung verweigert</string>
+    <string name="status_opening">Kamera wird geöffnet</string>
+    <string name="status_open_failed">Kamera konnte nicht geöffnet werden</string>
+    <string name="status_ready">Kamera bereit</string>
+    <string name="status_disconnected">Kamera getrennt</string>
+    <string name="status_camera_error">Kamerafehler %1$d</string>
+    <string name="status_preview_failed">Vorschau konnte nicht gestartet werden</string>
+    <string name="status_not_ready">Kamera ist nicht bereit</string>
+    <string name="status_capturing_photo">Foto wird aufgenommen</string>
+    <string name="status_photo_saved">Foto in SwirPhoneOS Bilder gespeichert</string>
+    <string name="status_photo_failed">Foto konnte nicht gespeichert werden</string>
+    <string name="status_recording">Stummes Video wird aufgenommen</string>
+    <string name="status_video_saved">Video in SwirPhoneOS Filme gespeichert</string>
+    <string name="status_video_failed">Video konnte nicht gespeichert werden</string>
+    <string name="status_video_too_short">Vor dem Stoppen mindestens eine halbe Sekunde aufnehmen</string>
+    <string name="take_photo">Foto</string>
+    <string name="start_video">Video</string>
+    <string name="stop_video">Stopp</string>
+    <string name="switch_camera">Wechseln</string>
+    <string name="capability_waiting">Kamerabericht erscheint nach dem Öffnen</string>
+    <string name="capability_report">%1$d Kameras · %2$s · HW %3$d · Foto %4$dx%5$d · Video %6$dx%7$d</string>
+    <string name="lens_back">hinten</string>
+    <string name="lens_front">vorne</string>
+    <string name="lens_external">extern</string>
+    <string name="lens_unknown">unbekanntes Objektiv</string>
+</resources>

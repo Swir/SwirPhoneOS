@@ -1,0 +1,31 @@
+<resources>
+    <string name="app_name">Swir Camera</string>
+    <string name="status_waiting">بانتظار الكاميرا</string>
+    <string name="status_permission_required">يلزم إذن الكاميرا</string>
+    <string name="status_permission_granted">تم منح إذن الكاميرا</string>
+    <string name="status_permission_denied">تم رفض إذن الكاميرا</string>
+    <string name="status_opening">جارٍ فتح الكاميرا</string>
+    <string name="status_open_failed">تعذر فتح الكاميرا</string>
+    <string name="status_ready">الكاميرا جاهزة</string>
+    <string name="status_disconnected">تم فصل الكاميرا</string>
+    <string name="status_camera_error">خطأ الكاميرا %1$d</string>
+    <string name="status_preview_failed">تعذر بدء المعاينة</string>
+    <string name="status_not_ready">الكاميرا غير جاهزة</string>
+    <string name="status_capturing_photo">جارٍ التقاط الصورة</string>
+    <string name="status_photo_saved">تم حفظ الصورة في صور SwirPhoneOS</string>
+    <string name="status_photo_failed">تعذر حفظ الصورة</string>
+    <string name="status_recording">جارٍ تسجيل فيديو بلا صوت</string>
+    <string name="status_video_saved">تم حفظ الفيديو في أفلام SwirPhoneOS</string>
+    <string name="status_video_failed">تعذر حفظ الفيديو</string>
+    <string name="status_video_too_short">سجّل نصف ثانية على الأقل قبل الإيقاف</string>
+    <string name="take_photo">صورة</string>
+    <string name="start_video">فيديو</string>
+    <string name="stop_video">إيقاف</string>
+    <string name="switch_camera">تبديل</string>
+    <string name="capability_waiting">سيظهر تقرير قدرات الكاميرا بعد فتحها</string>
+    <string name="capability_report">%1$d كاميرات · %2$s · HW %3$d · صورة %4$dx%5$d · فيديو %6$dx%7$d</string>
+    <string name="lens_back">خلفية</string>
+    <string name="lens_front">أمامية</string>
+    <string name="lens_external">خارجية</string>
+    <string name="lens_unknown">عدسة غير معروفة</string>
+</resources>
