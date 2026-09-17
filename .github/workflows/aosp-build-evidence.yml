@@ -191,6 +191,7 @@ jobs:
             --stage "$GITHUB_WORKSPACE/stage-report.json"
             --post-stage "$GITHUB_WORKSPACE/post-build-stage-evidence.json"
             --build "$GITHUB_WORKSPACE/build-evidence.json"
+            --app-manifest "$GITHUB_WORKSPACE/tools/system_apps/manifest.json"
           )
           if ${{ inputs.collect_runtime }}; then
             args+=(
