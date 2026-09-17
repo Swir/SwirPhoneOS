@@ -131,7 +131,9 @@ class AndroidAppSourceTests(unittest.TestCase):
         temp, product, registry = self._copy_fixture()
         with temp:
             activity = product / "apps/SwirRecorder/src/org/swir/phoneos/recorder/MainActivity.java"
-            activity.write_text(activity.read_text(encoding="utf-8").replace("stopRecording(false)", "refreshControls()", 1), encoding="utf-8")
+            source = activity.read_text(encoding="utf-8")
+            self.assertIn("if (recorder != null) stopRecording(false);", source)
+            activity.write_text(source.replace("stopRecording(false)", "refreshControls()"), encoding="utf-8")
             with self.assertRaises(AndroidAppSourceError): validate_android_app_sources(product, registry)
 
     def test_swirroot_service_cannot_gain_process_execution(self):
