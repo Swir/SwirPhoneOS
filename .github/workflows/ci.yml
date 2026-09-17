@@ -42,6 +42,18 @@ jobs:
         run: python -m swirphoneos aosp-plan --workspace ./_aosp-contract --jobs 8
       - name: Validate first-party Android source bundle
         run: python -m swirphoneos android-apps
+      - name: Host-test SwirPhone dial policy
+        if: runner.os == 'Linux' && matrix.python == '3.14'
+        run: |
+          mkdir -p _phone-java-test
+          javac -d _phone-java-test platform/aosp_product/apps/SwirPhone/src/org/swir/phoneos/phone/DialPolicy.java platform/aosp_product/apps/SwirPhone/hosttest/DialPolicyHostTest.java
+          java -cp _phone-java-test org.swir.phoneos.phone.DialPolicyHostTest
+      - name: Host-test SwirContacts contact policy
+        if: runner.os == 'Linux' && matrix.python == '3.14'
+        run: |
+          mkdir -p _contacts-java-test
+          javac -d _contacts-java-test platform/aosp_product/apps/SwirContacts/src/org/swir/phoneos/contacts/ContactPolicy.java platform/aosp_product/apps/SwirContacts/hosttest/ContactPolicyHostTest.java
+          java -cp _contacts-java-test org.swir.phoneos.contacts.ContactPolicyHostTest
       - name: Host-test SwirCalculator pure Java engine
         if: runner.os == 'Linux' && matrix.python == '3.14'
         run: |
