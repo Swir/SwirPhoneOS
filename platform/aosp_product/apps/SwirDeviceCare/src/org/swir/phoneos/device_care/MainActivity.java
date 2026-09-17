@@ -4,7 +4,6 @@ import android.app.Activity;
 import android.app.ActivityManager;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.graphics.Color;
 import android.os.BatteryManager;
 import android.os.Build;
 import android.os.Bundle;
@@ -25,8 +24,8 @@ public final class MainActivity extends Activity {
     @Override
     protected void onCreate(Bundle state) {
         super.onCreate(state);
-        getWindow().setStatusBarColor(Color.rgb(4, 11, 23));
-        getWindow().setNavigationBarColor(Color.rgb(4, 11, 23));
+        getWindow().setStatusBarColor(getColor(R.color.swir_background));
+        getWindow().setNavigationBarColor(getColor(R.color.swir_background));
         setContentView(buildUi());
         refresh();
     }
@@ -35,20 +34,21 @@ public final class MainActivity extends Activity {
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
         root.setPadding(dp(18), dp(18), dp(18), dp(18));
-        root.setBackgroundColor(Color.rgb(7, 18, 34));
+        root.setBackgroundColor(getColor(R.color.swir_background));
         root.setLayoutDirection(View.LAYOUT_DIRECTION_LOCALE);
 
-        TextView title = text(R.string.app_name, 26, Color.rgb(105, 216, 255));
+        TextView title = text(R.string.app_name, 26, getColor(R.color.swir_accent_cyan));
         root.addView(title, matchWrap());
-        TextView subtitle = text(R.string.subtitle, 14, Color.rgb(180, 198, 217));
+        TextView subtitle = text(R.string.subtitle, 14, getColor(R.color.swir_text_secondary));
         subtitle.setPadding(0, dp(4), 0, dp(10));
         root.addView(subtitle, matchWrap());
 
         Button refresh = new Button(this);
         refresh.setAllCaps(false);
         refresh.setText(R.string.refresh);
-        refresh.setTextColor(Color.WHITE);
-        refresh.setBackgroundColor(Color.rgb(17, 45, 71));
+        refresh.setTextColor(getColor(R.color.swir_text_primary));
+        refresh.setBackgroundColor(getColor(R.color.swir_surface_alt));
+        refresh.setMinHeight(touchMin());
         refresh.setContentDescription(getString(R.string.refresh));
         refresh.setOnClickListener(v -> refresh());
         root.addView(refresh, matchWrap());
@@ -141,9 +141,9 @@ public final class MainActivity extends Activity {
         LinearLayout card = new LinearLayout(this);
         card.setOrientation(LinearLayout.VERTICAL);
         card.setPadding(dp(14), dp(12), dp(14), dp(12));
-        card.setBackgroundColor(Color.rgb(13, 34, 55));
-        TextView title = text(titleRes, 13, Color.rgb(105, 216, 255));
-        TextView body = text(value, 16, Color.WHITE);
+        card.setBackgroundColor(getColor(R.color.swir_surface));
+        TextView title = text(titleRes, 13, getColor(R.color.swir_accent_cyan));
+        TextView body = text(value, 16, getColor(R.color.swir_text_primary));
         body.setPadding(0, dp(4), 0, 0);
         card.addView(title, matchWrap());
         card.addView(body, matchWrap());
@@ -171,6 +171,10 @@ public final class MainActivity extends Activity {
     private LinearLayout.LayoutParams matchWrap() {
         return new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+    }
+
+    private int touchMin() {
+        return getResources().getDimensionPixelSize(R.dimen.swir_touch_min);
     }
 
     private int dp(int value) {
