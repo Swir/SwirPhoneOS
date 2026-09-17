@@ -59,13 +59,18 @@ jobs:
 
           path = pathlib.Path(sys.argv[1])
           report = json.loads(path.read_text(encoding="utf-8"))
+          checks = report.get("checks", [])
+          if not isinstance(checks, list) or not checks:
+              raise SystemExit("AOSP builder preflight report has no checks.")
           failed = [
-              item.get("name", "unknown")
-              for item in report.get("checks", [])
-              if item.get("ok") is not True
+              item.get("id", "unknown")
+              for item in checks
+              if not isinstance(item, dict) or item.get("passed") is not True
           ]
           if report.get("ready_for_full_build") is not True:
               raise SystemExit("AOSP builder preflight rejected host; failed checks: " + ", ".join(failed))
+          if failed:
+              raise SystemExit("AOSP builder preflight is internally inconsistent; failed checks: " + ", ".join(failed))
           if sys.argv[2].lower() == "true" and report.get("cuttlefish_kvm_available") is not True:
               raise SystemExit("Runtime collection requires writable/readable KVM on the dedicated builder.")
           PY
@@ -174,6 +179,27 @@ jobs:
         run: |
           set -euo pipefail
           PYTHONPATH="$GITHUB_WORKSPACE/tools" python -m swirphoneos evidence-bundle --build "$GITHUB_WORKSPACE/build-evidence.json" --runtime "$GITHUB_WORKSPACE/runtime-evidence.json" > "$GITHUB_WORKSPACE/evidence-bundle.json"
+      - name: Bind complete AOSP run evidence chain
+        shell: bash
+        run: |
+          set -euo pipefail
+          args=(
+            --source-commit "$GITHUB_SHA"
+            --preflight "$GITHUB_WORKSPACE/builder-preflight.json"
+            --plan "$GITHUB_WORKSPACE/aosp-plan.json"
+            --manifest "$GITHUB_WORKSPACE/resolved-manifest.json"
+            --stage "$GITHUB_WORKSPACE/stage-report.json"
+            --post-stage "$GITHUB_WORKSPACE/post-build-stage-evidence.json"
+            --build "$GITHUB_WORKSPACE/build-evidence.json"
+          )
+          if ${{ inputs.collect_runtime }}; then
+            args+=(
+              --runtime "$GITHUB_WORKSPACE/runtime-evidence.json"
+              --smoke "$GITHUB_WORKSPACE/app-smoke-evidence.json"
+              --bundle "$GITHUB_WORKSPACE/evidence-bundle.json"
+            )
+          fi
+          PYTHONPATH="$GITHUB_WORKSPACE/tools" python -m swirphoneos aosp-run-evidence "${args[@]}" > "$GITHUB_WORKSPACE/aosp-run-evidence.json"
       - name: Stop local Cuttlefish instance
         if: ${{ always() && inputs.collect_runtime }}
         shell: bash
@@ -207,3 +233,4 @@ jobs:
             runtime-evidence.json
             app-smoke-evidence.json
             evidence-bundle.json
+            aosp-run-evidence.json
