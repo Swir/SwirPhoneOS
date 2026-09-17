@@ -9,8 +9,10 @@ import subprocess
 
 PROPERTIES = (
     "ro.product.manufacturer", "ro.product.model", "ro.product.device",
-    "ro.product.cpu.abi", "ro.treble.enabled", "ro.boot.flash.locked",
-    "ro.boot.slot_suffix", "ro.boot.dynamic_partitions",
+    "ro.product.cpu.abi", "ro.product.board", "ro.boot.hardware",
+    "ro.treble.enabled", "ro.boot.flash.locked", "ro.boot.verifiedbootstate",
+    "ro.boot.vbmeta.device_state", "ro.boot.slot", "ro.boot.slot_suffix",
+    "ro.boot.dynamic_partitions", "ro.build.fingerprint",
     "ro.build.version.release", "ro.build.version.security_patch",
 )
 SERIAL = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:-]{0,255}\Z")
@@ -71,16 +73,22 @@ def summarize(properties: dict[str, str]) -> dict[str, object]:
     locked = values["ro.boot.flash.locked"]
     treble = values["ro.treble.enabled"]
     return {
-        "schema_version": 1,
+        "schema_version": 2,
         "source": "adb_reported_properties_not_hardware_verification",
         "manufacturer": values["ro.product.manufacturer"],
         "model": values["ro.product.model"],
         "codename": values["ro.product.device"],
         "abi": values["ro.product.cpu.abi"],
+        "board_reported": values["ro.product.board"],
+        "hardware_reported": values["ro.boot.hardware"],
         "android_release": values["ro.build.version.release"],
+        "build_fingerprint_reported": values["ro.build.fingerprint"],
         "reported_security_patch": values["ro.build.version.security_patch"],
         "treble_reported": {"true": True, "false": False}.get(treble),
         "bootloader_reported": {"0": "unlocked", "1": "locked"}.get(locked, "unknown"),
+        "verified_boot_state_reported": values["ro.boot.verifiedbootstate"],
+        "vbmeta_device_state_reported": values["ro.boot.vbmeta.device_state"],
+        "slot_reported": values["ro.boot.slot"],
         "slot_suffix_reported": values["ro.boot.slot_suffix"],
         "dynamic_partitions_reported": {"true": True, "false": False}.get(values["ro.boot.dynamic_partitions"]),
         "swirphoneos_support": "NOT_VALIDATED",

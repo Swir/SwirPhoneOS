@@ -12,6 +12,7 @@ from .build_preflight import BuildPreflightError, capture_host, evaluate_preflig
 from .cuttlefish_evidence import CuttlefishEvidenceCollector, CuttlefishEvidenceError
 from .diagnostics import DiagnosticError, ReadOnlyAdb
 from .fastboot import FastbootDiagnosticError, ReadOnlyFastboot
+from .hardware_evidence import HardwareEvidenceError, assess_transaction_hardware, create_hardware_evidence, load_hardware_evidence, load_json_report as load_hardware_json
 from .i18n import LocalizationError, catalog_summary
 from .identity import IdentityAssessmentError, build_unified_report
 from .journal_evidence import load_journal, public_journal_summary
@@ -27,8 +28,10 @@ def main(argv: list[str] | None = None) -> int:
     parser=argparse.ArgumentParser(description="SwirPhoneOS read-only developer tooling — by Swir"); parser.add_argument("--version",action="version",version=__version__); sub=parser.add_subparsers(dest="command",required=True)
     for name in ("status","gate"): command=sub.add_parser(name); command.add_argument("--ledger",type=Path,default=Path("project.json"))
     inspect=sub.add_parser("inspect",help="Read selected properties from one authorized USB phone via ADB"); inspect.add_argument("--adb",required=True,type=Path,help="Absolute path to a trusted Android SDK adb executable")
-    inspect_fastboot=sub.add_parser("inspect-fastboot",help="Read a small allowlist of variables from one local USB phone in Fastboot/FastbootD mode"); inspect_fastboot.add_argument("--fastboot",required=True,type=Path,help="Absolute path to a trusted Android SDK fastboot executable")
-    inspect_device=sub.add_parser("inspect-device",help="Combine one read-only ADB/Fastboot report with non-authoritative local profile hints"); inspect_device.add_argument("--transport",required=True,choices=("adb","fastboot")); inspect_device.add_argument("--tool",required=True,type=Path,help="Absolute path to trusted adb/fastboot"); inspect_device.add_argument("--profiles",type=Path,default=Path("device_packs"))
+    inspect_fastboot=sub.add_parser("inspect-fastboot",help="Read a strict allowlist of variables from one local USB phone in Fastboot/FastbootD mode"); inspect_fastboot.add_argument("--fastboot",required=True,type=Path,help="Absolute path to a trusted Android SDK fastboot executable"); inspect_fastboot.add_argument("--partitions",action="store_true",help="Also read bounded has-slot/partition-size hints for reviewed partition names")
+    inspect_device=sub.add_parser("inspect-device",help="Combine one read-only ADB/Fastboot report with non-authoritative local profile hints"); inspect_device.add_argument("--transport",required=True,choices=("adb","fastboot")); inspect_device.add_argument("--tool",required=True,type=Path,help="Absolute path to trusted adb/fastboot"); inspect_device.add_argument("--profiles",type=Path,default=Path("device_packs")); inspect_device.add_argument("--partitions",action="store_true",help="Fastboot only: collect reviewed partition size/slot hints")
+    hardware_evidence=sub.add_parser("hardware-evidence",help="Correlate saved read-only ADB and Fastboot reports without claiming hardware verification"); hardware_evidence.add_argument("--adb-report",required=True,type=Path); hardware_evidence.add_argument("--fastboot-report",required=True,type=Path); hardware_evidence.add_argument("--profiles",type=Path,default=Path("device_packs"))
+    transaction_device=sub.add_parser("transaction-device-check",help="Compare a preparation-only transaction plan with read-only correlated hardware evidence"); transaction_device.add_argument("--plan",required=True,type=Path); transaction_device.add_argument("--hardware",required=True,type=Path)
     profiles=sub.add_parser("profiles",help="Validate and list metadata-only device profiles"); profiles.add_argument("--root",type=Path,default=Path("device_packs"))
     baseline=sub.add_parser("baseline",help="Validate and show the offline pinned AOSP baseline"); baseline.add_argument("--file",type=Path,default=Path("platform/aosp_baseline.json"))
     product_contract=sub.add_parser("product-contract",help="Validate the checked-in SwirPhoneOS Cuttlefish product integration contract"); product_contract.add_argument("--root",type=Path,default=Path("platform/aosp_product"))
@@ -49,9 +52,12 @@ def main(argv: list[str] | None = None) -> int:
     args=parser.parse_args(argv)
     try:
         if args.command=="inspect": result=ReadOnlyAdb(args.adb).inspect()
-        elif args.command=="inspect-fastboot": result=ReadOnlyFastboot(args.fastboot).inspect()
+        elif args.command=="inspect-fastboot": result=ReadOnlyFastboot(args.fastboot).inspect(include_partitions=args.partitions)
         elif args.command=="inspect-device":
-            report=ReadOnlyAdb(args.tool).inspect() if args.transport=="adb" else ReadOnlyFastboot(args.tool).inspect(); result=build_unified_report(args.transport,report,discover_profiles(args.profiles))
+            if args.transport=="adb" and args.partitions: raise HardwareEvidenceError("Partition hints are Fastboot-only.")
+            report=ReadOnlyAdb(args.tool).inspect() if args.transport=="adb" else ReadOnlyFastboot(args.tool).inspect(include_partitions=args.partitions); result=build_unified_report(args.transport,report,discover_profiles(args.profiles))
+        elif args.command=="hardware-evidence": result=create_hardware_evidence(load_hardware_json(args.adb_report),load_hardware_json(args.fastboot_report),discover_profiles(args.profiles))
+        elif args.command=="transaction-device-check": result=assess_transaction_hardware(load_plan(args.plan),load_hardware_evidence(args.hardware))
         elif args.command=="profiles":
             registry=discover_profiles(args.root); result={"schema_version":1,"profile_count":len(registry),"profiles":[public_profile_summary(p) for p in registry],"flash_allowed":False}
         elif args.command=="baseline": result=public_baseline_summary(load_baseline(args.file))
@@ -73,6 +79,6 @@ def main(argv: list[str] | None = None) -> int:
         elif args.command=="root-policy": result=public_policy_summary(load_policy(args.policy))
         else: result=evaluate(load_ledger(args.ledger))
         print(json.dumps(result,indent=2,ensure_ascii=True)); return 2 if args.command=="gate" and not result["beta_release_allowed"] else 0
-    except (AndroidAppSourceError,AospWorkspaceError,BuildEvidenceError,BuildPreflightError,CuttlefishEvidenceError,DiagnosticError,FastbootDiagnosticError,IdentityAssessmentError,LocalizationError,PlatformBaselineError,ProductContractError,ProfileError,SwirRootPolicyError,SystemAppRegistryError,TransactionEvidenceError,OSError,ValueError):
-        print("Operation failed: check project metadata or the trusted Android SDK tool path, USB mode, AOSP workspace/evidence/app source, local transaction evidence, host workspace and single-device connection. Raw errors are withheld for privacy.",file=sys.stderr); return 1
+    except (AndroidAppSourceError,AospWorkspaceError,BuildEvidenceError,BuildPreflightError,CuttlefishEvidenceError,DiagnosticError,FastbootDiagnosticError,HardwareEvidenceError,IdentityAssessmentError,LocalizationError,PlatformBaselineError,ProductContractError,ProfileError,SwirRootPolicyError,SystemAppRegistryError,TransactionEvidenceError,OSError,ValueError):
+        print("Operation failed: check project metadata or the trusted Android SDK tool path, USB mode, AOSP workspace/evidence/app source, read-only hardware/transaction evidence, host workspace and single-device connection. Raw errors are withheld for privacy.",file=sys.stderr); return 1
 if __name__=="__main__": raise SystemExit(main())
