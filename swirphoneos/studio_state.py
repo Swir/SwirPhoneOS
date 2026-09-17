@@ -10,7 +10,7 @@ import json
 import os
 import sys
 
-from .diagnostics import DiagnosticError, ReadOnlyAdb, summarize
+from .diagnostics import DiagnosticError, ReadOnlyAdb, summarize, validate_adb_report
 from .fastboot import FastbootDiagnosticError, ReadOnlyFastboot
 from .identity import IdentityAssessmentError, build_unified_report, validate_unified_report
 from .profiles import ProfileError, discover_profiles
@@ -23,36 +23,17 @@ class ScanResult:
 
 
 def report_json(report: dict[str, object]) -> str:
-    """Accept only the legacy ADB core's known schema. Never export extra private fields."""
-    expected = summarize({})
-    if set(report) != set(expected):
-        raise ValueError("Unexpected diagnostic report fields.")
-    for key in ("schema_version", "source", "swirphoneos_support", "flash_allowed", "warnings"):
-        if type(report[key]) is not type(expected[key]) or report[key] != expected[key]:
-            raise ValueError("Diagnostic report cannot change safety or provenance fields.")
-    for key in ("treble_reported", "dynamic_partitions_reported"):
-        if report[key] is not None and type(report[key]) is not bool:
-            raise ValueError("Invalid reported boolean.")
-    if report["bootloader_reported"] not in ("locked", "unlocked", "unknown"):
-        raise ValueError("Invalid reported bootloader state.")
-    for key in (
-        "manufacturer", "model", "codename", "abi", "board_reported", "hardware_reported",
-        "android_release", "build_fingerprint_reported", "reported_security_patch",
-        "verified_boot_state_reported", "vbmeta_device_state_reported", "slot_reported",
-        "slot_suffix_reported",
-    ):
-        value = report[key]
-        if value is not None and (
-            not isinstance(value, str) or not value or len(value) > 256
-            or not value.isascii() or any(ord(c) < 32 or ord(c) == 127 for c in value)
-        ):
-            raise ValueError("Invalid reported property value.")
+    """Validate and serialize the exact standalone ADB diagnostic schema."""
+    try:
+        validate_adb_report(report)
+    except DiagnosticError as exc:
+        raise ValueError("Unexpected diagnostic report fields.") from exc
     return json.dumps(report, indent=2, ensure_ascii=True, sort_keys=True) + "\n"
 
 
 def serialize_report(report: dict[str, object]) -> str:
-    """Serialize either the legacy ADB schema or the unified transport/profile schema."""
-    if report.get("schema_version") == 2:
+    """Serialize either the standalone ADB schema or unified transport/profile schema."""
+    if report.get("source") == "swirphoneos_read_only_transport_plus_profile_hint":
         validate_unified_report(report)
         return json.dumps(report, indent=2, ensure_ascii=True, sort_keys=True) + "\n"
     return report_json(report)
@@ -72,8 +53,9 @@ def save_report(destination: Path, payload: str) -> None:
     fd = os.open(destination, flags, 0o600)
     with os.fdopen(fd, "wb") as handle:
         handle.write(normalized)
-    # Device-reported model/manufacturer text is not guaranteed to be anonymous.
-    # The UI asks the owner to review the report before sharing it publicly.
+    # Device-reported model/manufacturer text and stable transport digests are
+    # not guaranteed to be anonymous. The UI asks the owner to review a report
+    # before sharing it publicly.
 
 
 def runtime_profile_root() -> Path:

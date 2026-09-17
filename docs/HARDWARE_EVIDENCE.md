@@ -8,7 +8,7 @@ The tooling in this document never unlocks, reboots, roots, erases, flashes, cha
 
 ADB collection is limited to a fixed `getprop` allowlist. Fastboot collection is limited to a fixed `getvar` allowlist. Optional partition probing reads only `has-slot:<name>` and `partition-size:<name>` for a bounded reviewed set of partition names. `getvar all` is intentionally not used.
 
-No USB serial number is written to the generated reports.
+No raw USB serial number is written to generated reports. Each real transport capture instead stores the SHA-256 digest of the exact serial returned by that transport's enumeration command and the SHA-256 digest of the exact trusted `adb` or `fastboot` executable used for the capture. The tool binary is hashed before and after inspection; if its bytes change during the run, the capture fails closed. A serial digest is pseudonymous, stable data and should still be treated as share-sensitive. It is useful for correlation, not as a hardware identity credential.
 
 ## Capture an ADB observation
 
@@ -21,7 +21,7 @@ python -m swirphoneos inspect-device \
   --profiles device_packs > adb-observation.json
 ```
 
-The report records non-secret device/build hints including model, codename, ABI, board/hardware, Android release, security patch, exact build fingerprint, slot hints, bootloader/verified-boot state and dynamic-partition reporting. These values can be missing or spoofed and are not hardware verification.
+The report records non-secret device/build hints including model, codename, ABI, board/hardware, Android release, security patch, exact build fingerprint, slot hints, bootloader/verified-boot state and dynamic-partition reporting. It also binds the observation to the SHA-256 of the enumerated transport serial and trusted ADB binary without retaining the raw serial. Device-reported values can be missing or spoofed and are not hardware verification.
 
 ## Capture a Fastboot observation
 
@@ -35,7 +35,7 @@ python -m swirphoneos inspect-device \
   --partitions > fastboot-observation.json
 ```
 
-The optional partition probe reads bounded size/slot hints for reviewed names such as `boot`, `vendor_boot`, `dtbo`, `vbmeta`, `super`, `system`, `product`, `vendor` and `userdata`. These hints are not a verified partition map and must never be converted directly into a flashing recipe.
+The optional partition probe reads bounded size/slot hints for reviewed names such as `boot`, `vendor_boot`, `dtbo`, `vbmeta`, `super`, `system`, `product`, `vendor` and `userdata`. These hints are not a verified partition map and must never be converted directly into a flashing recipe. The report also records the SHA-256 of the Fastboot transport serial and exact trusted Fastboot executable used for the capture.
 
 ## Correlate the observations
 
@@ -46,7 +46,9 @@ python -m swirphoneos hardware-evidence \
   --profiles device_packs > hardware-evidence.json
 ```
 
-The correlation is fail-closed. It requires both reports to point to one local metadata profile, requires the ADB model to match that profile's model allowlist, requires ADB and Fastboot codenames to agree with the profile, requires an exact ADB build fingerprint, and rejects contradictory slot or bootloader-state reports when both transports provide them.
+The schema-v2 correlation is fail-closed. It requires both nested transport reports to pass their exact schema and provenance validation, requires both to point to one local metadata profile, requires the ADB model to match that profile's model allowlist, requires ADB and Fastboot codenames to agree with the profile, requires an exact ADB build fingerprint, requires valid SHA-256 provenance for both trusted SDK tools, requires the hashed transport serial to match across ADB and Fastboot, and rejects contradictory slot or bootloader-state reports when both transports provide them.
+
+Some phones expose different identifiers in Android and Fastboot. Such a device deliberately fails this strict correlation path rather than being guessed equivalent. A future device-specific correlation mechanism may be introduced only after the identifier behavior is reviewed and tested for that exact profile.
 
 The result includes a canonical SHA-256 over the evidence payload and always states:
 
@@ -56,7 +58,7 @@ The result includes a canonical SHA-256 over the evidence payload and always sta
 - `flash_allowed=false`
 - `root_allowed=false`
 
-Cross-transport correlation is **not cryptographic proof that the two reports came from the same physical phone**. A future hardware-verification milestone still requires controlled physical testing, known firmware provenance, a verified partition/restore map and successful rollback evidence on the exact device/build.
+A matching transport-serial digest materially reduces accidental cross-device mixing, but it is **not cryptographic proof of physical hardware identity**: the identifier is device/tool reported and may be spoofed or cloned. Exact SDK-tool hashes improve capture provenance but do not make device-reported values trustworthy. A future hardware-verification milestone still requires controlled physical testing, known firmware provenance, a verified partition/restore map and successful rollback evidence on the exact device/build.
 
 ## Bind a transaction plan to the observed firmware
 
@@ -68,7 +70,7 @@ python -m swirphoneos transaction-device-check \
   --hardware /absolute/path/to/hardware-evidence.json
 ```
 
-A match requires the same profile, codename, model and exact current build fingerprint. Even a complete match produces only `PREPARATION_MATCH_ONLY`; it does not enable writes and does not satisfy physical hardware verification.
+A match requires the same profile, codename, model and exact current build fingerprint. Even a complete match produces only `PREPARATION_MATCH_ONLY`; it does not enable writes and does not satisfy physical hardware verification. The transport/tool provenance remains part of the integrity-hashed hardware evidence but does not relax rollback, owner-confirmation or physical-validation requirements.
 
 ## Current avicii status
 

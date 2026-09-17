@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import hashlib
+import json
 import os
 from pathlib import Path
 import subprocess
@@ -15,6 +17,7 @@ from swirphoneos.fastboot import (
     parse_getvar,
     select_fastboot_device,
     summarize_fastboot,
+    validate_fastboot_report,
 )
 
 
@@ -84,13 +87,24 @@ class SummaryTests(unittest.TestCase):
     def test_invalid_slot_count_stays_unknown(self) -> None:
         self.assertIsNone(summarize_fastboot({"slot-count": "many"})["slot_count_reported"])
 
+    def test_provenance_validator_requires_exact_digests(self) -> None:
+        report = summarize_fastboot({}, transport_serial_sha256="a" * 64, tool_sha256="b" * 64)
+        validate_fastboot_report(report, require_provenance=True)
+        report["transport_serial_sha256"] = "BAD"
+        with self.assertRaises(FastbootDiagnosticError):
+            validate_fastboot_report(report, require_provenance=True)
+
+    def test_provenance_validator_rejects_missing_evidence_digests(self) -> None:
+        with self.assertRaises(FastbootDiagnosticError):
+            validate_fastboot_report(summarize_fastboot({}), require_provenance=True)
+
 
 class ReadOnlyFastbootTests(unittest.TestCase):
     def _tool(self) -> tuple[tempfile.TemporaryDirectory[str], ReadOnlyFastboot]:
         temporary = tempfile.TemporaryDirectory()
         name = "fastboot.exe" if os.name == "nt" else "fastboot"
         path = Path(temporary.name) / name
-        path.write_bytes(b"")
+        path.write_bytes(b"test fastboot placeholder")
         return temporary, ReadOnlyFastboot(path)
 
     def test_rejects_mutating_command(self) -> None:
@@ -124,6 +138,10 @@ class ReadOnlyFastbootTests(unittest.TestCase):
         self.assertEqual(report["product_reported"], "avicii")
         self.assertEqual(report["transport_mode_reported"], "bootloader-fastboot")
         self.assertFalse(report["flash_allowed"])
+        self.assertEqual(report["transport_serial_sha256"], hashlib.sha256(b"ABC123").hexdigest())
+        self.assertEqual(report["tool_sha256"], hashlib.sha256(tool.executable.read_bytes()).hexdigest())
+        self.assertNotIn("ABC123", json.dumps(report))
+        validate_fastboot_report(report, require_provenance=True)
         self.assertEqual(sum(1 for call in calls if call[1:] == ["devices"]), 2)
         self.assertTrue(all("flash" not in call for call in calls))
 
@@ -142,6 +160,22 @@ class ReadOnlyFastbootTests(unittest.TestCase):
         self.assertIsNone(report["product_reported"])
         self.assertEqual(report["transport_mode_reported"], "unknown")
         self.assertFalse(report["flash_allowed"])
+        validate_fastboot_report(report, require_provenance=True)
+
+    def test_tool_binary_change_is_rejected(self) -> None:
+        temporary, tool = self._tool()
+        self.addCleanup(temporary.cleanup)
+
+        def fake_run(command: list[str], **_: object) -> subprocess.CompletedProcess[str]:
+            args = command[1:]
+            if args == ["devices"]:
+                return subprocess.CompletedProcess(command, 0, "ABC123 fastboot\n", "")
+            return subprocess.CompletedProcess(command, 1, "", "FAILED (remote: unknown variable)\n")
+
+        with patch("swirphoneos.fastboot.subprocess.run", side_effect=fake_run), patch(
+            "swirphoneos.fastboot._file_sha256", side_effect=["a" * 64, "b" * 64]
+        ), self.assertRaises(FastbootDiagnosticError):
+            tool.inspect()
 
 
 if __name__ == "__main__":
