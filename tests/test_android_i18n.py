@@ -27,7 +27,7 @@ class AndroidLocalizationTests(unittest.TestCase):
         self.assertEqual(summary["status"], "SOURCE_LINT_ONLY_NOT_RUNTIME_VERIFIED")
         self.assertEqual(summary["source_locale"], "en")
         self.assertEqual(summary["locale_count"], 8)
-        self.assertEqual(summary["source_ready_app_count"], 16)
+        self.assertEqual(summary["source_ready_app_count"], 17)
         self.assertIn("ar", summary["locales"])
         self.assertGreater(summary["source_string_entries"], 0)
         self.assertGreater(summary["production_java_files_scanned"], 0)
