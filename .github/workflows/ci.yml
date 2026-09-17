@@ -32,6 +32,8 @@ jobs:
         run: python -m unittest discover -s tests -v
       - name: Validate project ledger
         run: python -m swirphoneos status
+      - name: Validate generated progress SVG assets
+        run: python -m swirphoneos.progress_svg --check
       - name: Validate non-executable device registry
         run: python -m swirphoneos profiles
       - name: Validate pinned AOSP baseline metadata
