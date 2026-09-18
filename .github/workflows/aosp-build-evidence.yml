@@ -99,6 +99,14 @@ jobs:
               raise SystemExit("Runtime collection requires writable/readable KVM on the dedicated builder.")
           PY
           python -m swirphoneos aosp-plan --workspace "$SWIR_AOSP_WORKSPACE" --jobs "$SWIR_REQUESTED_JOBS" > "$GITHUB_WORKSPACE/aosp-plan.json"
+      - name: Capture exact pre-build host and toolchain identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH="$GITHUB_WORKSPACE/tools" python -m swirphoneos.aosp_host_evidence \
+            --workspace "$SWIR_AOSP_WORKSPACE" \
+            --phase PRE_BUILD \
+            > "$GITHUB_WORKSPACE/aosp-host-pre.json"
       - name: Initialize and synchronize exact Android 17 tag
         shell: bash
         run: |
@@ -178,6 +186,14 @@ jobs:
             --workspace "$SWIR_AOSP_WORKSPACE" \
             --manifest "$SWIR_AOSP_WORKSPACE/swirphoneos-pinned-manifest.xml" \
             > "$GITHUB_WORKSPACE/source-postbuild-evidence.json"
+      - name: Capture exact post-build host and toolchain identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH="$GITHUB_WORKSPACE/tools" python -m swirphoneos.aosp_host_evidence \
+            --workspace "$SWIR_AOSP_WORKSPACE" \
+            --phase POST_BUILD \
+            > "$GITHUB_WORKSPACE/aosp-host-post.json"
       - name: Capture build provenance
         shell: bash
         run: |
@@ -315,6 +331,15 @@ jobs:
             --source-pre "$GITHUB_WORKSPACE/source-prebuild-evidence.json" \
             --source-post "$GITHUB_WORKSPACE/source-postbuild-evidence.json" \
             > "$GITHUB_WORKSPACE/source-trust-bundle.json"
+      - name: Bind exact host and toolchain continuity to completed AOSP run
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH="$GITHUB_WORKSPACE/tools" python -m swirphoneos.aosp_host_trust_bundle \
+            --run-evidence "$GITHUB_WORKSPACE/aosp-run-evidence.json" \
+            --host-pre "$GITHUB_WORKSPACE/aosp-host-pre.json" \
+            --host-post "$GITHUB_WORKSPACE/aosp-host-post.json" \
+            > "$GITHUB_WORKSPACE/aosp-host-trust-bundle.json"
       - name: Bind exact adb trust to completed runtime evidence
         if: ${{ inputs.collect_runtime }}
         shell: bash
@@ -405,6 +430,9 @@ jobs:
             aosp-run-context.txt
             aosp-phase.txt
             builder-preflight.json
+            aosp-host-pre.json
+            aosp-host-post.json
+            aosp-host-trust-bundle.json
             runtime-tool-evidence.json
             runtime-tool-prelaunch-verification.json
             runtime-tool-post-verification.json
