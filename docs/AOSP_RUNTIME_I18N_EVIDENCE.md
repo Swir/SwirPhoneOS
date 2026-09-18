@@ -6,7 +6,7 @@ This evidence path is deliberately Cuttlefish-only and fail-closed. It must neve
 
 ## Source LocaleConfig gate
 
-Every source-ready first-party app now declares `android:localeConfig="@xml/locales_config"` and ships a package-local `res/xml/locales_config.xml` containing exactly the shared EN/PL/NB/DE/ES/FR/PT/AR catalog. `python -m swirphoneos.android_locale_config` validates the manifest declaration, exact locale set/order, `supportsRtl=true`, and exact AOSP staging coverage for every source-ready package. This is source evidence only.
+Every source-ready first-party app declares `android:localeConfig="@xml/locales_config"` and ships a package-local `res/xml/locales_config.xml` containing exactly the shared EN/PL/NB/DE/ES/FR/PT/AR catalog. `python -m swirphoneos.android_locale_config` validates the manifest declaration, exact locale set/order, `supportsRtl=true`, and exact AOSP staging coverage for every source-ready package. This is source evidence only.
 
 Android's per-app language surface depends on an application LocaleConfig. Keeping that metadata data-driven and staged with the app prevents the runtime locale test from relying on an undeclared or stale supported-language list.
 
@@ -61,6 +61,34 @@ The binder requires:
 
 It hashes the raw input reports and the current app manifest so reports from different runs or repository states cannot be silently mixed.
 
+## Dedicated builder integration and exact-adb trust
+
+When `collect_runtime=true`, `.github/workflows/aosp-build-evidence.yml` now performs the locale matrix and runtime-review binding automatically after ordinary package launch smoke. The workflow captures the exact local `adb` bytes before Cuttlefish runtime, re-verifies the same tool before launch, keeps locale switching inside that evidence window, and re-verifies the tool again only after the complete localization review has finished.
+
+The ordinary AOSP run evidence and exact-adb trust bundle are then combined with the runtime review:
+
+```sh
+python -m swirphoneos.runtime_review_trust_bundle \
+  --run-evidence aosp-run-evidence.json \
+  --runtime-trust runtime-trust-bundle.json \
+  --runtime-review runtime-review-evidence.json \
+  > runtime-review-trust-bundle.json
+```
+
+The final binder revalidates canonical digests instead of trusting copied SHA fields. It requires one `BUILD_AND_RUNTIME` AOSP run, the same build-fingerprint digest, the same checked-in app-manifest digest and sorted package set, the exact shared locale set, a complete locale/restoration review, and one unchanged exact `adb` identity across the full runtime-review window. It still keeps visual RTL, accessibility and visual translation claims false and cannot promote applications or authorize physical-device writes.
+
+The immutable builder artifact therefore preserves, when runtime collection succeeds:
+
+- `runtime-evidence.json`;
+- `app-smoke-evidence.json`;
+- `runtime-i18n-evidence.json`;
+- `runtime-review-evidence.json`;
+- `aosp-run-evidence.json`;
+- `runtime-trust-bundle.json`;
+- `runtime-review-trust-bundle.json`.
+
+Failure evidence also records whether these bounded reports existed at the exact failing phase. A failed locale restoration or review/trust binding remains `FAILED_NOT_READY`; it never becomes runtime or release credit.
+
 ## What this proves
 
 Successful evidence proves, for one exact Cuttlefish build:
@@ -69,7 +97,8 @@ Successful evidence proves, for one exact Cuttlefish build:
 - all source-ready apps were installed and launchable;
 - Android accepted and reported each checked-in per-app locale override;
 - every app could be launched while each locale override was active;
-- every captured original app-locale override was restored.
+- every captured original app-locale override was restored;
+- the locale matrix and review are bound to the same exact AOSP run and unchanged trusted local `adb` identity.
 
 ## What this does not prove
 

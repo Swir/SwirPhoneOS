@@ -30,10 +30,13 @@ ALLOWED_PHASES = (
     "RUNTIME_LAUNCH",
     "RUNTIME_WAIT",
     "APP_SMOKE",
+    "APP_I18N",
+    "RUNTIME_REVIEW",
     "RUNTIME_BIND",
     "RUN_BIND",
+    "TRUST_BIND",
 )
-EVIDENCE_IDS = (
+LEGACY_EVIDENCE_IDS_V1 = (
     "run_context",
     "builder_preflight",
     "aosp_plan",
@@ -45,6 +48,23 @@ EVIDENCE_IDS = (
     "app_smoke",
     "runtime_bundle",
     "aosp_run_evidence",
+)
+EVIDENCE_IDS = (
+    "run_context",
+    "builder_preflight",
+    "aosp_plan",
+    "resolved_manifest",
+    "stage_report",
+    "post_build_stage",
+    "build_evidence",
+    "runtime_evidence",
+    "app_smoke",
+    "runtime_i18n",
+    "runtime_review",
+    "runtime_bundle",
+    "aosp_run_evidence",
+    "runtime_trust_bundle",
+    "runtime_review_trust_bundle",
 )
 NEXT_ACTION = {
     "BOOTSTRAP": "Inspect runner availability and checkout diagnostics before retrying.",
@@ -58,8 +78,11 @@ NEXT_ACTION = {
     "RUNTIME_LAUNCH": "Inspect Cuttlefish host prerequisites and launch output for the exact built product.",
     "RUNTIME_WAIT": "Inspect boot failure while preserving exact product/fingerprint/runtime identity checks.",
     "APP_SMOKE": "Fix the first source-ready app that fails package-local launch or resumed-activity confirmation.",
+    "APP_I18N": "Fix the first package/locale failure and verify every captured locale override is restored; reset the disposable guest if restoration cannot be proven.",
+    "RUNTIME_REVIEW": "Resolve boot/launch/locale/manifest continuity without promoting app status or visual/accessibility claims.",
     "RUNTIME_BIND": "Resolve build/runtime fingerprint continuity failure; never mix evidence from different builds.",
     "RUN_BIND": "Resolve cross-report continuity mismatch before considering any runtime status promotion.",
+    "TRUST_BIND": "Resolve exact adb/run/runtime-review continuity; do not weaken tool or localization trust checks.",
 }
 
 
@@ -114,7 +137,7 @@ def collect_failure_evidence(
     evidence_paths: Mapping[str, Path | None],
     diagnostic_log: Path | None = None,
 ) -> dict[str, object]:
-    """Create a deterministic read-only report for one failed AOSP workflow run."""
+    """Create a deterministic read-only schema-v2 report for one failed AOSP workflow run."""
     if not isinstance(source_commit, str) or SHA1.fullmatch(source_commit) is None:
         raise AospFailureEvidenceError("source_commit must be one lowercase 40-character Git SHA-1.")
     if phase not in ALLOWED_PHASES:
@@ -132,7 +155,7 @@ def collect_failure_evidence(
 
     diagnostic = _describe_file(diagnostic_log, max_bytes=MAX_DIAGNOSTIC_BYTES)
     core: dict[str, object] = {
-        "schema_version": 1,
+        "schema_version": 2,
         "operation": "READ_ONLY_AOSP_FAILURE_EVIDENCE",
         "state": "FAILED_NOT_READY",
         "source_commit": source_commit,
@@ -167,7 +190,7 @@ def collect_failure_evidence(
 
 
 def validate_failure_evidence(report: object) -> dict[str, object]:
-    """Revalidate a saved schema-v1 report and its canonical integrity digest."""
+    """Revalidate saved schema-v1/v2 reports and their canonical integrity digest."""
     required = {
         "schema_version", "operation", "state", "source_commit", "failed_phase", "baseline",
         "evidence_inventory", "diagnostic_tail", "next_action", "build_succeeded", "runtime_succeeded",
@@ -175,8 +198,9 @@ def validate_failure_evidence(report: object) -> dict[str, object]:
         "failure_evidence_sha256",
     }
     if not isinstance(report, dict) or set(report) != required:
-        raise AospFailureEvidenceError("Failure evidence must match schema v1 exactly.")
-    if report["schema_version"] != 1 or report["operation"] != "READ_ONLY_AOSP_FAILURE_EVIDENCE" or report["state"] != "FAILED_NOT_READY":
+        raise AospFailureEvidenceError("Failure evidence does not match a supported schema shape.")
+    schema = report["schema_version"]
+    if schema not in (1, 2) or report["operation"] != "READ_ONLY_AOSP_FAILURE_EVIDENCE" or report["state"] != "FAILED_NOT_READY":
         raise AospFailureEvidenceError("Failure evidence identity is invalid.")
     if not isinstance(report["source_commit"], str) or SHA1.fullmatch(report["source_commit"]) is None:
         raise AospFailureEvidenceError("Failure evidence source commit is invalid.")
@@ -186,8 +210,9 @@ def validate_failure_evidence(report: object) -> dict[str, object]:
         if report[key] is not False:
             raise AospFailureEvidenceError("Failure evidence safety flags must remain false.")
     inventory = report["evidence_inventory"]
-    if not isinstance(inventory, list) or [item.get("id") for item in inventory if isinstance(item, dict)] != list(EVIDENCE_IDS):
-        raise AospFailureEvidenceError("Failure evidence inventory is incomplete or reordered.")
+    expected_ids = LEGACY_EVIDENCE_IDS_V1 if schema == 1 else EVIDENCE_IDS
+    if not isinstance(inventory, list) or [item.get("id") for item in inventory if isinstance(item, dict)] != list(expected_ids):
+        raise AospFailureEvidenceError("Failure evidence inventory is incomplete or reordered for its schema.")
     for item in inventory:
         if set(item) != {"id", "requested", "present", "file_name", "size", "sha256"}:
             raise AospFailureEvidenceError("Failure evidence inventory item is malformed.")

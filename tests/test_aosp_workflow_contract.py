@@ -46,12 +46,29 @@ class AospWorkflowContractTests(unittest.TestCase):
         self.assertLess(reverify, build_evidence)
         self.assertIn("post-build-stage-evidence.json", self.text)
 
+    def test_runtime_localization_review_is_in_exact_runtime_window(self):
+        prelaunch = self.text.index("runtime-tool-prelaunch-verification.json")
+        smoke = self.text.index("python -m swirphoneos.cuttlefish_smoke")
+        i18n = self.text.index("python -m swirphoneos.cuttlefish_i18n")
+        review = self.text.index("python -m swirphoneos.runtime_review_evidence")
+        post = self.text.index("runtime-tool-post-verification.json")
+        self.assertLess(prelaunch, smoke)
+        self.assertLess(smoke, i18n)
+        self.assertLess(i18n, review)
+        self.assertLess(review, post)
+        self.assertIn("runtime-i18n-evidence.json", self.text)
+        self.assertIn("runtime-review-evidence.json", self.text)
+
     def test_complete_run_chain_is_bound_after_build_and_optional_runtime(self):
         build_evidence = self.text.index("python -m swirphoneos build-evidence")
         run_evidence = self.text.index("python -m swirphoneos aosp-run-evidence")
+        runtime_trust = self.text.index("python -m swirphoneos.runtime_trust_bundle")
+        review_trust = self.text.index("python -m swirphoneos.runtime_review_trust_bundle")
         upload = self.text.index("Upload immutable evidence files")
         self.assertLess(build_evidence, run_evidence)
-        self.assertLess(run_evidence, upload)
+        self.assertLess(run_evidence, runtime_trust)
+        self.assertLess(runtime_trust, review_trust)
+        self.assertLess(review_trust, upload)
         self.assertIn('--source-commit "$GITHUB_SHA"', self.text)
         self.assertIn('--app-manifest "$GITHUB_WORKSPACE/tools/system_apps/manifest.json"', self.text)
         self.assertIn("--post-stage", self.text)
@@ -59,6 +76,7 @@ class AospWorkflowContractTests(unittest.TestCase):
         self.assertIn("--smoke", self.text)
         self.assertIn("--bundle", self.text)
         self.assertIn("aosp-run-evidence.json", self.text)
+        self.assertIn("runtime-review-trust-bundle.json", self.text)
 
     def test_failure_diagnostics_exist_before_checkout_and_track_bounded_phases(self):
         initialize = self.text.index("Initialize bounded run diagnostics")
@@ -69,7 +87,7 @@ class AospWorkflowContractTests(unittest.TestCase):
         for phase in (
             "BOOTSTRAP", "TOOLCHAIN", "PREFLIGHT", "SOURCE_SYNC", "SOURCE_STAGE", "BUILD",
             "POST_BUILD_STAGE", "BUILD_EVIDENCE", "RUNTIME_LAUNCH", "RUNTIME_WAIT",
-            "APP_SMOKE", "RUNTIME_BIND", "RUN_BIND",
+            "APP_SMOKE", "APP_I18N", "RUNTIME_REVIEW", "RUNTIME_BIND", "RUN_BIND", "TRUST_BIND",
         ):
             self.assertIn('"' + phase + '"', self.text)
 
@@ -89,19 +107,30 @@ class AospWorkflowContractTests(unittest.TestCase):
         self.assertIn("if: ${{ failure() }}", collector_block)
         self.assertIn("python -m swirphoneos.aosp_failure_cli", collector_block)
         self.assertIn('--phase "$phase"', collector_block)
+        self.assertIn('--i18n "$GITHUB_WORKSPACE/runtime-i18n-evidence.json"', collector_block)
+        self.assertIn('--runtime-review "$GITHUB_WORKSPACE/runtime-review-evidence.json"', collector_block)
+        self.assertIn('--runtime-trust "$GITHUB_WORKSPACE/runtime-trust-bundle.json"', collector_block)
+        self.assertIn('--runtime-review-trust "$GITHUB_WORKSPACE/runtime-review-trust-bundle.json"', collector_block)
         self.assertIn("aosp-failure-evidence.json", collector_block)
         self.assertIn("aosp-failure-evidence-error.txt", collector_block)
 
     def test_evidence_artifact_survives_early_and_late_failures(self):
         self.assertIn("if: ${{ always() }}", self.text)
         upload_block = self.text[self.text.index("Upload immutable evidence files"):]
-        self.assertIn("aosp-run-context.txt", upload_block)
-        self.assertIn("aosp-phase.txt", upload_block)
-        self.assertIn("builder-preflight.json", upload_block)
-        self.assertIn("stage-report.json", upload_block)
-        self.assertIn("post-build-stage-evidence.json", upload_block)
-        self.assertIn("aosp-run-evidence.json", upload_block)
-        self.assertIn("aosp-failure-evidence.json", upload_block)
+        for name in (
+            "aosp-run-context.txt",
+            "aosp-phase.txt",
+            "builder-preflight.json",
+            "stage-report.json",
+            "post-build-stage-evidence.json",
+            "runtime-i18n-evidence.json",
+            "runtime-review-evidence.json",
+            "runtime-trust-bundle.json",
+            "runtime-review-trust-bundle.json",
+            "aosp-run-evidence.json",
+            "aosp-failure-evidence.json",
+        ):
+            self.assertIn(name, upload_block)
         self.assertIn("if-no-files-found: error", upload_block)
 
 
