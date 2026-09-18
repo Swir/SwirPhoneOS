@@ -1,55 +1,113 @@
 package org.swir.phoneos.calculator;
 
 import android.app.Activity;
-import android.graphics.Color;
 import android.os.Bundle;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.Button;
 import android.widget.GridLayout;
 import android.widget.LinearLayout;
+import android.widget.ScrollView;
 import android.widget.TextView;
 
 import java.text.DecimalFormatSymbols;
 
-/** First functional SwirPhoneOS application source: an offline calculator. */
+/** Offline SwirPhoneOS calculator with basic and source-stage scientific functions. */
 public final class MainActivity extends Activity {
     private final CalculatorEngine engine = new CalculatorEngine();
     private TextView display;
+    private Button angleModeButton;
     private char decimalSeparator;
 
     @Override
     protected void onCreate(Bundle state) {
         super.onCreate(state);
         decimalSeparator = DecimalFormatSymbols.getInstance().getDecimalSeparator();
-        getWindow().setStatusBarColor(Color.rgb(4, 11, 23));
-        getWindow().setNavigationBarColor(Color.rgb(4, 11, 23));
+        getWindow().setStatusBarColor(getColor(R.color.swir_background));
+        getWindow().setNavigationBarColor(getColor(R.color.swir_surface));
         setContentView(buildUi());
         refreshDisplay();
+        refreshAngleMode();
     }
 
     private View buildUi() {
+        int spaceXs = getResources().getDimensionPixelSize(R.dimen.swir_space_xs);
+        int spaceSm = getResources().getDimensionPixelSize(R.dimen.swir_space_sm);
+        int spaceMd = getResources().getDimensionPixelSize(R.dimen.swir_space_md);
+
+        ScrollView scroll = new ScrollView(this);
+        scroll.setFillViewport(true);
+        scroll.setBackgroundColor(getColor(R.color.swir_background));
+
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
-        root.setPadding(dp(18), dp(18), dp(18), dp(18));
-        root.setBackgroundColor(Color.rgb(7, 18, 34));
+        root.setPadding(spaceMd, spaceMd, spaceMd, spaceMd);
         root.setLayoutDirection(View.LAYOUT_DIRECTION_LOCALE);
+        scroll.addView(root, new ScrollView.LayoutParams(
+                ScrollView.LayoutParams.MATCH_PARENT, ScrollView.LayoutParams.WRAP_CONTENT));
 
         TextView title = new TextView(this);
         title.setText(R.string.app_name);
-        title.setTextColor(Color.rgb(120, 205, 255));
-        title.setTextSize(20);
-        root.addView(title, new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+        title.setTextColor(getColor(R.color.swir_text_primary));
+        title.setTextSize(24);
+        root.addView(title);
+
+        TextView subtitle = new TextView(this);
+        subtitle.setText(R.string.scientific_mode);
+        subtitle.setTextColor(getColor(R.color.swir_text_secondary));
+        subtitle.setTextSize(14);
+        subtitle.setPadding(0, spaceXs, 0, spaceSm);
+        root.addView(subtitle);
 
         display = new TextView(this);
-        display.setTextColor(Color.WHITE);
-        display.setTextSize(46);
+        display.setTextColor(getColor(R.color.swir_text_primary));
+        display.setTextSize(42);
         display.setGravity(Gravity.END | Gravity.CENTER_VERTICAL);
-        display.setMinHeight(dp(112));
+        display.setMinHeight(dp(104));
         display.setContentDescription(getString(R.string.display_description));
         root.addView(display, new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f));
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+
+        TextView scientificLabel = new TextView(this);
+        scientificLabel.setText(R.string.scientific_functions);
+        scientificLabel.setTextColor(getColor(R.color.swir_text_secondary));
+        scientificLabel.setTextSize(13);
+        scientificLabel.setPadding(0, spaceSm, 0, spaceXs);
+        root.addView(scientificLabel);
+
+        GridLayout scientific = new GridLayout(this);
+        scientific.setColumnCount(4);
+        scientific.setUseDefaultMargins(false);
+        scientific.setAlignmentMode(GridLayout.ALIGN_BOUNDS);
+        scientific.setLayoutDirection(View.LAYOUT_DIRECTION_LOCALE);
+        scientific.addView(scientificButton(R.string.sine_short, R.string.sine, CalculatorEngine.ScientificOperation.SIN), cellParams());
+        scientific.addView(scientificButton(R.string.cosine_short, R.string.cosine, CalculatorEngine.ScientificOperation.COS), cellParams());
+        scientific.addView(scientificButton(R.string.tangent_short, R.string.tangent, CalculatorEngine.ScientificOperation.TAN), cellParams());
+        scientific.addView(scientificButton(R.string.square_root_short, R.string.square_root, CalculatorEngine.ScientificOperation.SQRT), cellParams());
+        scientific.addView(scientificButton(R.string.natural_log_short, R.string.natural_log, CalculatorEngine.ScientificOperation.LN), cellParams());
+        scientific.addView(scientificButton(R.string.base10_log_short, R.string.base10_log, CalculatorEngine.ScientificOperation.LOG10), cellParams());
+        scientific.addView(scientificButton(R.string.square_short, R.string.square, CalculatorEngine.ScientificOperation.SQUARE), cellParams());
+        scientific.addView(scientificButton(R.string.reciprocal_short, R.string.reciprocal, CalculatorEngine.ScientificOperation.RECIPROCAL), cellParams());
+        scientific.addView(constantButton(R.string.pi_short, R.string.pi_constant, true), cellParams());
+        scientific.addView(constantButton(R.string.e_short, R.string.e_constant, false), cellParams());
+        scientific.addView(scientificButton(R.string.absolute_short, R.string.absolute_value, CalculatorEngine.ScientificOperation.ABS), cellParams());
+        angleModeButton = new Button(this);
+        configureButton(angleModeButton, false);
+        angleModeButton.setContentDescription(getString(R.string.switch_angle_mode));
+        angleModeButton.setOnClickListener(v -> {
+            engine.toggleAngleMode();
+            refreshAngleMode();
+        });
+        scientific.addView(angleModeButton, cellParams());
+        root.addView(scientific, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+
+        TextView basicLabel = new TextView(this);
+        basicLabel.setText(R.string.basic_functions);
+        basicLabel.setTextColor(getColor(R.color.swir_text_secondary));
+        basicLabel.setTextSize(13);
+        basicLabel.setPadding(0, spaceSm, 0, spaceXs);
+        root.addView(basicLabel);
 
         GridLayout keypad = new GridLayout(this);
         keypad.setColumnCount(4);
@@ -72,27 +130,58 @@ public final class MainActivity extends Activity {
         }
         root.addView(keypad, new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
-        return root;
+        return scroll;
+    }
+
+    private Button scientificButton(int label, int description, CalculatorEngine.ScientificOperation operation) {
+        Button button = new Button(this);
+        configureButton(button, false);
+        button.setText(label);
+        button.setContentDescription(getString(description));
+        button.setOnClickListener(v -> {
+            engine.scientific(operation);
+            refreshDisplay();
+        });
+        return button;
+    }
+
+    private Button constantButton(int label, int description, boolean pi) {
+        Button button = new Button(this);
+        configureButton(button, false);
+        button.setText(label);
+        button.setContentDescription(getString(description));
+        button.setOnClickListener(v -> {
+            if (pi) engine.inputPi();
+            else engine.inputE();
+            refreshDisplay();
+        });
+        return button;
     }
 
     private Button makeButton(final String key) {
         Button button = new Button(this);
-        button.setAllCaps(false);
+        configureButton(button, isOperator(key));
         button.setText(".".equals(key) ? String.valueOf(decimalSeparator) : key);
-        button.setTextSize(22);
-        button.setTextColor(Color.WHITE);
-        button.setBackgroundColor(isOperator(key) ? Color.rgb(18, 88, 145) : Color.rgb(17, 38, 62));
         button.setContentDescription(descriptionFor(key));
         button.setOnClickListener(view -> handleKey(key));
         return button;
     }
 
+    private void configureButton(Button button, boolean accented) {
+        button.setAllCaps(false);
+        button.setTextSize(18);
+        button.setMinHeight(getResources().getDimensionPixelSize(R.dimen.swir_touch_min));
+        button.setTextColor(getColor(R.color.swir_text_primary));
+        button.setBackgroundColor(getColor(accented ? R.color.swir_accent : R.color.swir_surface_alt));
+    }
+
     private GridLayout.LayoutParams cellParams() {
         GridLayout.LayoutParams params = new GridLayout.LayoutParams();
         params.width = 0;
-        params.height = dp(66);
+        params.height = dp(58);
         params.columnSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f);
-        params.setMargins(dp(4), dp(4), dp(4), dp(4));
+        int margin = getResources().getDimensionPixelSize(R.dimen.swir_space_xs);
+        params.setMargins(margin, margin, margin, margin);
         return params;
     }
 
@@ -127,6 +216,12 @@ public final class MainActivity extends Activity {
             text = text.replace('.', decimalSeparator);
         }
         display.setText(text);
+    }
+
+    private void refreshAngleMode() {
+        if (angleModeButton == null) return;
+        angleModeButton.setText(engine.angleMode() == CalculatorEngine.AngleMode.DEGREES
+                ? R.string.angle_degrees_short : R.string.angle_radians_short);
     }
 
     private boolean isOperator(String key) {
