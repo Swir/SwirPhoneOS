@@ -19,7 +19,8 @@ def string_keys(path: Path) -> set[str]:
 class SwirPhoneInCallSourceTests(unittest.TestCase):
     def test_manifest_declares_owner_visible_dialer_role_contract(self):
         root = ET.fromstring((ROOT / "AndroidManifest.xml").read_text(encoding="utf-8"))
-        self.assertEqual(root.findall("uses-permission"), [])
+        permissions = {node.get(ANDROID + "name") for node in root.findall("uses-permission")}
+        self.assertEqual(permissions, {"android.permission.READ_CALL_LOG"})
         application = root.find("application")
         self.assertIsNotNone(application)
         main = next(node for node in application.findall("activity") if node.get(ANDROID + "name") == ".MainActivity")
@@ -83,18 +84,20 @@ class SwirPhoneInCallSourceTests(unittest.TestCase):
             self.assertIn(token, source)
         self.assertNotIn('setText("', source)
 
-    def test_exact_stage_fragment_contains_all_new_runtime_sources(self):
+    def test_exact_stage_fragment_contains_all_runtime_sources(self):
         data = json.loads(Path("platform/aosp_product/stage_manifest.d/phone.json").read_text(encoding="utf-8"))
         sources = {entry["source"] for entry in data["files"]}
         self.assertIn("apps/SwirPhone/src/org/swir/phoneos/phone/InCallActivity.java", sources)
         self.assertIn("apps/SwirPhone/src/org/swir/phoneos/phone/SwirInCallService.java", sources)
+        self.assertIn("apps/SwirPhone/src/org/swir/phoneos/phone/CallHistoryPolicy.java", sources)
 
-    def test_all_phone_locales_have_exact_role_and_incall_keys(self):
+    def test_all_phone_locales_have_exact_role_incall_and_history_keys(self):
         expected = string_keys(ROOT / "res/values/strings.xml")
         required = {
             "role_active", "role_inactive", "request_default_phone", "role_unavailable", "open_active_call",
             "incall_title", "incall_number_format", "incall_state_format", "answer_call", "reject_call", "end_call",
-            "call_state_ringing", "call_state_active", "call_state_disconnected",
+            "call_state_ringing", "call_state_active", "call_state_disconnected", "open_recent_calls",
+            "recent_calls_title", "recent_calls_permission_denied", "recent_call_duration", "recent_call_missed",
         }
         self.assertTrue(required.issubset(expected))
         for folder in LOCALES:

@@ -16,7 +16,7 @@ The current registry contains 20 apps: **0 `HOST_CONTRACT`, 20 `ANDROID_SOURCE`,
 ## Source-ready apps
 
 ### Swir Phone
-Permission-free owner-visible keypad with host-tested fail-closed dial normalization and `ACTION_DIAL` hand-off. It does not request `CALL_PHONE`, place calls directly or read the call log. `in_call` and `recent_calls` remain open.
+Owner-visible keypad with host-tested fail-closed dial normalization and explicit `ACTION_DIAL` hand-off. The owner may request Android's default-dialer role; source-stage in-call answer/reject/end controls are available only through that role. Recent-call history is bounded to 20 entries, requires both the default-dialer role and explicit runtime `READ_CALL_LOG`, hides restricted/private presentation, and queries the call log read-only. Swir Phone does not request `CALL_PHONE` or `WRITE_CALL_LOG`, place outgoing calls directly, or insert/update/delete call-log rows. Real Telecom/modem/IMS and device behavior remain runtime- and hardware-unverified.
 
 ### Swir Contacts
 Requests exactly `READ_CONTACTS`, browses/searches ContactsProvider, delegates create/edit to Android and provides explicit vCard import/export. It has no `WRITE_CONTACTS`, storage or network permission.
@@ -37,13 +37,13 @@ Permission-free file manager using an owner-selected Storage Access Framework tr
 Beta-critical permission-free settings hub with localized search, real build/device status and an exact reviewed allowlist of Android settings routes.
 
 ### Swir Browser
-Requests exactly `INTERNET`. The WebView path is HTTPS-only, disables cleartext/file/content access, starts with JavaScript and DOM storage disabled, blocks third-party cookies, enables Safe Browsing and provides explicit local browsing-data clearing. Owner opt-in can enable JavaScript for the current session. Downloads remain open.
+Requests exactly `INTERNET`. The WebView path is HTTPS-only, disables cleartext/file/content access, starts with JavaScript and DOM storage disabled, blocks third-party cookies, enables Safe Browsing and provides explicit local browsing-data clearing. Owner opt-in can enable JavaScript for the current session. Downloads are source-implemented through app-scoped, owner-visible `DownloadManager` handling; runtime redirect/provider behavior remains unverified.
 
 ### Swir Clock
 Permission-free locale-formatted clock with foreground stopwatch/timer and owner-visible Android alarm hand-off. It does not request exact-alarm privileges.
 
 ### Swir Calculator
-Permission-free BigDecimal basic arithmetic with host-tested policy and locale-aware display. Scientific math remains open.
+Permission-free BigDecimal arithmetic with host-tested source-stage scientific functions/keypad and locale-aware display. Android runtime, visual/accessibility review and conservative capability-ledger promotion remain open.
 
 ### Swir Notes
 Permission-free private SQLite notes with create/edit/delete/search, explicit sharing and owner-selected Markdown export.
@@ -52,16 +52,16 @@ Permission-free private SQLite notes with create/edit/delete/search, explicit sh
 Requests exactly `RECORD_AUDIO`, records AAC/MPEG-4 to app-private storage while foregrounded, supports pause/resume/stop/playback, surfaces microphone mute state and exports through an owner-selected document. Exact-device audio remains unverified.
 
 ### Swir Calendar
-Permission-free local SQLite agenda with editing/search/share and iCalendar export. CalendarProvider bridging remains open.
+Permission-free local SQLite agenda with editing/search/share, bounded owner-selected iCalendar import/export and an owner-visible Android calendar insert hand-off. It does not request direct calendar read/write permission; provider runtime behavior remains unverified.
 
 ### Swir Weather
 Requests exactly `INTERNET`. It retrieves bounded current-weather JSON over `HttpsURLConnection` from Open-Meteo using owner-entered latitude/longitude, persists metric/imperial preference and exposes provider attribution. It deliberately does not request device location permission.
 
 ### Swir Update
-Beta-critical read-only channel/build state plus host-tested SHA-256/RSA metadata verification. Download, staging and recovery install remain disabled; staged update state and recovery hand-off remain open.
+Beta-critical read-only channel/build state plus host-tested SHA-256/RSA metadata verification and fail-closed OTA trust-store/source policy. Download, staging and recovery install remain disabled; staged update state and recovery hand-off remain open.
 
 ### Swir Backup
-Permission-free owner-controlled document backup using Storage Access Framework. It creates bounded ZIP-compatible `.swirbackup` archives containing selected documents and build fingerprint/SDK metadata, and performs fail-closed archive inspection with traversal/count/size limits. It cannot read other apps' private data and deliberately does not restore archive entries yet; `restore_orchestration` remains open.
+Permission-free owner-controlled document backup using Storage Access Framework. It creates bounded schema-v2 `.swirbackup` archives containing selected documents and build metadata, binds every file to SHA-256, rechecks source bytes before archive write, performs strict archive inspection and restores only into an explicitly owner-selected SAF tree. Legacy schema-v1 archives remain inspect-only. This does not read private app data or partitions and does not satisfy broader device/recovery `restore_orchestration`.
 
 ### Swir Privacy
 Beta-critical permission-free center that opens only an exact reviewed allowlist of Android privacy/permission surfaces. Live indicators and access history remain open.
@@ -79,9 +79,9 @@ Original owner UI plus a non-exported status/diagnostic service, explicit enable
 
 All twenty apps use original SwirPhoneOS icons/UI and Android resources for English, Polish, Norwegian Bokmål, German, Spanish, French, Portuguese and Arabic. Layout direction follows the locale. Localization lint enforces key parity, formatter signatures, plural contracts and common direct Java UI-literal sinks.
 
-Source validation requires package identity, exact least-privilege permission allowlists, product inclusion and complete bounded AOSP staging. Network primitives are reviewed only for Swir Browser and Swir Weather; other apps fail closed on unreviewed network code. Broad-storage and process-execution primitives remain rejected. SwirRoot receives additional hard-disabled mutation checks.
+Source validation requires package identity, exact least-privilege permission allowlists, product inclusion and complete bounded AOSP staging. Swir Phone is allowed only `READ_CALL_LOG`; Contacts only `READ_CONTACTS`; Gallery only `READ_MEDIA_IMAGES` + `READ_MEDIA_VIDEO`; Recorder only `RECORD_AUDIO`; Browser and Weather only `INTERNET`. The remaining source apps are permission-free. Network primitives are reviewed only for Swir Browser and Swir Weather; other apps fail closed on unreviewed network code. Broad-storage and process-execution primitives remain rejected. Swir Phone additionally rejects direct-call and call-log-write primitives, and SwirRoot receives additional hard-disabled mutation checks.
 
-Source-summary schema v3 records missing capabilities by **app + capability**. Important open items include `phone:in_call`, `phone:recent_calls`, `messages:mms`, `messages:conversation_history`, `camera:photo_capture`, `camera:video_capture`, `browser:downloads`, `calendar:provider_bridge`, `backup:restore_orchestration`, `apps:update_status`, `swirroot:guided_enable` and `swirroot:guided_unroot`.
+Source-summary schema v3 records missing capabilities by **app + capability**. Swir Phone `dialer`, `in_call` and bounded read-only `recent_calls` are source-implemented. Important open items include `messages:mms`, `messages:conversation_history`, `camera:photo_capture`, `camera:video_capture`, `gallery:albums`, `backup:restore_orchestration`, `privacy:privacy_indicators`, `privacy:access_history`, `update:staged_update_state`, `update:recovery_handoff`, `apps:update_status`, `swirroot:guided_enable` and `swirroot:guided_unroot`.
 
 None of the twenty is `ANDROID_RUNTIME` until a real pinned-AOSP build and Cuttlefish exercise succeeds.
 
@@ -111,11 +111,11 @@ None of the twenty is `ANDROID_RUNTIME` until a real pinned-AOSP build and Cuttl
 
 ### Emulator-ready core
 
-All twenty source-ready apps now need the real AOSP build/runtime gate rather than more package breadth. They must compile into the pinned product, launch in Cuttlefish and pass focused checks for state, persistence, permissions, accessibility, locale switching and RTL. Source-only work receives no weighted progress credit.
+All twenty source-ready apps now need the real AOSP build/runtime gate rather than more package breadth. They must compile into the pinned product, launch in Cuttlefish and pass focused checks for state, persistence, permissions, accessibility, locale switching and RTL. Swir Phone specifically needs runtime review of default-role acquisition, `READ_CALL_LOG` deny/grant behavior, restricted-number presentation, recent-call rendering and in-call controls. Source-only work receives no weighted progress credit.
 
 ### Reference hardware
 
-Bring up exact telephony/default-role behavior for Phone/Messages, direct camera capture, recorder/audio, Gallery media behavior and Backup restore only against a physically verified supported build. Camera photo/video and Backup restore capabilities remain deliberately unpromoted until those tests exist.
+Bring up exact telephony/default-role/recent-call behavior for Phone and exact default-role/provider/MMS/carrier behavior for Messages; validate Contacts provider behavior on the same physical build. Direct camera capture, recorder/audio, Gallery media behavior and Backup recovery semantics also require a physically verified supported build. Source-stage recent calls do not satisfy telephony or hardware gates.
 
 ### Beta integration
 

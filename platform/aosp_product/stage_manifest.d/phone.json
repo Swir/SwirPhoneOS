@@ -4,6 +4,7 @@
     {"source":"apps/SwirPhone/Android.bp","destination":"vendor/swir/apps/SwirPhone/Android.bp"},
     {"source":"apps/SwirPhone/AndroidManifest.xml","destination":"vendor/swir/apps/SwirPhone/AndroidManifest.xml"},
     {"source":"apps/SwirPhone/src/org/swir/phoneos/phone/DialerPolicy.java","destination":"vendor/swir/apps/SwirPhone/src/org/swir/phoneos/phone/DialerPolicy.java"},
+    {"source":"apps/SwirPhone/src/org/swir/phoneos/phone/CallHistoryPolicy.java","destination":"vendor/swir/apps/SwirPhone/src/org/swir/phoneos/phone/CallHistoryPolicy.java"},
     {"source":"apps/SwirPhone/src/org/swir/phoneos/phone/MainActivity.java","destination":"vendor/swir/apps/SwirPhone/src/org/swir/phoneos/phone/MainActivity.java"},
     {"source":"apps/SwirPhone/src/org/swir/phoneos/phone/InCallActivity.java","destination":"vendor/swir/apps/SwirPhone/src/org/swir/phoneos/phone/InCallActivity.java"},
     {"source":"apps/SwirPhone/src/org/swir/phoneos/phone/SwirInCallService.java","destination":"vendor/swir/apps/SwirPhone/src/org/swir/phoneos/phone/SwirInCallService.java"},

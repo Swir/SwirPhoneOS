@@ -10,9 +10,10 @@ ANDROID = "{http://schemas.android.com/apk/res/android}"
 
 
 class SwirPhoneSourceBoundaryTests(unittest.TestCase):
-    def test_manifest_keeps_permission_free_launcher_and_explicit_dial_role_surface(self):
+    def test_manifest_keeps_exact_read_only_permission_and_explicit_dial_role_surface(self):
         manifest = ET.fromstring((ROOT / "AndroidManifest.xml").read_text(encoding="utf-8"))
-        self.assertEqual(manifest.findall("uses-permission"), [])
+        permissions = {node.get(ANDROID + "name") for node in manifest.findall("uses-permission")}
+        self.assertEqual(permissions, {"android.permission.READ_CALL_LOG"})
 
         main = next(
             node
@@ -44,13 +45,14 @@ class SwirPhoneSourceBoundaryTests(unittest.TestCase):
         self.assertEqual(schemes, {"tel"})
         self.assertNotIn("android.intent.action.CALL", actions)
 
-    def test_activity_hands_off_to_an_external_dialer(self):
+    def test_activity_hands_off_outgoing_calls_and_never_directly_places_them(self):
         source = (ROOT / "src/org/swir/phoneos/phone/MainActivity.java").read_text(encoding="utf-8")
         self.assertIn("Intent.ACTION_DIAL", source)
         self.assertIn('Uri.fromParts("tel"', source)
         self.assertIn("resolveActivity(getPackageManager())", source)
         self.assertNotIn("Intent.ACTION_CALL", source)
         self.assertNotIn("TelecomManager.placeCall", source)
+        self.assertNotIn("Manifest.permission.CALL_PHONE", source)
 
 
 if __name__ == "__main__":

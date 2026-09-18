@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+### Swir Phone owner-gated recent calls and source telephony hardening
+
+Expanded `SwirPhone` from a keypad/default-role/in-call source slice into a bounded read-only recent-call surface. Recent calls are available only when the owner has approved Swir Phone as the Android default dialer and has explicitly granted `READ_CALL_LOG` at runtime. The query is read-only, displays at most 20 entries, hides restricted/private caller presentation, strips control characters from bounded labels, localizes call type/date/duration output across EN/PL/NB/DE/ES/FR/PT/AR, and never writes call-log rows.
+
+The exact Swir Phone permission allowlist is now only `READ_CALL_LOG`. Source validation and focused CI reject `CALL_PHONE`, `WRITE_CALL_LOG`, `Intent.ACTION_CALL`, `TelecomManager.placeCall` and call-log insert/update/delete primitives. Outgoing calls remain a visible `ACTION_DIAL` hand-off. A pure-Java `CallHistoryPolicy` plus host tests cover privacy, call-type mapping, duration bounds and history limits, and exact AOSP staging includes the new policy source. Default-role, active-call and recent-call actions are vertically stacked to reduce translated-label clipping pressure.
+
+Source capability accounting now treats `phone:in_call` and bounded `phone:recent_calls` as implemented **source-stage** capabilities. This does not claim working Android runtime telephony, modem/IMS/carrier support, call-history provider behavior on a built image or physical-device verification. All 20 apps remain `ANDROID_SOURCE`, no app is `ANDROID_RUNTIME`, weighted project progress remains **2%**, 1/10 milestones, and Beta remains **0/9**.
+
 ### Safe source-ready Swir Messages composer
 
 Added `SwirMessages` as meaningful permission-free first-party Android source with an original dark/cyan UI and icon, app-private draft persistence, EN/PL/NB/DE/ES/FR/PT/AR resources, RTL-aware layout and exact AOSP/Cuttlefish product staging. A dependency-free `MessagePolicy` is host-tested for bounded recipient normalization, duplicate-recipient handling, body normalization/length limits and explicit hand-off readiness.
