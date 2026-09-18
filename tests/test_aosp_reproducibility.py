@@ -107,8 +107,9 @@ def _write(path: Path, value: dict[str, object], *, compact: bool = False) -> st
         text = json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=True)
     else:
         text = json.dumps(value, indent=2, sort_keys=True, ensure_ascii=True) + "\n"
-    path.write_text(text, encoding="utf-8")
-    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+    data = text.encode("utf-8")
+    path.write_bytes(data)
+    return hashlib.sha256(data).hexdigest()
 
 
 class AospReproducibilityTests(unittest.TestCase):
