@@ -42,7 +42,7 @@ _LOCALES = ("en", "pl", "nb", "de", "es", "fr", "pt", "ar")
 _RESOURCE_DIR = {"en":"values","pl":"values-pl","nb":"values-nb","de":"values-de","es":"values-es","fr":"values-fr","pt":"values-pt","ar":"values-ar"}
 _MAX_TEXT = 1_000_000
 _SPECS = {
-    "phone": _AppSpec("phone","SwirPhone","SwirPhone","org.swir.phoneos.phone","src/org/swir/phoneos/phone/DialerPolicy.java","src/org/swir/phoneos/phone/MainActivity.java","hosttest/DialerPolicyHostTest.java","res/drawable/ic_phone.xml",("dialer",)),
+    "phone": _AppSpec("phone","SwirPhone","SwirPhone","org.swir.phoneos.phone","src/org/swir/phoneos/phone/DialerPolicy.java","src/org/swir/phoneos/phone/MainActivity.java","hosttest/DialerPolicyHostTest.java","res/drawable/ic_phone.xml",("dialer","in_call","recent_calls"),("android.permission.READ_CALL_LOG",)),
     "messages": _AppSpec("messages","SwirMessages","SwirMessages","org.swir.phoneos.messages","src/org/swir/phoneos/messages/MessagePolicy.java","src/org/swir/phoneos/messages/MainActivity.java","hosttest/MessagePolicyHostTest.java","res/drawable/ic_messages.xml",("sms",)),
     "camera": _AppSpec("camera","SwirCamera","SwirCamera","org.swir.phoneos.camera","src/org/swir/phoneos/camera/CameraPolicy.java","src/org/swir/phoneos/camera/MainActivity.java","hosttest/CameraPolicyHostTest.java","res/drawable/ic_camera.xml",("camera_capability_report",)),
     "calculator": _AppSpec("calculator","SwirCalculator","SwirCalculator","org.swir.phoneos.calculator","src/org/swir/phoneos/calculator/CalculatorEngine.java","src/org/swir/phoneos/calculator/MainActivity.java","hosttest/CalculatorEngineHostTest.java","res/drawable/ic_calculator.xml",("basic_math",)),
@@ -136,9 +136,10 @@ def _validate_common(product_root: Path, product_mk: str, app, spec: _AppSpec, s
 
 def _validate_phone(logic,activity):
     if any(x not in logic for x in ("MAX_DIAL_LENGTH","normalize","isDialable","appendKey","eraseLast","Character.isDigit")): raise AndroidAppSourceError("SwirPhone host-tested dial policy drifted.")
-    required=("Intent.ACTION_DIAL",'Uri.fromParts("tel"',"resolveActivity(getPackageManager())","startActivity(intent)","DialerPolicy.normalize","R.array.dial_keys")
-    if any(x not in activity for x in required): raise AndroidAppSourceError("SwirPhone must retain explicit user-visible system dialer handoff and the reviewed keypad policy.")
-    if any(x in activity for x in ("Intent.ACTION_CALL","TelecomManager.placeCall","CallLog.Calls","Manifest.permission.CALL_PHONE")): raise AndroidAppSourceError("SwirPhone source stage must not place calls directly or claim call-log/in-call support.")
+    required=("Intent.ACTION_DIAL",'Uri.fromParts("tel"',"resolveActivity(getPackageManager())","startActivity(intent)","DialerPolicy.normalize","R.array.dial_keys","RoleManager.ROLE_DIALER","Manifest.permission.READ_CALL_LOG","checkSelfPermission(Manifest.permission.READ_CALL_LOG)","requestPermissions(new String[]{Manifest.permission.READ_CALL_LOG}","CallLog.Calls.CONTENT_URI","CallLog.Calls.NUMBER_PRESENTATION","TelecomManager.PRESENTATION_ALLOWED","CallHistoryPolicy.MAX_RECENT_CALLS","getContentResolver().query")
+    if any(x not in activity for x in required): raise AndroidAppSourceError("SwirPhone must retain explicit owner-visible dialing plus default-role-gated read-only recent-call history.")
+    forbidden=("Intent.ACTION_CALL","TelecomManager.placeCall","Manifest.permission.CALL_PHONE","Manifest.permission.WRITE_CALL_LOG","getContentResolver().insert","getContentResolver().update","getContentResolver().delete")
+    if any(x in activity for x in forbidden): raise AndroidAppSourceError("SwirPhone must not directly place calls or mutate call history.")
 
 def _validate_messages(logic,activity):
     if any(x not in logic for x in ("MAX_RECIPIENTS","MAX_BODY_LENGTH","normalizeRecipients","normalizeRecipient","normalizeBody","canHandoff","remainingCharacters","Character.isDigit")): raise AndroidAppSourceError("SwirMessages host-tested compose policy drifted.")
