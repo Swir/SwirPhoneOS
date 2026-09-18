@@ -11,7 +11,16 @@
     <string name="characters_remaining">%1$d tegn igjen</string>
     <string name="clear_draft">Tøm utkast</string>
     <string name="continue_to_messages">Fortsett til Meldinger</string>
-    <string name="handoff_notice">Swir Messages sender aldri SMS i skjul. Systemets meldingsapp utfører den endelige sendingen. Samtalehistorikk og MMS er ikke implementert ennå.</string>
+    <string name="remember_handoff_history">Behold nylige overleveringer på denne enheten</string>
+    <string name="remember_handoff_history_description">Lagre en begrenset lokal liste over nylige utkastoverleveringer. Dette er av som standard.</string>
+    <string name="handoff_notice">Swir Messages sender aldri SMS i skjul. Systemets meldingsapp utfører den endelige sendingen. Valgfri lokal historikk registrerer bare overlevering av utkast, ikke levering. Full samtalehistorikk og MMS er ikke implementert ennå.</string>
+    <string name="recent_handoffs">Nylige overleveringer</string>
+    <string name="recent_handoffs_description">Nylige utkastoverleveringer lagret lokalt på denne enheten</string>
+    <string name="recent_handoffs_empty">Ingen lokal overleveringshistorikk.</string>
+    <string name="recent_handoff_item">%1$s • %2$s\n%3$s</string>
+    <string name="clear_recent_handoffs">Tøm nylige</string>
+    <string name="recent_handoffs_cleared">Nylig overleveringshistorikk er tømt.</string>
+    <string name="history_not_saved">Nylig overleveringshistorikk ble ikke lagret.</string>
     <string name="invalid_message">Skriv inn en gyldig mottaker og en melding som ikke er tom.</string>
     <string name="no_messaging_app">Ingen kompatibel meldingsapp er tilgjengelig.</string>
     <string name="draft_cleared">Utkast tømt.</string>

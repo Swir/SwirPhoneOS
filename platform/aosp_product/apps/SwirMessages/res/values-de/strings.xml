@@ -11,7 +11,16 @@
     <string name="characters_remaining">Noch %1$d Zeichen</string>
     <string name="clear_draft">Entwurf löschen</string>
     <string name="continue_to_messages">Weiter zu Nachrichten</string>
-    <string name="handoff_notice">Swir Messages sendet SMS niemals unbemerkt. Die System-Nachrichten-App führt den endgültigen Versand aus. Gesprächsverlauf und MMS sind noch nicht implementiert.</string>
+    <string name="remember_handoff_history">Letzte Übergaben auf diesem Gerät speichern</string>
+    <string name="remember_handoff_history_description">Eine begrenzte lokale Liste der letzten Entwurfsübergaben speichern. Standardmäßig deaktiviert.</string>
+    <string name="handoff_notice">Swir Messages sendet SMS niemals unbemerkt. Die System-Nachrichten-App führt den endgültigen Versand aus. Der optionale lokale Verlauf zeichnet nur Entwurfsübergaben auf, nicht die Zustellung. Vollständige Unterhaltungen und MMS sind noch nicht implementiert.</string>
+    <string name="recent_handoffs">Letzte Übergaben</string>
+    <string name="recent_handoffs_description">Letzte Entwurfsübergaben, die lokal auf diesem Gerät gespeichert sind</string>
+    <string name="recent_handoffs_empty">Kein lokaler Übergabeverlauf.</string>
+    <string name="recent_handoff_item">%1$s • %2$s\n%3$s</string>
+    <string name="clear_recent_handoffs">Letzte löschen</string>
+    <string name="recent_handoffs_cleared">Der letzte Übergabeverlauf wurde gelöscht.</string>
+    <string name="history_not_saved">Der letzte Übergabeverlauf wurde nicht gespeichert.</string>
     <string name="invalid_message">Gib einen gültigen Empfänger und eine nicht leere Nachricht ein.</string>
     <string name="no_messaging_app">Keine kompatible Nachrichten-App verfügbar.</string>
     <string name="draft_cleared">Entwurf gelöscht.</string>

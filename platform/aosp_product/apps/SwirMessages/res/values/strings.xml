@@ -11,7 +11,16 @@
     <string name="characters_remaining">%1$d characters remaining</string>
     <string name="clear_draft">Clear draft</string>
     <string name="continue_to_messages">Continue to Messages</string>
-    <string name="handoff_notice">Swir Messages never sends SMS silently. The system messaging app performs the final send. Conversation history and MMS are not implemented yet.</string>
+    <string name="remember_handoff_history">Keep recent handoffs on this device</string>
+    <string name="remember_handoff_history_description">Store a bounded local list of recent compose handoffs. This is off by default.</string>
+    <string name="handoff_notice">Swir Messages never sends SMS silently. The system messaging app performs the final send. Optional local history records only compose handoffs, not delivery. Full conversations and MMS are not implemented yet.</string>
+    <string name="recent_handoffs">Recent handoffs</string>
+    <string name="recent_handoffs_description">Recent compose handoffs stored locally on this device</string>
+    <string name="recent_handoffs_empty">No local handoff history.</string>
+    <string name="recent_handoff_item">%1$s • %2$s\n%3$s</string>
+    <string name="clear_recent_handoffs">Clear recent</string>
+    <string name="recent_handoffs_cleared">Recent handoff history cleared.</string>
+    <string name="history_not_saved">Recent handoff history was not saved.</string>
     <string name="invalid_message">Enter a valid recipient and a non-empty message.</string>
     <string name="no_messaging_app">No compatible messaging app is available.</string>
     <string name="draft_cleared">Draft cleared.</string>

@@ -11,7 +11,16 @@
     <string name="characters_remaining">Restam %1$d caracteres</string>
     <string name="clear_draft">Limpar rascunho</string>
     <string name="continue_to_messages">Continuar para Mensagens</string>
-    <string name="handoff_notice">Swir Messages nunca envia SMS silenciosamente. A aplicação de mensagens do sistema realiza o envio final. O histórico de conversas e MMS ainda não estão implementados.</string>
+    <string name="remember_handoff_history">Guardar encaminhamentos recentes neste dispositivo</string>
+    <string name="remember_handoff_history_description">Guarda uma lista local limitada dos encaminhamentos recentes do rascunho. Desativado por predefinição.</string>
+    <string name="handoff_notice">Swir Messages nunca envia SMS silenciosamente. A aplicação de mensagens do sistema realiza o envio final. O histórico local opcional regista apenas o encaminhamento do rascunho, não a entrega. Conversas completas e MMS ainda não estão implementados.</string>
+    <string name="recent_handoffs">Encaminhamentos recentes</string>
+    <string name="recent_handoffs_description">Encaminhamentos recentes do rascunho guardados localmente neste dispositivo</string>
+    <string name="recent_handoffs_empty">Sem histórico local de encaminhamentos.</string>
+    <string name="recent_handoff_item">%1$s • %2$s\n%3$s</string>
+    <string name="clear_recent_handoffs">Limpar recentes</string>
+    <string name="recent_handoffs_cleared">O histórico de encaminhamentos recentes foi limpo.</string>
+    <string name="history_not_saved">O histórico do encaminhamento recente não foi guardado.</string>
     <string name="invalid_message">Introduza um destinatário válido e uma mensagem não vazia.</string>
     <string name="no_messaging_app">Nenhuma aplicação de mensagens compatível está disponível.</string>
     <string name="draft_cleared">Rascunho limpo.</string>

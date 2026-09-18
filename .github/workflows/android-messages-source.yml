@@ -25,8 +25,15 @@ jobs:
         run: python -m unittest discover -s tests -p 'test_android_i18n.py' -v
       - name: Validate Android app source regressions
         run: python -m unittest discover -s tests -p 'test_android_apps.py' -v
-      - name: Host-test SwirMessages compose policy
+      - name: Validate SwirMessages handoff-history safety boundary
+        run: python -m unittest discover -s tests -p 'test_android_messages_handoff_history.py' -v
+      - name: Host-test SwirMessages compose and local history policies
         run: |
           mkdir -p _messages-java-test
-          javac -d _messages-java-test platform/aosp_product/apps/SwirMessages/src/org/swir/phoneos/messages/MessagePolicy.java platform/aosp_product/apps/SwirMessages/hosttest/MessagePolicyHostTest.java
+          javac -d _messages-java-test \
+            platform/aosp_product/apps/SwirMessages/src/org/swir/phoneos/messages/MessagePolicy.java \
+            platform/aosp_product/apps/SwirMessages/src/org/swir/phoneos/messages/MessageHandoffHistory.java \
+            platform/aosp_product/apps/SwirMessages/hosttest/MessagePolicyHostTest.java \
+            platform/aosp_product/apps/SwirMessages/hosttest/MessageHandoffHistoryHostTest.java
           java -cp _messages-java-test org.swir.phoneos.messages.MessagePolicyHostTest
+          java -cp _messages-java-test org.swir.phoneos.messages.MessageHandoffHistoryHostTest
