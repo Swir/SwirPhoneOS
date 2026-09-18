@@ -32,6 +32,10 @@ public final class ClockCoreHostTest {
         require("01:01:01".equals(ClockCore.formatDuration(3_661_999L)), "duration formatting");
 
         require(ClockCore.worldZoneCount() == 5, "reviewed world zone inventory");
+        require(ClockCore.safeWorldZoneIndex(0) == 0, "valid saved zone preserved");
+        require(ClockCore.safeWorldZoneIndex(4) == 4, "last valid saved zone preserved");
+        require(ClockCore.safeWorldZoneIndex(-1) == 0, "negative saved zone falls back to UTC");
+        require(ClockCore.safeWorldZoneIndex(99) == 0, "oversized saved zone falls back to UTC");
         require("UTC".equals(ClockCore.worldZoneId(0)), "UTC first world zone");
         require("Europe/Oslo".equals(ClockCore.worldZoneId(1)), "Oslo world zone");
         require("Europe/Warsaw".equals(ClockCore.worldZoneId(2)), "Warsaw world zone");
