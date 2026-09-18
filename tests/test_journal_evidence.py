@@ -57,11 +57,11 @@ class JournalEvidenceTests(unittest.TestCase):
         with self.assertRaises(TransactionEvidenceError):
             validate_journal(journal)
 
-    def test_swirroot_projection_never_claims_transition_ready(self) -> None:
+    def test_swirroot_projection_requires_a_fresh_rollback_recheck(self) -> None:
         journal = self._journal()
         projection = swirroot_gate_projection(journal, profile_id="oneplus/avicii", exact_build="swir/example")
         self.assertTrue(projection["exact_build_match"])
-        self.assertTrue(projection["rollback_material_verified"])
+        self.assertFalse(projection["rollback_material_verified"])
         self.assertTrue(projection["journal_available"])
         self.assertFalse(projection["verified_device_profile"])
         self.assertFalse(projection["owner_confirmation"])
