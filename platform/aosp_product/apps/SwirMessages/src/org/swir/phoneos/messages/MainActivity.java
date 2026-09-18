@@ -9,20 +9,29 @@ import android.text.InputType;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.text.DateFormat;
+import java.util.Date;
+import java.util.List;
+
 public final class MainActivity extends Activity {
     private static final String PREFS = "compose_draft";
     private static final String KEY_RECIPIENTS = "recipients";
     private static final String KEY_BODY = "body";
+    private static final String KEY_REMEMBER_HISTORY = "remember_handoff_history";
+    private static final String KEY_HISTORY = "handoff_history";
 
     private EditText recipients;
     private EditText body;
     private TextView counter;
+    private TextView history;
     private Button handoff;
+    private CheckBox rememberHistory;
 
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
@@ -30,6 +39,7 @@ public final class MainActivity extends Activity {
         setContentView(buildUi());
         restoreDraft();
         refreshState();
+        renderHistory();
     }
 
     @Override protected void onPause() {
@@ -86,9 +96,29 @@ public final class MainActivity extends Activity {
         actions.addView(handoff, weighted());
         root.addView(actions, matchWrap());
 
+        rememberHistory = new CheckBox(this);
+        rememberHistory.setText(R.string.remember_handoff_history);
+        rememberHistory.setTextColor(getColor(R.color.swir_text_primary));
+        rememberHistory.setContentDescription(getString(R.string.remember_handoff_history_description));
+        rememberHistory.setMinHeight(dim(R.dimen.swir_touch_min));
+        root.addView(rememberHistory, matchWrap());
+
         TextView notice = text(getString(R.string.handoff_notice), 13, getColor(R.color.swir_text_secondary));
         notice.setGravity(Gravity.CENTER_HORIZONTAL);
         root.addView(notice, matchWrap());
+
+        LinearLayout historyHeader = new LinearLayout(this);
+        historyHeader.setOrientation(LinearLayout.HORIZONTAL);
+        TextView historyTitle = text(getString(R.string.recent_handoffs), 16, getColor(R.color.swir_text_primary));
+        historyHeader.addView(historyTitle, new LinearLayout.LayoutParams(0, -2, 1f));
+        Button clearHistory = actionButton(R.string.clear_recent_handoffs);
+        clearHistory.setOnClickListener(v -> clearHistory());
+        historyHeader.addView(clearHistory, new LinearLayout.LayoutParams(-2, -2));
+        root.addView(historyHeader, matchWrap());
+
+        history = text(getString(R.string.recent_handoffs_empty), 13, getColor(R.color.swir_text_secondary));
+        history.setContentDescription(getString(R.string.recent_handoffs_description));
+        root.addView(history, matchWrap());
 
         SimpleTextWatcher watcher = new SimpleTextWatcher(this::refreshState);
         recipients.addTextChangedListener(watcher);
@@ -109,29 +139,79 @@ public final class MainActivity extends Activity {
             Toast.makeText(this, R.string.no_messaging_app, Toast.LENGTH_SHORT).show();
             return;
         }
+        if (rememberHistory != null && rememberHistory.isChecked()) {
+            recordHandoff(normalizedRecipients, normalizedBody);
+        }
         saveDraft();
         startActivity(intent);
     }
 
+    private void recordHandoff(String normalizedRecipients, String normalizedBody) {
+        SharedPreferences prefs = getSharedPreferences(PREFS, MODE_PRIVATE);
+        try {
+            String updated = MessageHandoffHistory.prepend(
+                    prefs.getString(KEY_HISTORY, ""),
+                    System.currentTimeMillis(),
+                    normalizedRecipients,
+                    normalizedBody);
+            prefs.edit().putString(KEY_HISTORY, updated).apply();
+            renderHistory();
+        } catch (IllegalArgumentException | IllegalStateException ignored) {
+            Toast.makeText(this, R.string.history_not_saved, Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void renderHistory() {
+        if (history == null) return;
+        List<MessageHandoffHistory.Entry> entries = MessageHandoffHistory.decode(
+                getSharedPreferences(PREFS, MODE_PRIVATE).getString(KEY_HISTORY, ""));
+        if (entries.isEmpty()) {
+            history.setText(R.string.recent_handoffs_empty);
+            return;
+        }
+        DateFormat format = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT);
+        StringBuilder out = new StringBuilder();
+        for (MessageHandoffHistory.Entry entry : entries) {
+            if (out.length() > 0) out.append("\n\n");
+            out.append(getString(
+                    R.string.recent_handoff_item,
+                    format.format(new Date(entry.timestampMillis)),
+                    entry.recipients,
+                    MessageHandoffHistory.preview(entry.body)));
+        }
+        history.setText(out.toString());
+    }
+
     private void saveDraft() {
         if (recipients == null || body == null) return;
-        getSharedPreferences(PREFS, MODE_PRIVATE).edit()
+        SharedPreferences.Editor edit = getSharedPreferences(PREFS, MODE_PRIVATE).edit()
                 .putString(KEY_RECIPIENTS, recipients.getText().toString())
-                .putString(KEY_BODY, MessagePolicy.normalizeBody(body.getText().toString()))
-                .apply();
+                .putString(KEY_BODY, MessagePolicy.normalizeBody(body.getText().toString()));
+        if (rememberHistory != null) edit.putBoolean(KEY_REMEMBER_HISTORY, rememberHistory.isChecked());
+        edit.apply();
     }
 
     private void restoreDraft() {
         SharedPreferences prefs = getSharedPreferences(PREFS, MODE_PRIVATE);
         recipients.setText(prefs.getString(KEY_RECIPIENTS, ""));
         body.setText(prefs.getString(KEY_BODY, ""));
+        rememberHistory.setChecked(prefs.getBoolean(KEY_REMEMBER_HISTORY, false));
     }
 
     private void clearDraft() {
         recipients.getText().clear();
         body.getText().clear();
-        getSharedPreferences(PREFS, MODE_PRIVATE).edit().clear().apply();
+        getSharedPreferences(PREFS, MODE_PRIVATE).edit()
+                .remove(KEY_RECIPIENTS)
+                .remove(KEY_BODY)
+                .apply();
         Toast.makeText(this, R.string.draft_cleared, Toast.LENGTH_SHORT).show();
+    }
+
+    private void clearHistory() {
+        getSharedPreferences(PREFS, MODE_PRIVATE).edit().remove(KEY_HISTORY).apply();
+        renderHistory();
+        Toast.makeText(this, R.string.recent_handoffs_cleared, Toast.LENGTH_SHORT).show();
     }
 
     private void refreshState() {
