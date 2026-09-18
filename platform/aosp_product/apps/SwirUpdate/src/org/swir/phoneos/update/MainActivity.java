@@ -2,18 +2,33 @@ package org.swir.phoneos.update;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.database.Cursor;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.provider.OpenableColumns;
 import android.provider.Settings;
+import android.text.format.Formatter;
 import android.view.View;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 
-/** Read-only update status UI. Package staging/recovery handoff remains intentionally disabled. */
+import java.io.InputStream;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+/** Read-only update status and local-package preflight UI. Install/recovery handoff remains disabled. */
 public final class MainActivity extends Activity {
+    private static final int REQUEST_LOCAL_PACKAGE = 410;
+
+    private final ExecutorService inspectionExecutor = Executors.newSingleThreadExecutor();
     private LinearLayout cards;
+    private volatile boolean destroyed;
+    private boolean packageInspecting;
+    private String packageDisplayName;
+    private UpdatePolicy.PackageInspection packageInspection;
 
     @Override
     protected void onCreate(Bundle state) {
@@ -41,6 +56,12 @@ public final class MainActivity extends Activity {
         refresh.setOnClickListener(v -> refresh());
         root.addView(refresh, matchWrap());
 
+        Button reviewPackage = button(R.string.review_local_package);
+        reviewPackage.setOnClickListener(v -> chooseLocalPackage());
+        LinearLayout.LayoutParams reviewParams = matchWrap();
+        reviewParams.setMargins(0, dp(8), 0, 0);
+        root.addView(reviewPackage, reviewParams);
+
         Button systemUpdate = button(R.string.open_system_update);
         systemUpdate.setOnClickListener(v -> openSystemUpdate());
         LinearLayout.LayoutParams updateParams = matchWrap();
@@ -65,6 +86,26 @@ public final class MainActivity extends Activity {
         addCard(R.string.security_patch, Build.VERSION.SECURITY_PATCH);
         addCard(R.string.signature_engine, getString(R.string.signature_engine_ready));
         addCard(R.string.install_state, getString(R.string.no_package_staged));
+        addCard(R.string.local_package, packageStatusLabel());
+        if (packageDisplayName != null) addCard(R.string.package_name, packageDisplayName);
+        if (packageInspection != null && packageInspection.sizeBytes() >= 0L) {
+            addCard(R.string.package_size, Formatter.formatFileSize(this, packageInspection.sizeBytes()));
+        }
+        if (packageInspection != null && !packageInspection.sha256().isEmpty()) {
+            addCard(R.string.package_sha256, packageInspection.sha256());
+        }
+    }
+
+    private String packageStatusLabel() {
+        if (packageInspecting) return getString(R.string.package_inspecting);
+        if (packageInspection == null) return getString(R.string.package_none_selected);
+        switch (packageInspection.state()) {
+            case REVIEW_READY_UNTRUSTED: return getString(R.string.package_review_ready_untrusted);
+            case REJECTED_NAME: return getString(R.string.package_rejected_name);
+            case REJECTED_SIZE: return getString(R.string.package_rejected_size);
+            case REJECTED_FORMAT: return getString(R.string.package_rejected_format);
+            default: return getString(R.string.package_read_failed);
+        }
     }
 
     private String channelLabel(UpdatePolicy.Channel channel) {
@@ -74,6 +115,64 @@ public final class MainActivity extends Activity {
             case DEVELOPER: return getString(R.string.channel_developer);
             default: return getString(R.string.channel_unknown);
         }
+    }
+
+    private void chooseLocalPackage() {
+        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        intent.setType("application/zip");
+        if (intent.resolveActivity(getPackageManager()) != null) startActivityForResult(intent, REQUEST_LOCAL_PACKAGE);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode != REQUEST_LOCAL_PACKAGE || resultCode != RESULT_OK || data == null || data.getData() == null) return;
+        inspectLocalPackage(data.getData());
+    }
+
+    private void inspectLocalPackage(Uri uri) {
+        DocumentInfo info = documentInfo(uri);
+        packageDisplayName = info.displayName;
+        packageInspection = null;
+        packageInspecting = true;
+        refresh();
+        inspectionExecutor.execute(() -> {
+            UpdatePolicy.PackageInspection result;
+            try (InputStream input = getContentResolver().openInputStream(uri)) {
+                result = UpdatePolicy.inspectPackage(info.displayName, info.sizeBytes, input);
+            } catch (Exception ignored) {
+                result = UpdatePolicy.readFailure();
+            }
+            final UpdatePolicy.PackageInspection completed = result;
+            runOnUiThread(() -> {
+                if (destroyed) return;
+                packageInspecting = false;
+                packageInspection = completed;
+                refresh();
+            });
+        });
+    }
+
+    private DocumentInfo documentInfo(Uri uri) {
+        String displayName = null;
+        long size = -1L;
+        try (Cursor cursor = getContentResolver().query(
+                uri,
+                new String[]{OpenableColumns.DISPLAY_NAME, OpenableColumns.SIZE},
+                null,
+                null,
+                null)) {
+            if (cursor != null && cursor.moveToFirst()) {
+                int nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME);
+                int sizeIndex = cursor.getColumnIndex(OpenableColumns.SIZE);
+                if (nameIndex >= 0 && !cursor.isNull(nameIndex)) displayName = cursor.getString(nameIndex);
+                if (sizeIndex >= 0 && !cursor.isNull(sizeIndex)) size = cursor.getLong(sizeIndex);
+            }
+        } catch (Exception ignored) {
+            // inspectPackage will fail closed if the provider cannot supply a safe name/read stream.
+        }
+        return new DocumentInfo(displayName, size);
     }
 
     private void openSystemUpdate() {
@@ -128,5 +227,22 @@ public final class MainActivity extends Activity {
 
     private int dp(int value) {
         return Math.round(value * getResources().getDisplayMetrics().density);
+    }
+
+    @Override
+    protected void onDestroy() {
+        destroyed = true;
+        inspectionExecutor.shutdownNow();
+        super.onDestroy();
+    }
+
+    private static final class DocumentInfo {
+        final String displayName;
+        final long sizeBytes;
+
+        DocumentInfo(String displayName, long sizeBytes) {
+            this.displayName = displayName;
+            this.sizeBytes = sizeBytes;
+        }
     }
 }
