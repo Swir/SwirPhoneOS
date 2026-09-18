@@ -28,22 +28,17 @@ If the fresh rollback recheck is omitted, the report remains a useful diagnostic
 
 ## Policy-gate projection
 
-For `enable`, the current policy requires:
+Both `enable` and `unroot` now require the same complete recovery-safe gate set:
 
 - `exact_build_match`;
 - `verified_device_profile`;
 - `owner_confirmation`;
 - `rollback_material_verified`;
 - `journal_available`;
-- `update_state_safe`.
-
-For `unroot`, the current policy requires:
-
-- `exact_build_match`;
-- `owner_confirmation`;
-- `rollback_material_verified`;
-- `journal_available`;
+- `update_state_safe`;
 - `expected_nonroot_state_known`.
+
+The symmetry is intentional. Enabling root is blocked until the expected non-root restore state is already known, so a future backend cannot enter a rooted state without a defined unroot target. Unroot is also blocked unless the device profile is verified and the update state is safe, preventing a future write-capable path from weakening identity or OTA-safety requirements during restoration.
 
 A journal by itself no longer satisfies `rollback_material_verified`. That gate passes only after the exact rollback bytes are rechecked against the bound journal during readiness collection. The current cross-transport hardware evidence is intentionally only `CORRELATED_READ_ONLY_NOT_VERIFIED`, so it cannot establish a verified device profile or root authorization. The journal also deliberately records `owner_confirmation_recorded=false`. No current evidence object proves update-state safety or the authoritative expected non-root runtime state.
 
@@ -83,7 +78,7 @@ A future executable backend needs independent evidence that does not exist today
 3. a tested install/recovery/stock-restore path;
 4. durable owner confirmation bound to the exact transition;
 5. authoritative safe-update-state evidence;
-6. a known and verified non-root boot/system state for unroot;
+6. a known and verified non-root boot/system state before enable and during unroot;
 7. an exact-build mutation backend using legitimate owner-supported boot/image paths;
 8. physical enable → reboot → use → unroot → reboot/recovery validation.
 
