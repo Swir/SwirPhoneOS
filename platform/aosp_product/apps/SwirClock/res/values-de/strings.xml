@@ -3,6 +3,8 @@
     <string name="app_name">Swir Clock</string>
     <string name="subtitle">Zeit, Timer und Alarme mit einem klaren, nutzergesteuerten Ablauf.</string>
     <string name="now">Jetzt</string>
+    <string name="world_clock">Weltuhr</string>
+    <string name="next_zone_description">Zeitzone der Weltuhr wechseln</string>
     <string name="stopwatch">Stoppuhr</string>
     <string name="timer">Timer</string>
     <string name="alarm">Alarm</string>
