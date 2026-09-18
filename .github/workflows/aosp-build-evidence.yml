@@ -109,6 +109,14 @@ jobs:
           repo sync -c --no-tags --optimized-fetch --prune -j"$SWIR_REQUESTED_JOBS"
           repo manifest -r -o swirphoneos-pinned-manifest.xml
           PYTHONPATH="$GITHUB_WORKSPACE/tools" python -m swirphoneos aosp-manifest --file swirphoneos-pinned-manifest.xml > "$GITHUB_WORKSPACE/resolved-manifest.json"
+      - name: Verify exact clean synchronized AOSP source
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH="$GITHUB_WORKSPACE/tools" python -m swirphoneos.aosp_source_evidence \
+            --workspace "$SWIR_AOSP_WORKSPACE" \
+            --manifest "$SWIR_AOSP_WORKSPACE/swirphoneos-pinned-manifest.xml" \
+            > "$GITHUB_WORKSPACE/source-prebuild-evidence.json"
       - name: Stage reviewed SwirPhoneOS source
         shell: bash
         run: |
@@ -162,6 +170,14 @@ jobs:
           set -euo pipefail
           printf '%s\n' "POST_BUILD_STAGE" > "$GITHUB_WORKSPACE/aosp-phase.txt"
           PYTHONPATH="$GITHUB_WORKSPACE/tools" python -m swirphoneos.stage_evidence --report "$GITHUB_WORKSPACE/stage-report.json" --workspace "$SWIR_AOSP_WORKSPACE" > "$GITHUB_WORKSPACE/post-build-stage-evidence.json"
+      - name: Re-verify exact clean AOSP source after build
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH="$GITHUB_WORKSPACE/tools" python -m swirphoneos.aosp_source_evidence \
+            --workspace "$SWIR_AOSP_WORKSPACE" \
+            --manifest "$SWIR_AOSP_WORKSPACE/swirphoneos-pinned-manifest.xml" \
+            > "$GITHUB_WORKSPACE/source-postbuild-evidence.json"
       - name: Capture build provenance
         shell: bash
         run: |
@@ -289,6 +305,16 @@ jobs:
             )
           fi
           PYTHONPATH="$GITHUB_WORKSPACE/tools" python -m swirphoneos aosp-run-evidence "${args[@]}" > "$GITHUB_WORKSPACE/aosp-run-evidence.json"
+      - name: Bind exact clean source continuity to completed AOSP run
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH="$GITHUB_WORKSPACE/tools" python -m swirphoneos.aosp_source_trust_bundle \
+            --run-evidence "$GITHUB_WORKSPACE/aosp-run-evidence.json" \
+            --resolved-manifest-evidence "$GITHUB_WORKSPACE/resolved-manifest.json" \
+            --source-pre "$GITHUB_WORKSPACE/source-prebuild-evidence.json" \
+            --source-post "$GITHUB_WORKSPACE/source-postbuild-evidence.json" \
+            > "$GITHUB_WORKSPACE/source-trust-bundle.json"
       - name: Bind exact adb trust to completed runtime evidence
         if: ${{ inputs.collect_runtime }}
         shell: bash
@@ -388,6 +414,9 @@ jobs:
             runtime-review-trust-bundle.json
             aosp-plan.json
             resolved-manifest.json
+            source-prebuild-evidence.json
+            source-postbuild-evidence.json
+            source-trust-bundle.json
             stage-report.json
             post-build-stage-evidence.json
             build-evidence.json
