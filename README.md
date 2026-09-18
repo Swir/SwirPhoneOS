@@ -52,6 +52,7 @@ Detailed evidence status: [`BUILD_STATUS.md`](BUILD_STATUS.md).
 - **Common core + exact device profiles:** broad compatibility is a goal, but one generic image or flashing recipe is never advertised as safe for every Android device.
 - **20 first-party system apps:** every required everyday-app slot has meaningful Android source integrated into the developer product; none is counted as runtime before the image actually builds and exercises it.
 - **Fail-closed build provenance:** exact Android 17 baseline, resolved Repo manifest, clean exact Git worktree verification before and after the build, bounded `vendor/swir/` staging, stale-tree rejection, pinned build identity and Cuttlefish/GSI evidence contracts.
+- **SwirPhone least privilege:** outgoing calls remain an explicit Android `ACTION_DIAL` hand-off; in-call controls require the owner-approved default-phone role; recent-call history is read-only, bounded, role-gated and requests only `READ_CALL_LOG`, with no `CALL_PHONE` or `WRITE_CALL_LOG` path.
 - **SwirPhoneStudio:** dark/electric-cyan Windows-first companion with trusted ADB/Fastboot selection, read-only diagnostics, a manual ADB → Fastboot/FastbootD evidence capture wizard and local validation of SwirRoot readiness evidence. It exposes no flash/root controls today.
 - **SwirRoot safety model:** deny-by-default, exact-build policy, rollback/journal requirements, explicit owner confirmation design and a reliable unroot requirement before any supported root claim.
 - **Worldwide localization architecture:** shared host catalogs plus EN/PL/NB/DE/ES/FR/PT/AR Android resources, English fallback, RTL-aware Android configuration and localization linting.
@@ -62,7 +63,7 @@ All twenty required app slots are currently **source-ready only** and included i
 
 | App | Current source-stage capability |
 |---|---|
-| Phone | Permission-free keypad + explicit Android `ACTION_DIAL`, owner-controlled default-dialer role request and in-call answer/reject/end source; recent-call history and runtime telephony remain open |
+| Phone | Explicit Android `ACTION_DIAL`, owner-controlled default-dialer role and in-call answer/reject/end source, plus bounded read-only recent calls behind the same role and explicit `READ_CALL_LOG`; runtime Telecom/modem/IMS behavior remains unverified |
 | Contacts | Scoped `READ_CONTACTS`, browse/search, Android-managed edit/create, vCard import/export |
 | Messages | Local draft/composer + explicit `ACTION_SENDTO`; no silent SMS; MMS/history still open |
 | Camera | Camera2 capability inspection + explicit system photo/video capture hand-off; direct capture unverified |
