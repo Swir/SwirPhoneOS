@@ -22,6 +22,7 @@ public final class MainActivity extends Activity {
     private Button dial;
     private Button roleButton;
     private Button activeCallButton;
+    private Button recentCallsButton;
     private TextView roleStatus;
 
     @Override public void onCreate(Bundle state) {
@@ -109,6 +110,12 @@ public final class MainActivity extends Activity {
         phoneActions.addView(activeCallButton, weighted());
         root.addView(phoneActions, matchWrap());
 
+        recentCallsButton = actionButton(R.string.open_recent_calls);
+        recentCallsButton.setOnClickListener(v -> startActivity(new Intent(this, RecentCallsActivity.class)));
+        LinearLayout.LayoutParams recentParams = matchWrap();
+        recentParams.topMargin = dim(R.dimen.swir_space_xs);
+        root.addView(recentCallsButton, recentParams);
+
         TextView safety = text(getString(R.string.handoff_notice), 13, getColor(R.color.swir_text_secondary));
         safety.setGravity(Gravity.CENTER_HORIZONTAL);
         root.addView(safety, matchWrap());
@@ -168,13 +175,14 @@ public final class MainActivity extends Activity {
     }
 
     private void refreshPhoneRoleState() {
-        if (roleStatus == null || roleButton == null || activeCallButton == null) return;
+        if (roleStatus == null || roleButton == null || activeCallButton == null || recentCallsButton == null) return;
         RoleManager roleManager = getSystemService(RoleManager.class);
         boolean available = roleManager != null && roleManager.isRoleAvailable(RoleManager.ROLE_DIALER);
         boolean held = available && roleManager.isRoleHeld(RoleManager.ROLE_DIALER);
         roleStatus.setText(held ? R.string.role_active : R.string.role_inactive);
         roleButton.setEnabled(available && !held);
         activeCallButton.setEnabled(held && SwirInCallService.hasActiveCall());
+        recentCallsButton.setEnabled(held);
     }
 
     private void refreshDialState() {
