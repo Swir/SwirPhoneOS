@@ -59,6 +59,29 @@ class UpdateLocalPackagePreflightTests(unittest.TestCase):
         ):
             self.assertNotIn(forbidden, policy)
 
+    def test_signed_manifest_is_canonical_exact_bound_and_review_only(self):
+        policy = POLICY.read_text(encoding="utf-8")
+        for token in (
+            'MANIFEST_HEADER = "SWIR-OTA-MANIFEST-V1"',
+            "MAX_MANIFEST_BYTES = 4096",
+            "source_fingerprint=",
+            "target_fingerprint=",
+            "channel=",
+            "package_name=",
+            "package_size=",
+            "package_sha256=",
+            "key_id=",
+            "rollback_required=",
+            "verifyDetachedSignature(metadata, signature, trustedKey)",
+            "manifest.packageSize() != packageInspection.sizeBytes()",
+            "!manifest.packageSha256().equals(packageInspection.sha256())",
+            "AUTHENTIC_REVIEW_READY_NOT_STAGED",
+            "public boolean stagingAllowed() { return false; }",
+        ):
+            self.assertIn(token, policy)
+        self.assertNotIn("stagingAllowed() { return true; }", policy)
+        self.assertNotIn("RecoverySystem", policy)
+
     def test_manifest_gains_no_permission_for_local_review(self):
         root = ET.parse(MANIFEST).getroot()
         namespace = "{http://schemas.android.com/apk/res/android}"

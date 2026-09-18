@@ -56,6 +56,80 @@ public final class UpdatePolicyHostTest {
         };
         check(UpdatePolicy.inspectPackage("update.zip", -1L, broken).state()
                 == UpdatePolicy.PackageState.READ_FAILED, "read error fails closed");
+
+        String current = "swir/device/product:17/CP2A.260605.016/1:userdebug/test-keys";
+        String target = "swir/device/product:17/CP2A.260605.016/2:userdebug/release-keys";
+        String keyId = "swir-release-rsa-2026-01";
+        String canonical = String.join("\n",
+                UpdatePolicy.MANIFEST_HEADER,
+                "source_fingerprint=" + current,
+                "target_fingerprint=" + target,
+                "channel=BETA",
+                "package_name=swirphoneos-update.zip",
+                "package_size=" + candidate.length,
+                "package_sha256=" + ready.sha256(),
+                "key_id=" + keyId,
+                "rollback_required=true");
+        byte[] canonicalBytes = canonical.getBytes(StandardCharsets.UTF_8);
+        byte[] canonicalSignature = sign(canonicalBytes, pair);
+
+        UpdatePolicy.OtaManifest parsed = UpdatePolicy.parseCanonicalManifest(canonicalBytes);
+        check(parsed != null, "canonical manifest parsed");
+        check(parsed.packageSize() == candidate.length, "manifest package size");
+        check(parsed.rollbackRequired(), "manifest rollback policy");
+
+        UpdatePolicy.ManifestReview manifestReady = UpdatePolicy.reviewSignedManifest(
+                canonicalBytes,
+                canonicalSignature,
+                pair.getPublic(),
+                keyId,
+                current,
+                UpdatePolicy.Channel.BETA,
+                "swirphoneos-update.zip",
+                ready);
+        check(manifestReady.authenticReviewReady(), "signed manifest review ready");
+        check(manifestReady.state() == UpdatePolicy.ManifestState.AUTHENTIC_REVIEW_READY_NOT_STAGED, "manifest state");
+        check(!manifestReady.stagingAllowed(), "signed review does not authorize staging");
+
+        byte[] tamperedManifest = canonical.replace("package_size=8", "package_size=9").getBytes(StandardCharsets.UTF_8);
+        check(UpdatePolicy.reviewSignedManifest(
+                tamperedManifest, canonicalSignature, pair.getPublic(), keyId, current,
+                UpdatePolicy.Channel.BETA, "swirphoneos-update.zip", ready).state()
+                == UpdatePolicy.ManifestState.REJECTED_SIGNATURE, "metadata tamper rejected by signature");
+        check(UpdatePolicy.reviewSignedManifest(
+                canonicalBytes, canonicalSignature, pair.getPublic(), "other-key", current,
+                UpdatePolicy.Channel.BETA, "swirphoneos-update.zip", ready).state()
+                == UpdatePolicy.ManifestState.REJECTED_KEY_ID, "wrong key id rejected");
+        check(UpdatePolicy.reviewSignedManifest(
+                canonicalBytes, canonicalSignature, pair.getPublic(), keyId, "other/source/build",
+                UpdatePolicy.Channel.BETA, "swirphoneos-update.zip", ready).state()
+                == UpdatePolicy.ManifestState.REJECTED_SOURCE_BUILD, "wrong source build rejected");
+        check(UpdatePolicy.reviewSignedManifest(
+                canonicalBytes, canonicalSignature, pair.getPublic(), keyId, current,
+                UpdatePolicy.Channel.STABLE, "swirphoneos-update.zip", ready).state()
+                == UpdatePolicy.ManifestState.REJECTED_CHANNEL, "wrong channel rejected");
+        check(UpdatePolicy.reviewSignedManifest(
+                canonicalBytes, canonicalSignature, pair.getPublic(), keyId, current,
+                UpdatePolicy.Channel.BETA, "different.zip", ready).state()
+                == UpdatePolicy.ManifestState.REJECTED_PACKAGE_BINDING, "wrong selected package rejected");
+
+        String noRollback = canonical.replace("rollback_required=true", "rollback_required=false");
+        byte[] noRollbackBytes = noRollback.getBytes(StandardCharsets.UTF_8);
+        check(UpdatePolicy.reviewSignedManifest(
+                noRollbackBytes, sign(noRollbackBytes, pair), pair.getPublic(), keyId, current,
+                UpdatePolicy.Channel.BETA, "swirphoneos-update.zip", ready).state()
+                == UpdatePolicy.ManifestState.REJECTED_ROLLBACK_POLICY, "rollback requirement enforced");
+        check(UpdatePolicy.parseCanonicalManifest((canonical + "\nextra=value").getBytes(StandardCharsets.UTF_8)) == null,
+                "unknown field rejected");
+        check(UpdatePolicy.parseCanonicalManifest(canonical.replace("package_sha256=", "package_sha256=ABC").getBytes(StandardCharsets.UTF_8)) == null,
+                "noncanonical digest rejected");
+    }
+
+    private static byte[] sign(byte[] data, KeyPair pair) throws Exception {
+        Signature signer = Signature.getInstance("SHA256withRSA");
+        signer.initSign(pair.getPrivate());
+        signer.update(data);
+        return signer.sign();
     }
 
     private static void check(boolean value, String label) {
