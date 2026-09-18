@@ -157,6 +157,15 @@ jobs:
             --visual-trust "$GITHUB_WORKSPACE/runtime-visual-trust-bundle.json" \
             --visual-report "$GITHUB_WORKSPACE/runtime-visual-evidence.json" \
             > "$GITHUB_WORKSPACE/runtime-visual-review-template.json"
+      - name: Generate exact human accessibility review template
+        if: ${{ steps.runtime.outputs.has_runtime == 'true' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH="$GITHUB_WORKSPACE/tools" python -m swirphoneos.runtime_accessibility_review template \
+            --visual-trust "$GITHUB_WORKSPACE/runtime-visual-trust-bundle.json" \
+            --visual-report "$GITHUB_WORKSPACE/runtime-visual-evidence.json" \
+            > "$GITHUB_WORKSPACE/runtime-accessibility-review-template.json"
       - name: Stop local Cuttlefish instance
         if: ${{ always() && steps.runtime.outputs.has_runtime == 'true' }}
         shell: bash
@@ -186,4 +195,5 @@ jobs:
             runtime-visual-evidence.json
             runtime-visual-trust-bundle.json
             runtime-visual-review-template.json
+            runtime-accessibility-review-template.json
             runtime-visual/*.png
