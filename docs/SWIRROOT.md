@@ -31,23 +31,26 @@ SwirRoot uses four explicit states:
 
 Unverified builds default to `UNAVAILABLE`, not `ROOT_OFF`, because claiming root is safely disabled would itself require exact-build evidence. The current Android service therefore always reports `UNAVAILABLE`.
 
-## Enable-root gate
+## Symmetric transition safety gate
 
-A future implementation may offer an executable enable action only after all of these are true for the exact build/profile:
+A future implementation may offer either executable enable-root **or** executable unroot only when the same complete recovery-safe prerequisite set is true for the exact build/profile:
 
 - exact build match;
 - verified device profile;
 - explicit owner confirmation;
 - verified rollback material;
 - durable operation journal availability;
-- update state is safe for the transition;
+- update state is safe for a boot/system mutation;
+- the expected non-root restore state is known;
 - the exact build is explicitly supported by the mutation backend.
 
-Passing the pure-Java policy returns only an eligible `TRANSITION` plan. The current source has no executor and cannot make the device rooted.
+The expected non-root state is required **before enabling root**, not only when disabling it. This prevents a future backend from entering a rooted state without already knowing the state that a reliable unroot must restore. Unroot also requires the same verified device profile and safe update state as enable so a write-capable implementation cannot silently switch to weaker recovery assumptions on the way back.
 
-## Unroot gate
+Passing the pure-Java policy returns only an eligible `TRANSITION` plan. The current source has no executor and cannot make the device rooted or unrooted.
 
-The unroot path must know and verify the expected non-root state, require owner confirmation, retain rollback material and use the same durable transaction journal. Unroot is considered implemented only after exact-build physical validation demonstrates enable → reboot → use → disable → reboot/recovery behavior and verifies that the expected non-root boot/system state was restored.
+## Reliable unroot requirement
+
+Unroot is considered implemented only after exact-build physical validation demonstrates enable → reboot → use → disable → reboot/recovery behavior and verifies that the expected non-root boot/system state was restored. A future emergency-disable control for app authorization must not be confused with an unsafe boot-image mutation path: if a transition gate is not satisfied, mutation remains blocked and recovery must use a separately reviewed supported path.
 
 ## Readiness evidence binding
 
@@ -73,11 +76,12 @@ The Android source validator also scans all production Java files and rejects pr
 
 ## Machine-readable and Android contracts
 
-`swirroot/policy.json` remains the host-side authoritative safety contract and is validated by `swirphoneos/swirroot.py` and CI:
+`swirroot/policy.json` remains the host-side authoritative safety contract and is validated by `swirphoneos/swirroot.py` and CI. Both enable and unroot require the same seven recovery-safe gates, and Essential source CI also compiles/runs the Android pure-Java `RootPolicyHostTest` so the Android planner cannot quietly drift to a weaker prerequisite set.
 
 ```sh
 python -m swirphoneos root-policy
 python -m swirphoneos android-apps
+python -m unittest discover -s tests -p 'test_swirroot.py' -v
 ```
 
 Readiness binding is available separately so it cannot be mistaken for an execution command:
