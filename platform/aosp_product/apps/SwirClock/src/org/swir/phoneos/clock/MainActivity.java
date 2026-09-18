@@ -24,6 +24,9 @@ import java.util.Locale;
 
 /** Permission-minimal daily clock with world time, foreground timer/stopwatch and explicit alarm hand-off. */
 public final class MainActivity extends Activity {
+    private static final String PREFS = "swir_clock_preferences";
+    private static final String KEY_WORLD_ZONE = "world_zone_index";
+
     private final Handler handler = new Handler(Looper.getMainLooper());
     private TextView localTime;
     private TextView localDate;
@@ -54,6 +57,8 @@ public final class MainActivity extends Activity {
 
     @Override protected void onCreate(Bundle state) {
         super.onCreate(state);
+        worldZoneIndex = ClockCore.safeWorldZoneIndex(
+                getSharedPreferences(PREFS, MODE_PRIVATE).getInt(KEY_WORLD_ZONE, 0));
         getWindow().setStatusBarColor(Color.rgb(4, 11, 23));
         getWindow().setNavigationBarColor(Color.rgb(4, 11, 23));
         setContentView(buildUi());
@@ -104,6 +109,7 @@ public final class MainActivity extends Activity {
         worldZoneButton.setContentDescription(getString(R.string.next_zone_description));
         worldZoneButton.setOnClickListener(v -> {
             worldZoneIndex = ClockCore.nextWorldZoneIndex(worldZoneIndex);
+            getSharedPreferences(PREFS, MODE_PRIVATE).edit().putInt(KEY_WORLD_ZONE, worldZoneIndex).apply();
             renderTimes();
         });
         worldCard.addView(worldZoneButton, matchWrap());
