@@ -120,17 +120,17 @@ public final class MainActivity extends Activity {
         root.addView(roleStatus, roleStatusParams);
 
         LinearLayout phoneActions = new LinearLayout(this);
-        phoneActions.setOrientation(LinearLayout.HORIZONTAL);
+        phoneActions.setOrientation(LinearLayout.VERTICAL);
         phoneActions.setGravity(Gravity.CENTER);
         roleButton = actionButton(R.string.request_default_phone);
         roleButton.setOnClickListener(v -> requestDefaultPhoneRole());
-        phoneActions.addView(roleButton, weighted());
+        phoneActions.addView(roleButton, matchWrap());
         activeCallButton = actionButton(R.string.open_active_call);
         activeCallButton.setOnClickListener(v -> openActiveCall());
-        phoneActions.addView(activeCallButton, weighted());
+        phoneActions.addView(activeCallButton, matchWrap());
         recentCallsButton = actionButton(R.string.open_recent_calls);
         recentCallsButton.setOnClickListener(v -> requestRecentCalls());
-        phoneActions.addView(recentCallsButton, weighted());
+        phoneActions.addView(recentCallsButton, matchWrap());
         root.addView(phoneActions, matchWrap());
 
         TextView safety = text(getString(R.string.handoff_notice), 13, getColor(R.color.swir_text_secondary));
