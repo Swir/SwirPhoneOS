@@ -13,18 +13,38 @@ class AospWorkflowRuntimeToolGuardTests(unittest.TestCase):
             "SWIR_ADB_PATH: ${{ inputs.adb_path }}",
             "python -m swirphoneos.runtime_tool_evidence capture",
             "python -m swirphoneos.runtime_tool_evidence verify",
+            "python -m swirphoneos.cuttlefish_i18n",
+            "python -m swirphoneos.runtime_review_evidence",
             "python -m swirphoneos.runtime_trust_bundle",
+            "python -m swirphoneos.runtime_review_trust_bundle",
             'repo sync -c --no-tags --optimized-fetch --prune -j"$SWIR_REQUESTED_JOBS"',
             'm -j"$SWIR_REQUESTED_JOBS"',
             '--adb "$SWIR_ADB_PATH"',
             "runtime-tool-evidence.json",
             "runtime-tool-prelaunch-verification.json",
             "runtime-tool-post-verification.json",
+            "runtime-i18n-evidence.json",
+            "runtime-review-evidence.json",
             "runtime-trust-bundle.json",
+            "runtime-review-trust-bundle.json",
         )
         for marker in required:
             with self.subTest(marker=marker):
                 self.assertIn(marker, workflow)
+
+    def test_localization_review_finishes_before_post_runtime_tool_verification(self) -> None:
+        workflow = Path(".github/workflows/aosp-build-evidence.yml").read_text(encoding="utf-8")
+        prelaunch = workflow.index("runtime-tool-prelaunch-verification.json")
+        locale_matrix = workflow.index("python -m swirphoneos.cuttlefish_i18n")
+        runtime_review = workflow.index("python -m swirphoneos.runtime_review_evidence")
+        post = workflow.index("runtime-tool-post-verification.json")
+        trust = workflow.index("python -m swirphoneos.runtime_trust_bundle")
+        final = workflow.index("python -m swirphoneos.runtime_review_trust_bundle")
+        self.assertLess(prelaunch, locale_matrix)
+        self.assertLess(locale_matrix, runtime_review)
+        self.assertLess(runtime_review, post)
+        self.assertLess(post, trust)
+        self.assertLess(trust, final)
 
     def test_dispatch_values_are_not_interpolated_directly_into_shell_commands(self) -> None:
         workflow = Path(".github/workflows/aosp-build-evidence.yml").read_text(encoding="utf-8")
@@ -45,7 +65,10 @@ class AospWorkflowRuntimeToolGuardTests(unittest.TestCase):
             "runtime-tool-evidence.json",
             "runtime-tool-prelaunch-verification.json",
             "runtime-tool-post-verification.json",
+            "runtime-i18n-evidence.json",
+            "runtime-review-evidence.json",
             "runtime-trust-bundle.json",
+            "runtime-review-trust-bundle.json",
         ):
             self.assertIn(name, upload)
         self.assertNotIn("flash ", workflow)
