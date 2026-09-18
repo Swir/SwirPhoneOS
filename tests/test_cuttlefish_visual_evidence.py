@@ -27,7 +27,7 @@ class CuttlefishVisualEvidenceTests(unittest.TestCase):
         with self.assertRaises(CuttlefishVisualEvidenceError):
             parse_png_dimensions(b"not-png")
         with self.assertRaises(CuttlefishVisualEvidenceError):
-            parse_png(0, 10)
+            parse_png_dimensions(png(0, 10))
 
     def test_output_root_is_create_only(self):
         with tempfile.TemporaryDirectory() as temp:
@@ -111,20 +111,18 @@ class CuttlefishVisualEvidenceTests(unittest.TestCase):
             registry, _apps, runner, runtime, current, original = self._runner(adb)
             base = runner._run_png
             count = {"n": 0}
+
             def fail(serial):
                 count["n"] += 1
                 if count["n"] == 3:
                     raise CuttlefishVisualEvidenceError("synthetic")
                 return base(serial)
+
             runner._run_png = fail
             with patch.object(runner.evidence, "inspect", return_value=runtime):
                 with self.assertRaises(CuttlefishVisualEvidenceError):
                     runner.capture(registry, Path(temp).resolve() / "visual")
             self.assertEqual(current["locales"], original)
-
-
-def parse_png(width, height):
-    return png(width, height)
 
 
 if __name__ == "__main__":
