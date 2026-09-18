@@ -59,7 +59,8 @@ class SwirBackupRestoreSourceTests(unittest.TestCase):
             self.assertIn(token, self.policy)
 
     def test_source_is_rehashed_before_archive_write_and_restore_rechecks_archive(self):
-        self.assertGreaterEqual(self.activity.count("openInputStream(document.uri)"), 2)
+        self.assertIn("openInputStream(uri)", self.activity)
+        self.assertIn("openInputStream(document.uri)", self.activity)
         self.assertIn("source size changed", self.activity)
         self.assertIn("archive changed before restore", self.activity)
         self.assertGreaterEqual(self.activity.count("verifyManifestEntries"), 3)
