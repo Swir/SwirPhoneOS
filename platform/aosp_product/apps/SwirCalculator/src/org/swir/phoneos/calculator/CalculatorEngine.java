@@ -7,13 +7,17 @@ import java.math.RoundingMode;
 /** Pure-Java calculator state machine. It intentionally has no Android dependency. */
 public final class CalculatorEngine {
     public enum Operation { NONE, ADD, SUBTRACT, MULTIPLY, DIVIDE }
+    public enum ScientificOperation { SQUARE, SQRT, RECIPROCAL, SIN, COS, TAN, LN, LOG10, ABS }
+    public enum AngleMode { DEGREES, RADIANS }
 
     private static final MathContext MATH = new MathContext(16, RoundingMode.HALF_EVEN);
+    private static final double TAN_SINGULARITY_EPSILON = 1.0e-12;
     private BigDecimal accumulator;
     private Operation pending = Operation.NONE;
     private String input = "0";
     private boolean replaceInput = true;
     private boolean error;
+    private AngleMode angleMode = AngleMode.DEGREES;
 
     public void clear() {
         accumulator = null;
@@ -79,6 +83,88 @@ public final class CalculatorEngine {
         replaceInput = true;
     }
 
+    public void inputPi() {
+        setScientificValue(Math.PI);
+    }
+
+    public void inputE() {
+        setScientificValue(Math.E);
+    }
+
+    public AngleMode angleMode() {
+        return angleMode;
+    }
+
+    public void toggleAngleMode() {
+        angleMode = angleMode == AngleMode.DEGREES ? AngleMode.RADIANS : AngleMode.DEGREES;
+    }
+
+    public void scientific(ScientificOperation operation) {
+        if (operation == null) {
+            throw new IllegalArgumentException("scientific operation required");
+        }
+        recoverFromError();
+        double value = currentValue().doubleValue();
+        if (error || !Double.isFinite(value)) {
+            error = true;
+            return;
+        }
+        double result;
+        switch (operation) {
+            case SQUARE:
+                result = value * value;
+                break;
+            case SQRT:
+                if (value < 0.0d) {
+                    error = true;
+                    return;
+                }
+                result = Math.sqrt(value);
+                break;
+            case RECIPROCAL:
+                if (value == 0.0d) {
+                    error = true;
+                    return;
+                }
+                result = 1.0d / value;
+                break;
+            case SIN:
+                result = Math.sin(toRadians(value));
+                break;
+            case COS:
+                result = Math.cos(toRadians(value));
+                break;
+            case TAN:
+                double radians = toRadians(value);
+                if (Math.abs(Math.cos(radians)) < TAN_SINGULARITY_EPSILON) {
+                    error = true;
+                    return;
+                }
+                result = Math.tan(radians);
+                break;
+            case LN:
+                if (value <= 0.0d) {
+                    error = true;
+                    return;
+                }
+                result = Math.log(value);
+                break;
+            case LOG10:
+                if (value <= 0.0d) {
+                    error = true;
+                    return;
+                }
+                result = Math.log10(value);
+                break;
+            case ABS:
+                result = Math.abs(value);
+                break;
+            default:
+                throw new IllegalArgumentException("unsupported scientific operation");
+        }
+        setScientificValue(result);
+    }
+
     public void choose(Operation operation) {
         if (operation == null || operation == Operation.NONE) {
             throw new IllegalArgumentException("operation required");
@@ -120,6 +206,19 @@ public final class CalculatorEngine {
 
     public Operation pendingOperation() {
         return pending;
+    }
+
+    private void setScientificValue(double value) {
+        if (!Double.isFinite(value)) {
+            error = true;
+            return;
+        }
+        input = format(BigDecimal.valueOf(value).round(MATH));
+        replaceInput = true;
+    }
+
+    private double toRadians(double value) {
+        return angleMode == AngleMode.DEGREES ? Math.toRadians(value) : value;
     }
 
     private void recoverFromError() {
