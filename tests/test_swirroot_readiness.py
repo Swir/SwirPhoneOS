@@ -191,10 +191,10 @@ class SwirRootReadinessTests(unittest.TestCase):
         self.assertNotIn("rollback_material_verified", result["missing_requirements"])
         self.assertFalse(result["transition_ready"])
 
-    def test_enable_and_unroot_project_identical_required_gate_names(self):
+    def test_enable_and_unroot_project_identical_missing_gate_names(self):
         enable = self._ready("enable")
         unroot = self._ready("unroot")
-        self.assertEqual(set(enable["required_gates"]), set(unroot["required_gates"]))
+        self.assertEqual(enable["missing_requirements"], unroot["missing_requirements"])
 
     def test_rejects_hardware_and_journal_build_mismatch(self):
         journal = _journal()
