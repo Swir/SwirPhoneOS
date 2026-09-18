@@ -1,4 +1,32 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Calculatrice Swir</string><string name="display_description">Écran de la calculatrice</string><string name="clear">Effacer</string><string name="positive_negative">Changer le signe</string><string name="percent">Pourcentage</string><string name="backspace">Effacer le dernier chiffre</string><string name="decimal">Séparateur décimal</string><string name="plus">Additionner</string><string name="minus">Soustraire</string><string name="multiply">Multiplier</string><string name="divide">Diviser</string><string name="equals">Résultat</string><string name="error">Erreur</string>
+    <string name="app_name">Calculatrice Swir</string>
+    <string name="display_description">Affichage de la calculatrice</string>
+    <string name="clear">Effacer</string>
+    <string name="positive_negative">Changer le signe</string>
+    <string name="percent">Pourcentage</string>
+    <string name="backspace">Effacer le dernier chiffre</string>
+    <string name="decimal">Séparateur décimal</string>
+    <string name="plus">Additionner</string>
+    <string name="minus">Soustraire</string>
+    <string name="multiply">Multiplier</string>
+    <string name="divide">Diviser</string>
+    <string name="equals">Résultat</string>
+    <string name="error">Erreur</string>
+    <string name="scientific_mode">Les fonctions scientifiques fonctionnent hors connexion. La trigonométrie peut utiliser les degrés ou les radians.</string>
+    <string name="scientific_functions">Fonctions scientifiques</string>
+    <string name="basic_functions">Clavier de base</string>
+    <string name="sine_short">sin</string><string name="sine">Sinus</string>
+    <string name="cosine_short">cos</string><string name="cosine">Cosinus</string>
+    <string name="tangent_short">tan</string><string name="tangent">Tangente</string>
+    <string name="square_root_short">√</string><string name="square_root">Racine carrée</string>
+    <string name="natural_log_short">ln</string><string name="natural_log">Logarithme naturel</string>
+    <string name="base10_log_short">log</string><string name="base10_log">Logarithme en base 10</string>
+    <string name="square_short">x²</string><string name="square">Carré</string>
+    <string name="reciprocal_short">1/x</string><string name="reciprocal">Inverse</string>
+    <string name="pi_short">π</string><string name="pi_constant">Constante pi</string>
+    <string name="e_short">e</string><string name="e_constant">Constante d’Euler</string>
+    <string name="absolute_short">|x|</string><string name="absolute_value">Valeur absolue</string>
+    <string name="angle_degrees_short">DEG</string><string name="angle_radians_short">RAD</string>
+    <string name="switch_angle_mode">Basculer l’unité d’angle entre degrés et radians</string>
 </resources>
