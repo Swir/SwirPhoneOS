@@ -21,11 +21,16 @@ class GuiTests(unittest.TestCase):
             self.app.close()
 
     def complete_scan(self):
-        deadline = time.monotonic() + 3
+        # Hosted Windows runners can occasionally delay the worker/Tk handoff
+        # even though the synthetic inspector is already complete. Poll the
+        # real busy state with a bounded monotonic deadline instead of making
+        # the smoke test depend on runner scheduling jitter.
+        deadline = time.monotonic() + 10
         while self.app.session.busy and time.monotonic() < deadline:
             self.root.update()
-            time.sleep(0.01)
-        self.assertFalse(self.app.session.busy)
+            time.sleep(0.02)
+        self.root.update()
+        self.assertFalse(self.app.session.busy, "synthetic diagnostic did not complete within 10 seconds")
 
     def test_launch_and_icon(self):
         self.assertEqual(self.app.icon.width(), 48)
