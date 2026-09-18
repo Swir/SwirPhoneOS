@@ -17,24 +17,25 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
 import java.util.Locale;
 
-/** Permission-minimal daily clock with foreground timer/stopwatch and explicit alarm hand-off. */
+/** Permission-minimal daily clock with world time, foreground timer/stopwatch and explicit alarm hand-off. */
 public final class MainActivity extends Activity {
     private final Handler handler = new Handler(Looper.getMainLooper());
     private TextView localTime;
     private TextView localDate;
-    private TextView utcTime;
+    private TextView worldTime;
+    private Button worldZoneButton;
     private TextView stopwatchText;
     private TextView timerText;
     private EditText timerMinutes;
     private EditText alarmHour;
     private EditText alarmMinute;
     private Button stopwatchToggle;
+    private int worldZoneIndex;
     private long stopwatchAccumulated;
     private long stopwatchStartedAt;
     private boolean stopwatchRunning;
@@ -91,11 +92,22 @@ public final class MainActivity extends Activity {
         localDate = text("", 15, Color.rgb(180, 198, 217));
         localDate.setGravity(Gravity.CENTER_HORIZONTAL);
         nowCard.addView(localDate, matchWrap());
-        utcTime = text("", 14, Color.rgb(105, 216, 255));
-        utcTime.setGravity(Gravity.CENTER_HORIZONTAL);
-        utcTime.setPadding(0, dp(8), 0, 0);
-        nowCard.addView(utcTime, matchWrap());
         root.addView(nowCard, spaced());
+
+        LinearLayout worldCard = card();
+        worldCard.addView(text(getString(R.string.world_clock), 17, Color.rgb(105, 216, 255)), matchWrap());
+        worldTime = text(getString(R.string.clock_placeholder), 34, Color.WHITE);
+        worldTime.setGravity(Gravity.CENTER_HORIZONTAL);
+        worldTime.setPadding(0, dp(4), 0, dp(6));
+        worldCard.addView(worldTime, matchWrap());
+        worldZoneButton = button(R.string.world_clock);
+        worldZoneButton.setContentDescription(getString(R.string.next_zone_description));
+        worldZoneButton.setOnClickListener(v -> {
+            worldZoneIndex = ClockCore.nextWorldZoneIndex(worldZoneIndex);
+            renderTimes();
+        });
+        worldCard.addView(worldZoneButton, matchWrap());
+        root.addView(worldCard, spaced());
 
         LinearLayout stopwatchCard = card();
         stopwatchCard.addView(text(getString(R.string.stopwatch), 17, Color.rgb(105, 216, 255)), matchWrap());
@@ -153,9 +165,12 @@ public final class MainActivity extends Activity {
     private void renderTimes() {
         Locale locale = getResources().getConfiguration().getLocales().get(0);
         ZonedDateTime now = ZonedDateTime.now();
+        long epochMillis = System.currentTimeMillis();
         localTime.setText(DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT).withLocale(locale).format(now));
         localDate.setText(DateTimeFormatter.ofLocalizedDate(FormatStyle.FULL).withLocale(locale).format(now));
-        utcTime.setText(getString(R.string.utc_format, ClockCore.worldTime("UTC", Instant.now().toEpochMilli(), locale)));
+        String zoneId = ClockCore.worldZoneId(worldZoneIndex);
+        worldTime.setText(ClockCore.worldTime(zoneId, epochMillis, locale));
+        worldZoneButton.setText(ClockCore.worldZoneLabel(zoneId, epochMillis, locale));
     }
 
     private void toggleStopwatch() {
