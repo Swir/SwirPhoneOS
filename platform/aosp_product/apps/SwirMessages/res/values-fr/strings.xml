@@ -11,7 +11,16 @@
     <string name="characters_remaining">%1$d caractères restants</string>
     <string name="clear_draft">Effacer le brouillon</string>
     <string name="continue_to_messages">Continuer vers Messages</string>
-    <string name="handoff_notice">Swir Messages n’envoie jamais de SMS silencieusement. L’application de messagerie système effectue l’envoi final. L’historique des conversations et les MMS ne sont pas encore implémentés.</string>
+    <string name="remember_handoff_history">Conserver les transmissions récentes sur cet appareil</string>
+    <string name="remember_handoff_history_description">Enregistre une liste locale limitée des transmissions récentes du brouillon. Désactivé par défaut.</string>
+    <string name="handoff_notice">Swir Messages n’envoie jamais de SMS silencieusement. L’application de messagerie système effectue l’envoi final. L’historique local facultatif enregistre uniquement la transmission du brouillon, pas la livraison. Les conversations complètes et les MMS ne sont pas encore implémentés.</string>
+    <string name="recent_handoffs">Transmissions récentes</string>
+    <string name="recent_handoffs_description">Transmissions récentes du brouillon enregistrées localement sur cet appareil</string>
+    <string name="recent_handoffs_empty">Aucun historique local de transmission.</string>
+    <string name="recent_handoff_item">%1$s • %2$s\n%3$s</string>
+    <string name="clear_recent_handoffs">Effacer les récentes</string>
+    <string name="recent_handoffs_cleared">L’historique des transmissions récentes a été effacé.</string>
+    <string name="history_not_saved">L’historique de la transmission récente n’a pas été enregistré.</string>
     <string name="invalid_message">Saisissez un destinataire valide et un message non vide.</string>
     <string name="no_messaging_app">Aucune application de messagerie compatible n’est disponible.</string>
     <string name="draft_cleared">Brouillon effacé.</string>
