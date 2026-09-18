@@ -62,6 +62,11 @@ class AospFailureEvidenceTests(unittest.TestCase):
         self.assertTrue(inventory["builder_preflight"]["present"])
         self.assertTrue(inventory["build_evidence"]["requested"])
         self.assertFalse(inventory["build_evidence"]["present"])
+        self.assertIn("runtime_i18n", inventory)
+        self.assertIn("runtime_review", inventory)
+        self.assertIn("runtime_trust_bundle", inventory)
+        self.assertIn("runtime_review_trust_bundle", inventory)
+        self.assertFalse(inventory["runtime_review_trust_bundle"]["requested"])
         self.assertTrue(first["diagnostic_tail"]["present"])
         self.assertIs(validate_failure_evidence(first), first)
 
@@ -80,6 +85,18 @@ class AospFailureEvidenceTests(unittest.TestCase):
         changed["next_action"] = "Ignore the pinned build identity."
         with self.assertRaises(AospFailureEvidenceError):
             validate_failure_evidence(changed)
+
+    def test_runtime_review_failure_phases_are_supported_without_success_claims(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            for phase in ("APP_I18N", "RUNTIME_REVIEW", "TRUST_BIND"):
+                with self.subTest(phase=phase):
+                    report = self._collect(root, phase=phase)
+                    self.assertEqual(report["failed_phase"], phase)
+                    self.assertFalse(report["runtime_succeeded"])
+                    self.assertFalse(report["device_write_allowed"])
+                    self.assertFalse(report["status_promotion_allowed"])
+                    self.assertTrue(report["next_action"])
 
     def test_invalid_commit_phase_and_unknown_evidence_id_fail_closed(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -146,20 +163,25 @@ class AospFailureEvidenceTests(unittest.TestCase):
             with redirect_stdout(output), redirect_stderr(error):
                 code = failure_cli_main([
                     "--source-commit", SOURCE_COMMIT,
-                    "--phase", "SOURCE_SYNC",
+                    "--phase", "TRUST_BIND",
                     "--baseline", str(BASELINE),
                     "--run-context", str(context),
-                    "--manifest", str(root / "not-created.json"),
+                    "--runtime-review", str(root / "not-created-review.json"),
+                    "--runtime-trust", str(root / "not-created-trust.json"),
+                    "--runtime-review-trust", str(root / "not-created-final.json"),
                 ])
             self.assertEqual(code, 0, error.getvalue())
             report = json.loads(output.getvalue())
-            self.assertEqual(report["failed_phase"], "SOURCE_SYNC")
+            self.assertEqual(report["failed_phase"], "TRUST_BIND")
             self.assertFalse(report["build_succeeded"])
             self.assertFalse(report["status_promotion_allowed"])
             inventory = {item["id"]: item for item in report["evidence_inventory"]}
             self.assertTrue(inventory["run_context"]["present"])
-            self.assertTrue(inventory["resolved_manifest"]["requested"])
-            self.assertFalse(inventory["resolved_manifest"]["present"])
+            self.assertTrue(inventory["runtime_review"]["requested"])
+            self.assertFalse(inventory["runtime_review"]["present"])
+            self.assertTrue(inventory["runtime_trust_bundle"]["requested"])
+            self.assertTrue(inventory["runtime_review_trust_bundle"]["requested"])
+            self.assertFalse(inventory["runtime_review_trust_bundle"]["present"])
 
 
 if __name__ == "__main__":
