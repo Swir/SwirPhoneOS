@@ -108,7 +108,7 @@ public final class EventPolicy {
     /**
      * Parses one bounded, local VEVENT into the app-private agenda. This deliberately accepts a
      * small interoperable subset: UTC date-times or all-day dates, one event, no recurrence and no
-     * implicit network/provider access. Unknown non-critical properties are ignored.
+     * implicit network/provider access. Unknown non-critical properties are ignored inside VEVENT.
      */
     public static ImportedEvent parseSingleEvent(String ics) {
         if (ics == null || ics.isEmpty() || ics.length() > MAX_ICS_BYTES || ics.indexOf('\0') >= 0) return null;
@@ -119,6 +119,7 @@ public final class EventPolicy {
         boolean eventOpen = false;
         boolean eventClosed = false;
         boolean calendarClosed = false;
+        boolean locationSeen = false;
         String title = null;
         String location = "";
         ParsedTime start = null;
@@ -126,18 +127,19 @@ public final class EventPolicy {
 
         for (String line : lines) {
             if (line.isEmpty()) continue;
+            if (calendarClosed) return null;
             if ("BEGIN:VCALENDAR".equals(line)) {
-                if (calendarOpen || calendarClosed || eventOpen || eventClosed) return null;
+                if (calendarOpen || eventOpen || eventClosed) return null;
                 calendarOpen = true;
                 continue;
             }
             if ("END:VCALENDAR".equals(line)) {
-                if (!calendarOpen || eventOpen || !eventClosed || calendarClosed) return null;
+                if (!calendarOpen || eventOpen || !eventClosed) return null;
                 calendarClosed = true;
                 continue;
             }
             if ("BEGIN:VEVENT".equals(line)) {
-                if (!calendarOpen || eventOpen || eventClosed || calendarClosed) return null;
+                if (!calendarOpen || eventOpen || eventClosed) return null;
                 eventOpen = true;
                 continue;
             }
@@ -158,7 +160,8 @@ public final class EventPolicy {
                 title = unescapeIcs(value);
                 if (!validTitle(title)) return null;
             } else if ("LOCATION".equals(key)) {
-                if (!location.isEmpty()) return null;
+                if (locationSeen) return null;
+                locationSeen = true;
                 String decoded = unescapeIcs(value);
                 if (decoded == null || !validLocation(decoded)) return null;
                 location = decoded;
@@ -174,9 +177,9 @@ public final class EventPolicy {
         }
 
         if (!calendarOpen || !calendarClosed || eventOpen || !eventClosed || title == null || start == null) return null;
-        long resolvedEnd;
-        if (end == null) resolvedEnd = start.millis + (start.allDay ? DEFAULT_ALL_DAY_DURATION_MS : DEFAULT_DURATION_MS);
-        else resolvedEnd = end.millis;
+        long resolvedEnd = end == null
+                ? start.millis + (start.allDay ? DEFAULT_ALL_DAY_DURATION_MS : DEFAULT_DURATION_MS)
+                : end.millis;
         if (start.millis < 0 || resolvedEnd <= start.millis) return null;
         return new ImportedEvent(title, location, start.millis, resolvedEnd);
     }
