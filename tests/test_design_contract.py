@@ -18,7 +18,7 @@ class DesignContractTests(unittest.TestCase):
     def test_repository_design_contract_covers_every_system_app_but_is_source_ready_only(self):
         summary = validate_design_contract()
         self.assertEqual(summary["status"], "SOURCE_CONTRACT_READY_NOT_BUILT")
-        self.assertEqual(summary["design_contract"], "swirphoneos-design-v5")
+        self.assertEqual(summary["design_contract"], "swirphoneos-design-v6")
         self.assertEqual(summary["integrated_core_apps"], ["settings", "files", "update", "privacy", "device_care"])
         self.assertEqual(summary["integrated_core_app_count"], 5)
         self.assertEqual(summary["integrated_system_apps"], list(SYSTEM_APPS))
@@ -27,9 +27,9 @@ class DesignContractTests(unittest.TestCase):
         self.assertTrue(summary["all_system_apps_integrated"])
         self.assertEqual(
             summary["tokenized_apps"],
-            ["phone", "messages", "camera", "settings", "files", "browser", "backup", "update", "privacy", "device_care"],
+            ["phone", "messages", "camera", "calculator", "settings", "files", "browser", "backup", "update", "privacy", "device_care", "calendar"],
         )
-        self.assertEqual(summary["tokenized_app_count"], 10)
+        self.assertEqual(summary["tokenized_app_count"], 12)
         self.assertEqual(summary["tokenized_core_apps"], ["settings", "files", "update", "privacy", "device_care"])
         self.assertEqual(summary["tokenized_core_app_count"], 5)
         self.assertEqual(summary["expected_core_app_count"], 5)
@@ -87,6 +87,30 @@ class DesignContractTests(unittest.TestCase):
         with temp:
             source = root / "apps/SwirSettings/src/org/swir/phoneos/settings/MainActivity.java"
             source.write_text(source.read_text(encoding="utf-8").replace("import android.os.Build;", "import android.graphics.Color;\nimport android.os.Build;", 1), encoding="utf-8")
+            with self.assertRaises(DesignContractError):
+                validate_design_contract(root)
+
+    def test_calculator_cannot_regress_to_direct_color_literals(self):
+        temp, root = self._fixture()
+        with temp:
+            source = root / "apps/SwirCalculator/src/org/swir/phoneos/calculator/MainActivity.java"
+            source.write_text(source.read_text(encoding="utf-8").replace("import android.os.Bundle;", "import android.graphics.Color;\nimport android.os.Bundle;", 1), encoding="utf-8")
+            with self.assertRaises(DesignContractError):
+                validate_design_contract(root)
+
+    def test_calculator_must_keep_shared_touch_target_reference(self):
+        temp, root = self._fixture()
+        with temp:
+            source = root / "apps/SwirCalculator/src/org/swir/phoneos/calculator/MainActivity.java"
+            source.write_text(source.read_text(encoding="utf-8").replace("R.dimen.swir_touch_min", "R.dimen.swir_space_lg"), encoding="utf-8")
+            with self.assertRaises(DesignContractError):
+                validate_design_contract(root)
+
+    def test_calendar_cannot_regress_to_direct_color_literals(self):
+        temp, root = self._fixture()
+        with temp:
+            source = root / "apps/SwirCalendar/src/org/swir/phoneos/calendar/MainActivity.java"
+            source.write_text(source.read_text(encoding="utf-8").replace("import android.app.Activity;", "import android.app.Activity;\nimport android.graphics.Color;", 1), encoding="utf-8")
             with self.assertRaises(DesignContractError):
                 validate_design_contract(root)
 
