@@ -122,6 +122,7 @@ class RuntimeAccessibilityReviewTests(unittest.TestCase):
         review = json.loads(json.dumps(template))
         review["reviewer"] = "SWIR accessibility reviewer"
         review["reviewed_at_utc"] = "2026-09-18T19:30:00Z"
+        review["assistive_technology"] = "TalkBack"
         for item in review["items"]:
             for check in item["checks"]:
                 item["checks"][check] = "PASS"
@@ -140,7 +141,7 @@ class RuntimeAccessibilityReviewTests(unittest.TestCase):
             self.assertEqual(first["capture_count"], len(packages) * len(locales))
             self.assertEqual(first["reviewer"], "")
             self.assertEqual(first["reviewed_at_utc"], "")
-            self.assertEqual(first["assistive_technology"], "TalkBack")
+            self.assertEqual(first["assistive_technology"], "")
             self.assertEqual(first["input_methods"], ["touch", "keyboard"])
             for item in first["items"]:
                 self.assertEqual(
@@ -170,6 +171,7 @@ class RuntimeAccessibilityReviewTests(unittest.TestCase):
             self.assertTrue(evidence["human_review_complete"])
             self.assertTrue(evidence["accessibility_review_complete"])
             self.assertTrue(evidence["accessibility_review_passed"])
+            self.assertEqual(evidence["assistive_technology"], "TalkBack")
             self.assertTrue(evidence["spoken_labels_review_passed"])
             self.assertTrue(evidence["focus_order_review_passed"])
             self.assertTrue(evidence["touch_targets_review_passed"])
@@ -230,6 +232,16 @@ class RuntimeAccessibilityReviewTests(unittest.TestCase):
                 create_accessibility_template(trust_path, visual_path)
             )
             complete["input_methods"] = ["touch"]
+            review_path.write_text(json.dumps(complete), encoding="utf-8")
+            with self.assertRaises(RuntimeAccessibilityReviewError):
+                verify_completed_accessibility_review(
+                    trust_path, visual_path, review_path
+                )
+
+            complete = self._complete(
+                create_accessibility_template(trust_path, visual_path)
+            )
+            complete["assistive_technology"] = ""
             review_path.write_text(json.dumps(complete), encoding="utf-8")
             with self.assertRaises(RuntimeAccessibilityReviewError):
                 verify_completed_accessibility_review(
