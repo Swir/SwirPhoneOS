@@ -3,6 +3,8 @@
     <string name="app_name">Swir Clock</string>
     <string name="subtitle">Hora, temporizadores y alarmas con un flujo claro controlado por el usuario.</string>
     <string name="now">Ahora</string>
+    <string name="world_clock">Reloj mundial</string>
+    <string name="next_zone_description">Cambiar la zona horaria del reloj mundial</string>
     <string name="stopwatch">Cronómetro</string>
     <string name="timer">Temporizador</string>
     <string name="alarm">Alarma</string>
