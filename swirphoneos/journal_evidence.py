@@ -1,7 +1,8 @@
 """Read-only validation of persisted transaction journals.
 
-A validated journal proves only local artifact review. It cannot prove hardware
-identity, owner confirmation, update safety, or authorize a device mutation.
+A validated journal proves only local artifact review at journal creation time.
+It cannot prove current rollback-byte availability, hardware identity, owner
+confirmation, update safety, or authorize a device mutation.
 """
 from __future__ import annotations
 
@@ -160,17 +161,19 @@ def public_journal_summary(journal: dict[str, object]) -> dict[str, object]:
 
 
 def swirroot_gate_projection(journal: dict[str, object], *, profile_id: str, exact_build: str) -> dict[str, bool]:
-    """Project what this local journal can prove to the SwirRoot safety policy.
+    """Project only what the persisted journal can prove to SwirRoot.
 
-    Hardware verification, owner confirmation, update safety and expected
-    non-root state require independent evidence and therefore remain false.
+    `rollback_ready` means rollback bytes were verified when the journal was
+    created. It is deliberately *not* current rollback-material proof; schema-v2
+    SwirRoot readiness requires `rollback_material_evidence` to re-hash those
+    files immediately before the gate can pass.
     """
     journal = validate_journal(journal)
     return {
         "exact_build_match": journal["profile_id"] == profile_id and journal["target_build"] == exact_build,
         "verified_device_profile": False,
         "owner_confirmation": False,
-        "rollback_material_verified": True,
+        "rollback_material_verified": False,
         "journal_available": True,
         "update_state_safe": False,
         "expected_nonroot_state_known": False,
