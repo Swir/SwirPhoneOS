@@ -36,7 +36,7 @@ python -m swirphoneos.runtime_visual_review verify \
 
 The verifier rejects duplicate JSON keys, unknown fields, PENDING final checks, cross-run/trust-digest drift, changed package/locale/capture identity, swapped screenshot hashes, LTR records that claim an RTL result and RTL records without an explicit mirroring result. It computes review-complete and pass/fail values from the per-capture checks instead of trusting reviewer-supplied summary booleans.
 
-A completed visual review remains a human attestation. It can establish that the exact captured matrix was reviewed for translation, clipping and RTL mirroring, but it cannot establish TalkBack behavior, semantic labels, focus order, keyboard/input behavior, touch-target quality or other accessibility requirements.
+A completed visual review remains a human attestation. It can establish that the exact captured matrix was reviewed for translation, clipping and RTL mirroring, but it cannot establish screen-reader behavior, semantic labels, focus order, keyboard/input behavior, touch-target quality or other accessibility requirements.
 
 ## Human accessibility review template
 
@@ -50,7 +50,9 @@ Every review item starts with five explicit `PENDING` checks:
 - `keyboard_navigation`;
 - `state_announcements`.
 
-The canonical review scope declares TalkBack plus touch and keyboard input. CI only creates the PENDING template; it never runs the verification command, never converts a template into a passing accessibility result and never infers accessibility from screenshot existence. A reviewer must interactively exercise the exact retained Cuttlefish build and package/locale scope, then record `PASS` or `FAIL` for every check. This is a human attestation tied to exact evidence, not an automated accessibility certification.
+The template deliberately leaves `assistive_technology` empty and fixes the interaction-method scope to touch plus keyboard. The reviewer must record the actual bounded accessibility-service/screen-reader label used during the interactive review. SwirPhoneOS does not assume that a proprietary accessibility service is preinstalled in a plain AOSP/Cuttlefish image.
+
+CI only creates the PENDING template; it never runs the verification command, never converts a template into a passing accessibility result and never infers accessibility from screenshot existence. A reviewer must interactively exercise the exact retained Cuttlefish build and package/locale scope, then record the actual accessibility service and `PASS` or `FAIL` for every check. This is a human attestation tied to exact evidence, not an automated accessibility certification.
 
 A completed accessibility review can be verified offline:
 
@@ -62,7 +64,7 @@ python -m swirphoneos.runtime_accessibility_review verify \
   > runtime-accessibility-review-evidence.json
 ```
 
-The verifier rejects incomplete/PENDING checks, unknown fields, changed assistive-technology/input-method scope, cross-run trust drift and capture-identity changes. It computes overall and per-check pass/fail values from the submitted items. A complete review may truthfully fail; failure details remain visible instead of being converted into success.
+The verifier rejects incomplete/PENDING checks, unknown fields, an empty/unsafe assistive-technology label, changed input-method scope, cross-run trust drift and capture-identity changes. It computes overall and per-check pass/fail values from the submitted items. A complete review may truthfully fail; failure details remain visible instead of being converted into success.
 
 Accessibility evidence is independent from visual translation/clipping/RTL evidence. A passing accessibility review does not set `visual_translation_review_complete` or `rtl_visual_mirroring_verified`, and neither review authorizes app promotion, release publication or physical-device writes.
 
