@@ -148,6 +148,15 @@ jobs:
             --visual-report "$GITHUB_WORKSPACE/runtime-visual-evidence.json" \
             --visual-dir "$GITHUB_WORKSPACE/runtime-visual" \
             > "$GITHUB_WORKSPACE/runtime-visual-trust-bundle.json"
+      - name: Generate exact human visual review template
+        if: ${{ steps.runtime.outputs.has_runtime == 'true' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH="$GITHUB_WORKSPACE/tools" python -m swirphoneos.runtime_visual_review template \
+            --visual-trust "$GITHUB_WORKSPACE/runtime-visual-trust-bundle.json" \
+            --visual-report "$GITHUB_WORKSPACE/runtime-visual-evidence.json" \
+            > "$GITHUB_WORKSPACE/runtime-visual-review-template.json"
       - name: Stop local Cuttlefish instance
         if: ${{ always() && steps.runtime.outputs.has_runtime == 'true' }}
         shell: bash
@@ -176,4 +185,5 @@ jobs:
             visual-adb-post-verification.json
             runtime-visual-evidence.json
             runtime-visual-trust-bundle.json
+            runtime-visual-review-template.json
             runtime-visual/*.png

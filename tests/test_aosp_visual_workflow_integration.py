@@ -15,18 +15,29 @@ class AospVisualWorkflowIntegrationTests(unittest.TestCase):
         self.assertIn("run-id: ${{ github.event.workflow_run.id }}", self.text)
         self.assertIn("swirphoneos-aosp-evidence-${{ github.event.workflow_run.head_sha }}", self.text)
 
-    def test_visual_capture_is_runtime_gated_and_byte_bound(self):
+    def test_visual_capture_is_runtime_gated_byte_bound_and_review_ready(self):
         self.assertIn("has_runtime", self.text)
         self.assertIn("swirphoneos.aosp_artifact_continuity", self.text)
         self.assertIn("swirphoneos.runtime_tool_evidence verify", self.text)
         self.assertIn("swirphoneos.cuttlefish_visual_evidence", self.text)
         self.assertIn("swirphoneos.runtime_visual_trust_bundle", self.text)
+        self.assertIn("swirphoneos.runtime_visual_review template", self.text)
+        self.assertIn("runtime-visual-review-template.json", self.text)
         self.assertIn("runtime-visual/*.png", self.text)
         self.assertIn("stop_cvd", self.text)
 
-    def test_workflow_does_not_add_physical_write_primitives(self):
+    def test_workflow_does_not_auto_attest_human_review_or_add_write_primitives(self):
         lowered = self.text.lower()
-        for forbidden in ("fastboot flash", "fastboot erase", "fastboot format", "adb install", "adb uninstall", "adb reboot", "su -c"):
+        self.assertNotIn("runtime_visual_review verify", lowered)
+        for forbidden in (
+            "fastboot flash",
+            "fastboot erase",
+            "fastboot format",
+            "adb install",
+            "adb uninstall",
+            "adb reboot",
+            "su -c",
+        ):
             self.assertNotIn(forbidden, lowered)
 
 
