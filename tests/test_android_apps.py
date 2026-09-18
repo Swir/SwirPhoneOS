@@ -35,19 +35,18 @@ class AndroidAppSourceTests(unittest.TestCase):
             self.assertIn(capability, summary["implemented_capabilities"])
         self.assertEqual(summary["remaining_target_capabilities"], [
             "access_history", "albums", "conversation_history", "guided_enable", "guided_unroot", "in_call",
-            "mms", "photo_capture", "privacy_indicators", "provider_bridge", "recent_calls", "recovery_handoff",
+            "mms", "photo_capture", "privacy_indicators", "recent_calls", "recovery_handoff",
             "restore_orchestration", "scientific_math", "staged_update_state", "update_status", "video_capture",
         ])
         for item in (
             "phone:in_call", "phone:recent_calls", "messages:mms", "messages:conversation_history",
-            "camera:photo_capture", "camera:video_capture", "calendar:provider_bridge",
-            "backup:restore_orchestration", "apps:update_status",
+            "camera:photo_capture", "camera:video_capture", "backup:restore_orchestration", "apps:update_status",
         ):
             self.assertIn(item, summary["remaining_app_capabilities"])
         for item in (
             "messages:sms", "camera:camera_capability_report", "browser:web_browsing", "browser:downloads", "browser:privacy_controls",
             "weather:forecast", "weather:provider_attribution", "weather:unit_preferences", "backup:supported_data_backup",
-            "backup:recovery_metadata", "contacts:provider_bridge",
+            "backup:recovery_metadata", "contacts:provider_bridge", "calendar:provider_bridge",
         ):
             self.assertNotIn(item, summary["remaining_app_capabilities"])
         self.assertFalse(summary["android_build_verified"])
