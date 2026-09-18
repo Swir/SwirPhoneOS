@@ -31,8 +31,6 @@
 
 <img width="100%" src="assets/readme/progress-card.svg" alt="SwirPhoneOS verified weighted engineering progress: 2%, 1 of 10 milestones complete, beta gates 0 of 9" />
 
-`[--------------------] 2%`
-
 The authoritative progress ledger is [`project.json`](project.json). Host CI, source-ready apps, Windows packaging, local recovery preparation and read-only hardware correlation do **not** substitute for Android build/boot or physical validation.
 
 | Area | Current verified state |
@@ -71,7 +69,7 @@ All twenty required app slots are currently **source-ready only** and included i
 | Gallery | Scoped MediaStore browse/search/open/share + owner-confirmed delete |
 | Files | Storage Access Framework browse/search/create/rename/copy/move/delete/open/share |
 | Settings | Searchable Swir hub + reviewed Android settings routes |
-| Browser | HTTPS-first WebView with conservative privacy defaults; downloads still open |
+| Browser | HTTPS-first WebView with conservative privacy defaults + app-scoped owner-visible `DownloadManager` downloads; runtime redirect/provider behavior unverified |
 | Clock | Localized clock, foreground stopwatch/timer + visible alarm hand-off |
 | Calculator | Host-tested `BigDecimal` basic arithmetic + locale-aware display |
 | Notes | App-private SQLite CRUD/search/share + Markdown export |
@@ -79,7 +77,7 @@ All twenty required app slots are currently **source-ready only** and included i
 | Calendar | Local SQLite agenda + share/ICS export; provider bridge still open |
 | Weather | Bounded Open-Meteo HTTPS current-weather lookup for owner-entered coordinates |
 | System Updater | Read-only build/channel state + SHA-256/RSA metadata verification; install disabled |
-| Backup/Restore | Bounded owner-selected archive creation + safe inspection; restore orchestration still open |
+| Backup/Restore | Owner-selected bounded schema-v2 document backup with per-file SHA-256, strict inspection and SAF restore into an explicitly chosen folder; Android runtime/provider behavior unverified |
 | Privacy Center | Reviewed routes into Android privacy/permission surfaces |
 | Device Care | Framework-backed battery/storage/memory/thermal diagnostics |
 | Software Center | Local app catalog, version/signing SHA-256 provenance, launch/details hand-off |
@@ -187,7 +185,7 @@ Privilege side
        └── exact-build policy → rollback/journal evidence → future physically validated backend only
 ```
 
-Engineering references: [`ARCHITECTURE.md`](ARCHITECTURE.md) · [`docs/AOSP_BUILD_WORKSPACE.md`](docs/AOSP_BUILD_WORKSPACE.md) · [`docs/HARDWARE_EVIDENCE.md`](docs/HARDWARE_EVIDENCE.md) · [`docs/RECOVERY_TRANSACTIONS.md`](docs/RECOVERY_TRANSACTIONS.md) · [`docs/SWIRROOT.md`](docs/SWIRROOT.md).
+Engineering references: [`ARCHITECTURE.md`](ARCHITECTURE.md) · [`docs/AOSP_BUILD_WORKSPACE.md`](docs/AOSP_BUILD_WORKSPACE.md) · [`docs/HARDWARE_EVIDENCE.md`](docs/HARDWARE_EVIDENCE.md) · [`docs/RECOVERY_TRANSACTIONS.md`](docs/RECOVERY_TRANSACTIONS.md) · [`docs/SWIR_BACKUP_RESTORE.md`](docs/SWIR_BACKUP_RESTORE.md) · [`docs/SWIRROOT.md`](docs/SWIRROOT.md).
 
 ## 🌍 Localization
 
