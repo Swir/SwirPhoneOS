@@ -1,6 +1,6 @@
 # Cuttlefish visual capture and review evidence
 
-SwirPhoneOS keeps automated runtime launch/localization evidence separate from human visual review. The post-run visual evidence path captures bounded PNG screenshots from the exact retained Cuttlefish build only after a successful runtime-enabled `AOSP build evidence` run.
+SwirPhoneOS keeps automated runtime launch/localization evidence separate from human visual and accessibility review. The post-run visual evidence path captures bounded PNG screenshots from the exact retained Cuttlefish build only after a successful runtime-enabled `AOSP build evidence` run.
 
 ## What automated capture proves
 
@@ -36,7 +36,35 @@ python -m swirphoneos.runtime_visual_review verify \
 
 The verifier rejects duplicate JSON keys, unknown fields, PENDING final checks, cross-run/trust-digest drift, changed package/locale/capture identity, swapped screenshot hashes, LTR records that claim an RTL result and RTL records without an explicit mirroring result. It computes review-complete and pass/fail values from the per-capture checks instead of trusting reviewer-supplied summary booleans.
 
-A completed visual review remains a human attestation. It can establish that the exact captured matrix was reviewed for translation, clipping and RTL mirroring, but it cannot establish TalkBack behavior, semantic labels, focus order, keyboard/input behavior, touch-target quality or other accessibility requirements. `accessibility_review_complete` therefore remains false in visual-review evidence.
+A completed visual review remains a human attestation. It can establish that the exact captured matrix was reviewed for translation, clipping and RTL mirroring, but it cannot establish TalkBack behavior, semantic labels, focus order, keyboard/input behavior, touch-target quality or other accessibility requirements.
+
+## Human accessibility review template
+
+The same successful runtime-enabled post-run capture now also emits `runtime-accessibility-review-template.json`. It is generated from the exact same trusted visual bundle and package×locale capture inventory, so package, locale, direction, filename and screenshot SHA-256 cannot be swapped without invalidating verification.
+
+Every review item starts with five explicit `PENDING` checks:
+
+- `spoken_labels`;
+- `focus_order`;
+- `touch_targets`;
+- `keyboard_navigation`;
+- `state_announcements`.
+
+The canonical review scope declares TalkBack plus touch and keyboard input. CI only creates the PENDING template; it never runs the verification command, never converts a template into a passing accessibility result and never infers accessibility from screenshot existence. A reviewer must interactively exercise the exact retained Cuttlefish build and package/locale scope, then record `PASS` or `FAIL` for every check. This is a human attestation tied to exact evidence, not an automated accessibility certification.
+
+A completed accessibility review can be verified offline:
+
+```sh
+python -m swirphoneos.runtime_accessibility_review verify \
+  --visual-trust /absolute/path/to/runtime-visual-trust-bundle.json \
+  --visual-report /absolute/path/to/runtime-visual-evidence.json \
+  --review /absolute/path/to/completed-runtime-accessibility-review.json \
+  > runtime-accessibility-review-evidence.json
+```
+
+The verifier rejects incomplete/PENDING checks, unknown fields, changed assistive-technology/input-method scope, cross-run trust drift and capture-identity changes. It computes overall and per-check pass/fail values from the submitted items. A complete review may truthfully fail; failure details remain visible instead of being converted into success.
+
+Accessibility evidence is independent from visual translation/clipping/RTL evidence. A passing accessibility review does not set `visual_translation_review_complete` or `rtl_visual_mirroring_verified`, and neither review authorizes app promotion, release publication or physical-device writes.
 
 ## Safety boundary
 
@@ -51,7 +79,7 @@ The automated visual report and trust bundle deliberately keep all of these valu
 - application/status promotion
 - release-artifact authorization
 
-The human-review verifier may set `visual_translation_review_complete` and `rtl_visual_mirroring_verified` only from a fully completed exact-bound attestation. It always keeps accessibility, physical-device writes/support, application promotion and release authorization false.
+The human visual-review verifier may set `visual_translation_review_complete` and `rtl_visual_mirroring_verified` only from a fully completed exact-bound visual attestation. The accessibility verifier may set `accessibility_review_complete` and its pass/fail result only from a fully completed exact-bound accessibility attestation. Both keep physical-device writes/support, application promotion and release authorization false.
 
 The path performs no package install/uninstall, root, phone reboot, flash, erase, bootloader operation or physical-device command.
 
@@ -66,8 +94,9 @@ A runtime-enabled successful post-run capture uploads an immutable artifact cont
 - `runtime-visual-evidence.json`
 - `runtime-visual-trust-bundle.json`
 - `runtime-visual-review-template.json`
+- `runtime-accessibility-review-template.json`
 - the closed `runtime-visual/*.png` package/locale matrix
 
-A completed `runtime-visual-review-evidence.json` is intentionally a later reviewer-produced artifact and is not manufactured by the automated capture workflow.
+Completed `runtime-visual-review-evidence.json` and `runtime-accessibility-review-evidence.json` files are intentionally later reviewer-produced artifacts and are not manufactured by the automated capture workflow.
 
 This work does not change `project.json`. Weighted engineering progress remains governed only by completed milestone evidence, and source/host/visual-capture/review infrastructure cannot satisfy build, boot, accessibility or physical-device gates by itself.
