@@ -35,7 +35,8 @@ jobs:
             'SwirCamera org/swir/phoneos/camera CameraPolicy CameraPolicyHostTest' \
             'SwirBrowser org/swir/phoneos/browser BrowserPolicy BrowserPolicyHostTest' \
             'SwirWeather org/swir/phoneos/weather WeatherPolicy WeatherPolicyHostTest' \
-            'SwirBackup org/swir/phoneos/backup BackupPolicy BackupPolicyHostTest'
+            'SwirBackup org/swir/phoneos/backup BackupPolicy BackupPolicyHostTest' \
+            'SwirCalendar org/swir/phoneos/calendar EventPolicy EventPolicyHostTest'
           do
             set -- $app
             folder="$1"; package_path="$2"; policy="$3"; test="$4"

@@ -22,14 +22,14 @@ class AndroidAppExpansionTests(unittest.TestCase):
         self.assertEqual(summary["localized_catalogs"], 160)
         for app_id in ("phone", "messages", "camera", "browser", "weather", "backup", "notes", "calendar", "gallery", "recorder", "contacts", "apps", "swirroot"):
             self.assertIn(app_id, summary["source_ready_apps"])
-        for capability in ("dialer", "sms", "camera_capability_report", "web_browsing", "downloads", "privacy_controls", "forecast", "provider_attribution", "unit_preferences", "supported_data_backup", "recovery_metadata", "offline_notes", "local_calendar", "local_media", "audio_recording", "microphone_state", "file_export", "local_contacts", "import_export", "package_catalog", "signature_provenance", "root_state", "authorization_audit"):
+        for capability in ("dialer", "sms", "camera_capability_report", "web_browsing", "downloads", "privacy_controls", "forecast", "provider_attribution", "unit_preferences", "supported_data_backup", "recovery_metadata", "offline_notes", "local_calendar", "provider_bridge", "local_media", "audio_recording", "microphone_state", "file_export", "local_contacts", "import_export", "package_catalog", "signature_provenance", "root_state", "authorization_audit"):
             self.assertIn(capability, summary["implemented_capabilities"])
-        for capability in ("in_call", "recent_calls", "mms", "conversation_history", "photo_capture", "video_capture", "restore_orchestration", "albums", "provider_bridge", "update_status", "guided_enable", "guided_unroot"):
+        for capability in ("in_call", "recent_calls", "mms", "conversation_history", "photo_capture", "video_capture", "restore_orchestration", "albums", "update_status", "guided_enable", "guided_unroot"):
             self.assertIn(capability, summary["remaining_target_capabilities"])
         self.assertIn("camera:photo_capture", summary["remaining_app_capabilities"])
         self.assertNotIn("browser:downloads", summary["remaining_app_capabilities"])
         self.assertIn("backup:restore_orchestration", summary["remaining_app_capabilities"])
-        self.assertIn("calendar:provider_bridge", summary["remaining_app_capabilities"])
+        self.assertNotIn("calendar:provider_bridge", summary["remaining_app_capabilities"])
         self.assertFalse(summary["android_build_verified"]); self.assertFalse(summary["runtime_verified"])
 
     def test_notes_must_keep_explicit_document_export(self):
@@ -39,11 +39,18 @@ class AndroidAppExpansionTests(unittest.TestCase):
             activity.write_text(activity.read_text(encoding="utf-8").replace("Intent.ACTION_CREATE_DOCUMENT", "Intent.ACTION_VIEW", 1), encoding="utf-8")
             with self.assertRaises(AndroidAppSourceError): validate_android_app_sources(product, registry)
 
-    def test_calendar_provider_is_not_claimed_before_review(self):
+    def test_calendar_provider_bridge_requires_owner_visible_handoff(self):
         temp, product, registry = self._copy_fixture()
         with temp:
             activity = product / "apps/SwirCalendar/src/org/swir/phoneos/calendar/MainActivity.java"
-            activity.write_text(activity.read_text(encoding="utf-8") + "\n// CalendarContract\n", encoding="utf-8")
+            activity.write_text(activity.read_text(encoding="utf-8").replace("Intent.ACTION_INSERT", "Intent.ACTION_VIEW", 1), encoding="utf-8")
+            with self.assertRaises(AndroidAppSourceError): validate_android_app_sources(product, registry)
+
+    def test_calendar_direct_provider_mutation_is_rejected(self):
+        temp, product, registry = self._copy_fixture()
+        with temp:
+            activity = product / "apps/SwirCalendar/src/org/swir/phoneos/calendar/MainActivity.java"
+            activity.write_text(activity.read_text(encoding="utf-8") + "\n// getContentResolver().insert(CalendarContract.Events.CONTENT_URI\n", encoding="utf-8")
             with self.assertRaises(AndroidAppSourceError): validate_android_app_sources(product, registry)
 
     def test_stage_fragment_duplicate_is_rejected_across_manifests(self):

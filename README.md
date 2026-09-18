@@ -74,7 +74,7 @@ All twenty required app slots are currently **source-ready only** and included i
 | Calculator | Host-tested `BigDecimal` basic arithmetic + locale-aware display |
 | Notes | App-private SQLite CRUD/search/share + Markdown export |
 | Voice Recorder | Foreground-only private AAC/MPEG-4 record/playback/export |
-| Calendar | Local SQLite agenda + share/ICS export; provider bridge still open |
+| Calendar | Local SQLite agenda/search + bounded owner-selected ICS import/export/share + owner-visible Android calendar hand-off; no direct calendar-write permission |
 | Weather | Bounded Open-Meteo HTTPS current-weather lookup for owner-entered coordinates |
 | System Updater | Read-only build/channel state + SHA-256/RSA metadata verification; install disabled |
 | Backup/Restore | Owner-selected bounded schema-v2 document backup with per-file SHA-256, strict inspection and SAF restore into an explicitly chosen folder; Android runtime/provider behavior unverified |
@@ -185,7 +185,7 @@ Privilege side
        └── exact-build policy → rollback/journal evidence → future physically validated backend only
 ```
 
-Engineering references: [`ARCHITECTURE.md`](ARCHITECTURE.md) · [`docs/AOSP_BUILD_WORKSPACE.md`](docs/AOSP_BUILD_WORKSPACE.md) · [`docs/HARDWARE_EVIDENCE.md`](docs/HARDWARE_EVIDENCE.md) · [`docs/RECOVERY_TRANSACTIONS.md`](docs/RECOVERY_TRANSACTIONS.md) · [`docs/SWIR_BACKUP_RESTORE.md`](docs/SWIR_BACKUP_RESTORE.md) · [`docs/SWIRROOT.md`](docs/SWIRROOT.md).
+Engineering references: [`ARCHITECTURE.md`](ARCHITECTURE.md) · [`docs/AOSP_BUILD_WORKSPACE.md`](docs/AOSP_BUILD_WORKSPACE.md) · [`docs/HARDWARE_EVIDENCE.md`](docs/HARDWARE_EVIDENCE.md) · [`docs/RECOVERY_TRANSACTIONS.md`](docs/RECOVERY_TRANSACTIONS.md) · [`docs/SWIR_BACKUP_RESTORE.md`](docs/SWIR_BACKUP_RESTORE.md) · [`docs/SWIR_CALENDAR_PROVIDER_BRIDGE.md`](docs/SWIR_CALENDAR_PROVIDER_BRIDGE.md) · [`docs/SWIRROOT.md`](docs/SWIRROOT.md).
 
 ## 🌍 Localization
 
