@@ -27,6 +27,8 @@ jobs:
         run: python -m unittest discover -s tests -p 'test_android_apps*.py' -v
       - name: Validate essential registry
         run: python -m unittest discover -s tests -p 'test_system_apps.py' -v
+      - name: Validate SwirRoot host safety contract
+        run: python -m unittest discover -s tests -p 'test_swirroot.py' -v
       - name: Host-test new pure-Java policies
         shell: bash
         run: |
@@ -37,7 +39,8 @@ jobs:
             'SwirWeather org/swir/phoneos/weather WeatherPolicy WeatherPolicyHostTest' \
             'SwirBackup org/swir/phoneos/backup BackupPolicy BackupPolicyHostTest' \
             'SwirCalendar org/swir/phoneos/calendar EventPolicy EventPolicyHostTest' \
-            'SwirGallery org/swir/phoneos/gallery MediaPolicy MediaPolicyHostTest'
+            'SwirGallery org/swir/phoneos/gallery MediaPolicy MediaPolicyHostTest' \
+            'SwirRoot org/swir/phoneos/swirroot RootPolicy RootPolicyHostTest'
           do
             set -- $app
             folder="$1"; package_path="$2"; policy="$3"; test="$4"

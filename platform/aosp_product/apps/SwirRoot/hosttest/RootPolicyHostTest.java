@@ -20,9 +20,23 @@ public final class RootPolicyHostTest {
         require(!RootPolicy.evaluateEnable(noOwner, true, true).allowed, "owner confirmation is mandatory");
 
         RootPolicy.Gates unknownRestore = new RootPolicy.Gates(true, true, true, true, true, true, false);
-        RootPolicy.Decision unroot = RootPolicy.evaluateUnroot(unknownRestore, true, true);
-        require(!unroot.allowed, "unroot requires expected non-root restore state");
-        require("expected_nonroot_state_known".equals(unroot.reasonCode), "unroot denial reason must be explicit");
+        RootPolicy.Decision enableUnknownRestore = RootPolicy.evaluateEnable(unknownRestore, true, true);
+        require(!enableUnknownRestore.allowed, "enable requires a known non-root restore state before mutation");
+        require("expected_nonroot_state_known".equals(enableUnknownRestore.reasonCode), "enable restore-state denial must be explicit");
+
+        RootPolicy.Decision unrootUnknownRestore = RootPolicy.evaluateUnroot(unknownRestore, true, true);
+        require(!unrootUnknownRestore.allowed, "unroot requires expected non-root restore state");
+        require("expected_nonroot_state_known".equals(unrootUnknownRestore.reasonCode), "unroot restore-state denial must be explicit");
+
+        RootPolicy.Gates unverifiedProfile = new RootPolicy.Gates(true, false, true, true, true, true, true);
+        RootPolicy.Decision unrootUnverifiedProfile = RootPolicy.evaluateUnroot(unverifiedProfile, true, true);
+        require(!unrootUnverifiedProfile.allowed, "unroot requires the same verified device profile as enable");
+        require("verified_device_profile".equals(unrootUnverifiedProfile.reasonCode), "unroot profile denial must be explicit");
+
+        RootPolicy.Gates unsafeUpdateState = new RootPolicy.Gates(true, true, true, true, true, false, true);
+        RootPolicy.Decision unrootUnsafeUpdateState = RootPolicy.evaluateUnroot(unsafeUpdateState, true, true);
+        require(!unrootUnsafeUpdateState.allowed, "unroot must not mutate boot state during an unsafe update state");
+        require("update_state_safe".equals(unrootUnsafeUpdateState.reasonCode), "unroot update-state denial must be explicit");
 
         require(RootPolicy.evaluateUnroot(all, true, true).allowed, "complete unroot plan should be eligible");
     }

@@ -15,13 +15,16 @@
     "owner_confirmation",
     "rollback_material_verified",
     "journal_available",
-    "update_state_safe"
+    "update_state_safe",
+    "expected_nonroot_state_known"
   ],
   "unroot_requirements": [
     "exact_build_match",
+    "verified_device_profile",
     "owner_confirmation",
     "rollback_material_verified",
     "journal_available",
+    "update_state_safe",
     "expected_nonroot_state_known"
   ],
   "forbidden_methods": [

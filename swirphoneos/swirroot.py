@@ -10,7 +10,7 @@ import json
 from pathlib import Path
 
 REQUIRED_STATES = ("UNAVAILABLE", "ROOT_OFF", "ROOT_ON", "TRANSITION")
-REQUIRED_ENABLE_GATES = frozenset(
+REQUIRED_TRANSITION_GATES = frozenset(
     {
         "exact_build_match",
         "verified_device_profile",
@@ -18,17 +18,11 @@ REQUIRED_ENABLE_GATES = frozenset(
         "rollback_material_verified",
         "journal_available",
         "update_state_safe",
-    }
-)
-REQUIRED_UNROOT_GATES = frozenset(
-    {
-        "exact_build_match",
-        "owner_confirmation",
-        "rollback_material_verified",
-        "journal_available",
         "expected_nonroot_state_known",
     }
 )
+REQUIRED_ENABLE_GATES = REQUIRED_TRANSITION_GATES
+REQUIRED_UNROOT_GATES = REQUIRED_TRANSITION_GATES
 REQUIRED_FORBIDDEN_METHODS = frozenset(
     {
         "bootloader_exploit",
