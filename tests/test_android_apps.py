@@ -25,7 +25,7 @@ class AndroidAppSourceTests(unittest.TestCase):
         self.assertEqual(summary["localized_catalogs"], 160)
         for capability in (
             "dialer", "sms", "camera_capability_report", "basic_math", "system_settings", "search", "device_status",
-            "browse", "copy_move_rename", "share", "safe_delete", "web_browsing", "privacy_controls", "storage_status",
+            "browse", "copy_move_rename", "share", "safe_delete", "web_browsing", "downloads", "privacy_controls", "storage_status",
             "battery_status", "thermal_status", "hardware_diagnostics", "channel_status", "signed_metadata", "permission_review",
             "alarms", "timers", "stopwatch", "world_clock", "offline_notes", "export", "local_calendar", "forecast",
             "provider_attribution", "unit_preferences", "local_media", "audio_recording", "microphone_state", "file_export",
@@ -34,18 +34,18 @@ class AndroidAppSourceTests(unittest.TestCase):
         ):
             self.assertIn(capability, summary["implemented_capabilities"])
         self.assertEqual(summary["remaining_target_capabilities"], [
-            "access_history", "albums", "conversation_history", "downloads", "guided_enable", "guided_unroot", "in_call",
+            "access_history", "albums", "conversation_history", "guided_enable", "guided_unroot", "in_call",
             "mms", "photo_capture", "privacy_indicators", "provider_bridge", "recent_calls", "recovery_handoff",
             "restore_orchestration", "scientific_math", "staged_update_state", "update_status", "video_capture",
         ])
         for item in (
             "phone:in_call", "phone:recent_calls", "messages:mms", "messages:conversation_history",
-            "camera:photo_capture", "camera:video_capture", "browser:downloads", "calendar:provider_bridge",
+            "camera:photo_capture", "camera:video_capture", "calendar:provider_bridge",
             "backup:restore_orchestration", "apps:update_status",
         ):
             self.assertIn(item, summary["remaining_app_capabilities"])
         for item in (
-            "messages:sms", "camera:camera_capability_report", "browser:web_browsing", "browser:privacy_controls",
+            "messages:sms", "camera:camera_capability_report", "browser:web_browsing", "browser:downloads", "browser:privacy_controls",
             "weather:forecast", "weather:provider_attribution", "weather:unit_preferences", "backup:supported_data_backup",
             "backup:recovery_metadata", "contacts:provider_bridge",
         ):
@@ -96,6 +96,19 @@ class AndroidAppSourceTests(unittest.TestCase):
 
     def test_browser_must_keep_javascript_disabled_by_default(self):
         self._replace_and_reject("apps/SwirBrowser/src/org/swir/phoneos/browser/MainActivity.java", "setJavaScriptEnabled(false)", "setJavaScriptEnabled(true)")
+
+    def test_browser_downloads_must_remain_app_scoped(self):
+        self._replace_and_reject("apps/SwirBrowser/src/org/swir/phoneos/browser/MainActivity.java", "setDestinationInExternalFilesDir", "setDestinationInExternalPublicDir")
+
+    def test_browser_downloads_must_not_copy_webview_cookies(self):
+        temp, product, registry = self._copy_fixture()
+        with temp:
+            activity = product / "apps/SwirBrowser/src/org/swir/phoneos/browser/MainActivity.java"
+            activity.write_text(activity.read_text(encoding="utf-8") + "\n// getCookie(\n", encoding="utf-8")
+            with self.assertRaises(AndroidAppSourceError): validate_android_app_sources(product, registry)
+
+    def test_browser_downloads_must_keep_https_entry_gate(self):
+        self._replace_and_reject("apps/SwirBrowser/src/org/swir/phoneos/browser/MainActivity.java", "BrowserPolicy.isSafeDownloadUrl", "BrowserPolicy.isSafeUrl")
 
     def test_weather_cannot_gain_location_permission(self):
         self._replace_and_reject("apps/SwirWeather/AndroidManifest.xml", "<application", '<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>\n    <application')

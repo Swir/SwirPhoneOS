@@ -25,7 +25,7 @@ Version: **0.0.2.dev0 + unreleased Android-source/platform hardening**. Updated:
 | Cuttlefish product | `PRODUCT_PACKAGES` includes all 20 essential first-party apps; **not built or booted** |
 | ARM64 GSI product | Source contract registered as `swirphoneos_gsi_arm64-aosp_current-userdebug`; standard AOSP ARM64 + GSI-release inheritance, all 20 apps, exact staging and `systemimage` plan implemented; **not built, Treble/VTS-validated or physically tested** |
 | ARM64 GSI build evidence | Manual-only self-hosted workflow and fail-closed `system.img` SHA-256/build-identity collector implemented; compatibility/install/rollback/write/release flags remain false; no successful GSI build evidence recorded |
-| Shared Swir Android design | `SwirDesign` source contract v4 is statically linked and `Theme.SwirPhoneOS` declared by all 20 system apps; eight activities directly consume the shared palette/touch tokens, including all 5/5 beta-critical core apps; Android build, visual/runtime and accessibility review remain unverified |
+| Shared Swir Android design | `SwirDesign` source contract v4 is statically linked and `Theme.SwirPhoneOS` declared by all 20 system apps; nine activities directly consume the shared palette/touch tokens, including all 5/5 beta-critical core apps; Android build, visual/runtime and accessibility review remain unverified |
 | Swir Phone | `ANDROID_SOURCE`; permission-free keypad + explicit `ACTION_DIAL`; in-call/default-role/recent calls open |
 | Swir Contacts | `ANDROID_SOURCE`; exactly `READ_CONTACTS`, scoped provider browse/search, Android-managed create/edit, vCard import/export; runtime unverified |
 | Swir Messages | `ANDROID_SOURCE`; permission-free local compose/draft + explicit `ACTION_SENDTO`/`smsto:`; MMS/history/runtime/carrier behavior open |
@@ -33,7 +33,7 @@ Version: **0.0.2.dev0 + unreleased Android-source/platform hardening**. Updated:
 | Swir Gallery | `ANDROID_SOURCE`; scoped MediaStore browse/search/open/share and owner-confirmed delete; albums open |
 | Swir Files | `ANDROID_SOURCE`; user-granted SAF browse/search/copy/move/rename/create/share/delete flows; shared Swir design/touch tokens at source stage; provider/runtime/accessibility behavior unverified |
 | Swir Settings | `ANDROID_SOURCE`; reviewed settings routes/search/device state; runtime unverified |
-| Swir Browser | `ANDROID_SOURCE`; exactly `INTERNET`, HTTPS-only WebView with conservative privacy defaults; downloads open |
+| Swir Browser | `ANDROID_SOURCE`; exactly `INTERNET`, HTTPS-first WebView with conservative privacy defaults plus app-scoped owner-visible `DownloadManager` downloads; no broad storage permission or WebView-cookie forwarding; runtime/redirect behavior unverified |
 | Swir Clock | `ANDROID_SOURCE`; localized time/stopwatch/timer/user-visible alarm hand-off |
 | Swir Calculator | `ANDROID_SOURCE`; basic math host-tested; scientific math open |
 | Swir Notes | `ANDROID_SOURCE`; local SQLite CRUD/search/share/Markdown export |
@@ -49,7 +49,7 @@ Version: **0.0.2.dev0 + unreleased Android-source/platform hardening**. Updated:
 | SwirRoot readiness | Recovery journal + correlated read-only hardware evidence + exact target build binding implemented; current schema cannot authorize root and always keeps transition/write/promotion false |
 | Android source safety | Exact per-app permission allowlists; process/broad-storage primitives rejected; network primitives allowed only for reviewed Browser/Weather source; SwirRoot has additional no-mutation gates |
 | Android source localization | All 20 source-ready apps have EN/PL/NB/DE/ES/FR/PT/AR catalogs; key/formatter/plural/UI-literal lint passes source contracts; automated Cuttlefish package×locale switching/restoration is wired into the trusted runtime workflow but has not run; visual RTL/accessibility quality remains unverified |
-| Source capability accounting | Schema v3 tracks missing capabilities per app, including camera capture, browser downloads, backup restore, telephony gaps and SwirRoot guided transitions |
+| Source capability accounting | Schema v3 tracks missing capabilities per app; Browser downloads are source-implemented, while camera capture, backup restore, telephony gaps and SwirRoot guided transitions remain open |
 | System apps | 20-app registry: **20 `ANDROID_SOURCE`, 0 `HOST_CONTRACT`, 0 `ANDROID_RUNTIME`, 0 hardware-verified** |
 | SwirRoot host policy | `write_operations_enabled=false`; supported root builds = 0; exploit/bypass methods forbidden |
 | Resolved full AOSP source manifest | Not captured from a real synchronized workspace |

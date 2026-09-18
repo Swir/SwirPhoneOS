@@ -42,6 +42,7 @@ TOKENIZED_APPS = {
     "camera": ("SwirCamera", "src/org/swir/phoneos/camera/MainActivity.java"),
     "settings": ("SwirSettings", "src/org/swir/phoneos/settings/MainActivity.java"),
     "files": ("SwirFiles", "src/org/swir/phoneos/files/MainActivity.java"),
+    "browser": ("SwirBrowser", "src/org/swir/phoneos/browser/MainActivity.java"),
     "update": ("SwirUpdate", "src/org/swir/phoneos/update/MainActivity.java"),
     "privacy": ("SwirPrivacy", "src/org/swir/phoneos/privacy/MainActivity.java"),
     "device_care": ("SwirDeviceCare", "src/org/swir/phoneos/device_care/MainActivity.java"),

@@ -27,9 +27,9 @@ class DesignContractTests(unittest.TestCase):
         self.assertTrue(summary["all_system_apps_integrated"])
         self.assertEqual(
             summary["tokenized_apps"],
-            ["phone", "messages", "camera", "settings", "files", "update", "privacy", "device_care"],
+            ["phone", "messages", "camera", "settings", "files", "browser", "update", "privacy", "device_care"],
         )
-        self.assertEqual(summary["tokenized_app_count"], 8)
+        self.assertEqual(summary["tokenized_app_count"], 9)
         self.assertEqual(summary["tokenized_core_apps"], ["settings", "files", "update", "privacy", "device_care"])
         self.assertEqual(summary["tokenized_core_app_count"], 5)
         self.assertEqual(summary["expected_core_app_count"], 5)
@@ -87,6 +87,22 @@ class DesignContractTests(unittest.TestCase):
         with temp:
             source = root / "apps/SwirSettings/src/org/swir/phoneos/settings/MainActivity.java"
             source.write_text(source.read_text(encoding="utf-8").replace("import android.os.Build;", "import android.graphics.Color;\nimport android.os.Build;", 1), encoding="utf-8")
+            with self.assertRaises(DesignContractError):
+                validate_design_contract(root)
+
+    def test_browser_cannot_regress_to_direct_color_literals(self):
+        temp, root = self._fixture()
+        with temp:
+            source = root / "apps/SwirBrowser/src/org/swir/phoneos/browser/MainActivity.java"
+            source.write_text(source.read_text(encoding="utf-8").replace("import android.app.DownloadManager;", "import android.app.DownloadManager;\nimport android.graphics.Color;", 1), encoding="utf-8")
+            with self.assertRaises(DesignContractError):
+                validate_design_contract(root)
+
+    def test_browser_must_keep_shared_touch_target_reference(self):
+        temp, root = self._fixture()
+        with temp:
+            source = root / "apps/SwirBrowser/src/org/swir/phoneos/browser/MainActivity.java"
+            source.write_text(source.read_text(encoding="utf-8").replace("R.dimen.swir_touch_min", "R.dimen.swir_space_lg"), encoding="utf-8")
             with self.assertRaises(DesignContractError):
                 validate_design_contract(root)
 
