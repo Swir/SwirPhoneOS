@@ -1,0 +1,179 @@
+name: AOSP post-run visual evidence
+
+on:
+  workflow_run:
+    workflows: ["AOSP build evidence"]
+    types: [completed]
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: swir-aosp-builder
+  cancel-in-progress: false
+
+jobs:
+  visual:
+    name: Capture exact Cuttlefish package-locale PNG evidence
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: [self-hosted, linux, x64, swir-aosp-builder]
+    timeout-minutes: 120
+    env:
+      SWIR_ADB_PATH: /opt/android-sdk/platform-tools/adb
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          path: tools
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.14'
+      - name: Download immutable evidence from triggering AOSP run
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: swirphoneos-aosp-evidence-${{ github.event.workflow_run.head_sha }}
+          path: evidence
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          repository: ${{ github.repository }}
+          run-id: ${{ github.event.workflow_run.id }}
+      - name: Detect complete runtime-enabled source evidence
+        id: runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          required=(
+            aosp-run-evidence.json
+            build-evidence.json
+            runtime-evidence.json
+            runtime-tool-evidence.json
+            runtime-review-trust-bundle.json
+          )
+          has_runtime=true
+          for name in "${required[@]}"; do
+            if ! test -s "$GITHUB_WORKSPACE/evidence/$name"; then
+              has_runtime=false
+            fi
+          done
+          printf 'has_runtime=%s\n' "$has_runtime" >> "$GITHUB_OUTPUT"
+      - name: Re-verify exact retained build artifact bytes
+        if: ${{ steps.runtime.outputs.has_runtime == 'true' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          : "${SWIR_AOSP_WORKSPACE:?Set SWIR_AOSP_WORKSPACE on the dedicated self-hosted runner}"
+          PYTHONPATH="$GITHUB_WORKSPACE/tools" python -m swirphoneos.aosp_artifact_continuity \
+            --workspace "$SWIR_AOSP_WORKSPACE" \
+            --run-evidence "$GITHUB_WORKSPACE/evidence/aosp-run-evidence.json" \
+            --build-evidence "$GITHUB_WORKSPACE/evidence/build-evidence.json" \
+            --source-commit "${{ github.event.workflow_run.head_sha }}" \
+            > "$GITHUB_WORKSPACE/aosp-artifact-continuity.json"
+      - name: Re-verify exact trusted adb before visual capture
+        if: ${{ steps.runtime.outputs.has_runtime == 'true' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH="$GITHUB_WORKSPACE/tools" python -m swirphoneos.runtime_tool_evidence verify \
+            --adb "$SWIR_ADB_PATH" \
+            --evidence "$GITHUB_WORKSPACE/evidence/runtime-tool-evidence.json" \
+            > "$GITHUB_WORKSPACE/visual-adb-pre-verification.json"
+      - name: Launch exact retained Cuttlefish build
+        if: ${{ steps.runtime.outputs.has_runtime == 'true' }}
+        shell: bash
+        env:
+          SWIR_CVD_HOME: ${{ github.workspace }}/visual-cuttlefish-home
+        run: |
+          set -euo pipefail
+          rm -rf "$SWIR_CVD_HOME"
+          mkdir -p "$SWIR_CVD_HOME"
+          cd "$SWIR_AOSP_WORKSPACE"
+          source build/envsetup.sh
+          lunch swirphoneos_cf_x86_64-aosp_current-userdebug >/dev/null
+          export HOME="$SWIR_CVD_HOME"
+          LAUNCH_CVD="$(command -v launch_cvd || true)"
+          test -n "$LAUNCH_CVD" && test -x "$LAUNCH_CVD"
+          "$LAUNCH_CVD" --daemon --report_anonymous_usage_stats=n
+      - name: Wait for exact runtime identity
+        if: ${{ steps.runtime.outputs.has_runtime == 'true' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          ready=0
+          for attempt in $(seq 1 180); do
+            if PYTHONPATH="$GITHUB_WORKSPACE/tools" python -m swirphoneos cuttlefish-evidence \
+              --adb "$SWIR_ADB_PATH" --manifest "$GITHUB_WORKSPACE/tools/system_apps/manifest.json" \
+              > "$GITHUB_WORKSPACE/visual-runtime-evidence.tmp" 2>/dev/null; then
+              if python - "$GITHUB_WORKSPACE/visual-runtime-evidence.tmp" <<'PY'
+          import json, pathlib, sys
+          report = json.loads(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"))
+          raise SystemExit(0 if report.get("runtime_evidence_complete") is True else 1)
+          PY
+              then
+                mv "$GITHUB_WORKSPACE/visual-runtime-evidence.tmp" "$GITHUB_WORKSPACE/visual-runtime-evidence.json"
+                ready=1
+                break
+              fi
+            fi
+            sleep 2
+          done
+          test "$ready" -eq 1
+      - name: Capture bounded package-locale PNG matrix
+        if: ${{ steps.runtime.outputs.has_runtime == 'true' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test ! -e "$GITHUB_WORKSPACE/runtime-visual"
+          PYTHONPATH="$GITHUB_WORKSPACE/tools" python -m swirphoneos.cuttlefish_visual_evidence \
+            --adb "$SWIR_ADB_PATH" \
+            --manifest "$GITHUB_WORKSPACE/tools/system_apps/manifest.json" \
+            --output-dir "$GITHUB_WORKSPACE/runtime-visual" \
+            > "$GITHUB_WORKSPACE/runtime-visual-evidence.json"
+      - name: Re-verify exact trusted adb after visual capture
+        if: ${{ steps.runtime.outputs.has_runtime == 'true' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH="$GITHUB_WORKSPACE/tools" python -m swirphoneos.runtime_tool_evidence verify \
+            --adb "$SWIR_ADB_PATH" \
+            --evidence "$GITHUB_WORKSPACE/evidence/runtime-tool-evidence.json" \
+            > "$GITHUB_WORKSPACE/visual-adb-post-verification.json"
+      - name: Bind exact PNG bytes to trusted runtime review
+        if: ${{ steps.runtime.outputs.has_runtime == 'true' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH="$GITHUB_WORKSPACE/tools" python -m swirphoneos.runtime_visual_trust_bundle \
+            --runtime-review-trust "$GITHUB_WORKSPACE/evidence/runtime-review-trust-bundle.json" \
+            --visual-report "$GITHUB_WORKSPACE/runtime-visual-evidence.json" \
+            --visual-dir "$GITHUB_WORKSPACE/runtime-visual" \
+            > "$GITHUB_WORKSPACE/runtime-visual-trust-bundle.json"
+      - name: Stop local Cuttlefish instance
+        if: ${{ always() && steps.runtime.outputs.has_runtime == 'true' }}
+        shell: bash
+        env:
+          SWIR_CVD_HOME: ${{ github.workspace }}/visual-cuttlefish-home
+        run: |
+          set +e
+          cd "$SWIR_AOSP_WORKSPACE"
+          source build/envsetup.sh
+          lunch swirphoneos_cf_x86_64-aosp_current-userdebug >/dev/null 2>&1
+          export HOME="$SWIR_CVD_HOME"
+          STOP_CVD="$(command -v stop_cvd || true)"
+          if test -n "$STOP_CVD" && test -x "$STOP_CVD"; then "$STOP_CVD"; fi
+          exit 0
+      - name: Upload immutable visual evidence
+        if: ${{ steps.runtime.outputs.has_runtime == 'true' }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: swirphoneos-aosp-postrun-visual-${{ github.event.workflow_run.head_sha }}
+          if-no-files-found: error
+          retention-days: 30
+          path: |
+            aosp-artifact-continuity.json
+            visual-runtime-evidence.json
+            visual-adb-pre-verification.json
+            visual-adb-post-verification.json
+            runtime-visual-evidence.json
+            runtime-visual-trust-bundle.json
+            runtime-visual/*.png
