@@ -47,7 +47,7 @@ public final class ClockCoreHostTest {
         requireThrows(() -> ClockCore.worldTime("Not/AZone", 0L, Locale.US), "invalid IANA zone rejected");
         require(ClockCore.worldTime("UTC", 0L, Locale.US).startsWith("12:00"), "UTC epoch formatting");
         require(ClockCore.worldTime("Asia/Tokyo", 0L, Locale.US).startsWith("9:00"), "Tokyo epoch formatting");
-        require(!ClockCore.worldZoneLabel("Europe/Oslo", 0L, Locale.US).isBlank(), "localized zone label");
+        require(!ClockCore.worldZoneLabel("Europe/Oslo", 0L, Locale.US).trim().isEmpty(), "localized zone label");
         System.out.println("SwirClock ClockCore host tests passed");
     }
 }
