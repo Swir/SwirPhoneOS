@@ -20,7 +20,7 @@ A beta is a working SwirPhoneOS system plus a tested Windows installation compan
 
 Store sanitized test reports with candidate commit, build ID, device profile, firmware baseline, environment, test procedure, result and reviewer. Keep serials, IMEI, account identifiers and unlock credentials out of public evidence. Never convert mock results into physical-device evidence. Do not make test calls to public emergency numbers.
 
-`project.json` is an accounting ledger, not proof by itself. The current validator checks mandatory IDs, types and evidence references and deliberately blocks publication even if every box is manually filled. Implement and review candidate/artifact/evidence verification before removing that guard. Evidence references alone are not authenticated or independently checked by the current code.
+`project.json` is an accounting ledger, not proof by itself. The ledger validator checks mandatory IDs, types and evidence references and deliberately blocks publication even if every box is manually filled. The candidate-bundle verifier documented in [`docs/BETA_CANDIDATE_EVIDENCE.md`](docs/BETA_CANDIDATE_EVIDENCE.md) now adds a second fail-closed layer: for a future fully passed ledger it binds every referenced evidence file and required release artifact to exact local bytes, SHA-256, size, version and candidate commit while rejecting path traversal, symlinks, duplicate paths and duplicate JSON keys. That cryptographic binding is still not semantic proof that a file satisfies a gate. Gate-specific semantic evidence validators and real evidence remain mandatory, so candidate schema v1 always reports `beta_release_allowed=false`.
 
 ## Publishing procedure when ready
 
