@@ -24,5 +24,9 @@
     <string name="media_load_failed">Lokale medier kunne ikke leses.</string>
     <string name="delete_complete">Sletting av medium ble bekreftet.</string>
     <string name="delete_cancelled">Sletting av medium ble avbrutt.</string>
+    <string name="album_section_title">Album</string>
+    <string name="all_media">Alle medier</string>
+    <string name="album_item">%1$s · %2$d</string>
+    <string name="unknown_album">Andre medier</string>
     <string name="footer">by Swir · GitHub</string>
 </resources>

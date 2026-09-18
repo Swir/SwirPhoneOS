@@ -24,5 +24,9 @@
     <string name="media_load_failed">Lokale Medien konnten nicht gelesen werden.</string>
     <string name="delete_complete">Löschen des Mediums wurde bestätigt.</string>
     <string name="delete_cancelled">Löschen des Mediums wurde abgebrochen.</string>
+    <string name="album_section_title">Alben</string>
+    <string name="all_media">Alle Medien</string>
+    <string name="album_item">%1$s · %2$d</string>
+    <string name="unknown_album">Andere Medien</string>
     <string name="footer">by Swir · GitHub</string>
 </resources>

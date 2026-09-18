@@ -23,18 +23,23 @@ import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 /** Owner-visible local media browser using scoped MediaStore access only. */
 public final class MainActivity extends Activity {
     private static final int PERMISSION_REQUEST = 6101;
     private static final int DELETE_REQUEST = 6102;
     private static final int MAX_ITEMS = 300;
+    private static final long ALL_ALBUMS = Long.MIN_VALUE;
 
     private final ArrayList<MediaItem> items = new ArrayList<>();
+    private LinearLayout albumList;
     private LinearLayout mediaList;
     private android.widget.EditText search;
     private TextView accessState;
+    private long selectedAlbumId = ALL_ALBUMS;
 
     @Override protected void onCreate(Bundle state) {
         super.onCreate(state);
@@ -106,6 +111,12 @@ public final class MainActivity extends Activity {
         });
         root.addView(search, spaced());
 
+        root.addView(text(getString(R.string.album_section_title), 17, Color.rgb(105, 216, 255)), matchWrap());
+        albumList = new LinearLayout(this);
+        albumList.setOrientation(LinearLayout.VERTICAL);
+        albumList.setPadding(0, dp(6), 0, dp(4));
+        root.addView(albumList, matchWrap());
+
         mediaList = new LinearLayout(this);
         mediaList.setOrientation(LinearLayout.VERTICAL);
         root.addView(mediaList, matchWrap());
@@ -135,6 +146,8 @@ public final class MainActivity extends Activity {
         accessState.setText(images || videos ? R.string.permission_granted : R.string.media_permission_body);
         items.clear();
         if (!images && !videos) {
+            selectedAlbumId = ALL_ALBUMS;
+            renderAlbums();
             renderMedia();
             return;
         }
@@ -154,7 +167,9 @@ public final class MainActivity extends Activity {
                 MediaStore.MediaColumns.MIME_TYPE,
                 MediaStore.MediaColumns.DATE_ADDED,
                 MediaStore.MediaColumns.SIZE,
-                MediaStore.Files.FileColumns.MEDIA_TYPE
+                MediaStore.Files.FileColumns.MEDIA_TYPE,
+                MediaStore.Images.ImageColumns.BUCKET_ID,
+                MediaStore.Images.ImageColumns.BUCKET_DISPLAY_NAME
         };
         Uri collection = MediaStore.Files.getContentUri("external");
         try (Cursor cursor = getContentResolver().query(collection, projection, selection, args.toArray(new String[0]), MediaStore.MediaColumns.DATE_ADDED + " DESC")) {
@@ -165,6 +180,8 @@ public final class MainActivity extends Activity {
                 int dateIndex = cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.DATE_ADDED);
                 int sizeIndex = cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.SIZE);
                 int typeIndex = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.MEDIA_TYPE);
+                int albumIdIndex = cursor.getColumnIndexOrThrow(MediaStore.Images.ImageColumns.BUCKET_ID);
+                int albumNameIndex = cursor.getColumnIndexOrThrow(MediaStore.Images.ImageColumns.BUCKET_DISPLAY_NAME);
                 while (cursor.moveToNext() && items.size() < MAX_ITEMS) {
                     long id = cursor.getLong(idIndex);
                     String name = cursor.getString(nameIndex);
@@ -174,14 +191,57 @@ public final class MainActivity extends Activity {
                     Uri uri = mediaType == MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO
                             ? ContentUris.withAppendedId(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, id)
                             : ContentUris.withAppendedId(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id);
+                    long albumId = cursor.isNull(albumIdIndex) ? 0L : cursor.getLong(albumIdIndex);
+                    String albumName = MediaPolicy.safeAlbumName(cursor.getString(albumNameIndex), getString(R.string.unknown_album));
                     items.add(new MediaItem(uri, name == null ? getString(R.string.unnamed) : name, mime,
-                            MediaPolicy.safeEpochSeconds(cursor.getLong(dateIndex)), Math.max(0L, cursor.getLong(sizeIndex))));
+                            MediaPolicy.safeEpochSeconds(cursor.getLong(dateIndex)), Math.max(0L, cursor.getLong(sizeIndex)),
+                            albumId, albumName));
                 }
             }
         } catch (RuntimeException error) {
             Toast.makeText(this, R.string.media_load_failed, Toast.LENGTH_LONG).show();
         }
+        if (selectedAlbumId != ALL_ALBUMS && !containsAlbum(selectedAlbumId)) selectedAlbumId = ALL_ALBUMS;
+        renderAlbums();
         renderMedia();
+    }
+
+    private boolean containsAlbum(long albumId) {
+        for (MediaItem item : items) if (item.albumId == albumId) return true;
+        return false;
+    }
+
+    private void renderAlbums() {
+        if (albumList == null) return;
+        albumList.removeAllViews();
+        albumList.addView(albumButton(getString(R.string.album_item, getString(R.string.all_media), items.size()), ALL_ALBUMS), spaced());
+        Map<Long, AlbumSummary> grouped = new LinkedHashMap<>();
+        for (MediaItem item : items) {
+            AlbumSummary summary = grouped.get(item.albumId);
+            if (summary == null) grouped.put(item.albumId, new AlbumSummary(item.albumId, item.albumName, 1));
+            else summary.count++;
+        }
+        ArrayList<AlbumSummary> albums = new ArrayList<>(grouped.values());
+        Collections.sort(albums, (left, right) -> String.CASE_INSENSITIVE_ORDER.compare(left.name, right.name));
+        for (AlbumSummary album : albums) {
+            albumList.addView(albumButton(getString(R.string.album_item, album.name, album.count), album.id), spaced());
+        }
+    }
+
+    private Button albumButton(String label, long albumId) {
+        Button value = new Button(this);
+        value.setAllCaps(false);
+        value.setText(label);
+        value.setContentDescription(label);
+        value.setTextColor(Color.WHITE);
+        value.setBackgroundColor(albumId == selectedAlbumId ? Color.rgb(0, 136, 255) : Color.rgb(17, 61, 92));
+        value.setMinHeight(dp(48));
+        value.setOnClickListener(v -> {
+            selectedAlbumId = albumId;
+            renderAlbums();
+            renderMedia();
+        });
+        return value;
     }
 
     private void renderMedia() {
@@ -190,7 +250,8 @@ public final class MainActivity extends Activity {
         String query = search == null ? "" : search.getText().toString();
         int shown = 0;
         for (MediaItem item : items) {
-            if (!MediaPolicy.matches(query, item.name, item.mime)) continue;
+            if (selectedAlbumId != ALL_ALBUMS && item.albumId != selectedAlbumId) continue;
+            if (!MediaPolicy.matches(query, item.name, item.mime, item.albumName)) continue;
             mediaList.addView(mediaCard(item), spaced());
             shown++;
         }
@@ -202,6 +263,7 @@ public final class MainActivity extends Activity {
         card.addView(text(item.name, 16, Color.WHITE), matchWrap());
         String type = getString(MediaPolicy.isVideo(item.mime) ? R.string.video : R.string.image);
         card.addView(text(getString(R.string.item_meta, type, Formatter.formatShortFileSize(this, item.size)), 13, Color.rgb(180, 198, 217)), matchWrap());
+        card.addView(text(item.albumName, 12, Color.rgb(140, 160, 181)), matchWrap());
         LinearLayout actions = row();
         Button open = button(R.string.open);
         open.setOnClickListener(v -> openItem(item));
@@ -294,18 +356,33 @@ public final class MainActivity extends Activity {
         return Math.round(value * getResources().getDisplayMetrics().density);
     }
 
+    private static final class AlbumSummary {
+        final long id;
+        final String name;
+        int count;
+        AlbumSummary(long id, String name, int count) {
+            this.id = id;
+            this.name = name;
+            this.count = count;
+        }
+    }
+
     private static final class MediaItem {
         final Uri uri;
         final String name;
         final String mime;
         final long dateAdded;
         final long size;
-        MediaItem(Uri uri, String name, String mime, long dateAdded, long size) {
+        final long albumId;
+        final String albumName;
+        MediaItem(Uri uri, String name, String mime, long dateAdded, long size, long albumId, String albumName) {
             this.uri = uri;
             this.name = name;
             this.mime = mime;
             this.dateAdded = dateAdded;
             this.size = size;
+            this.albumId = albumId;
+            this.albumName = albumName;
         }
     }
 }

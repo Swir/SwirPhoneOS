@@ -24,5 +24,9 @@
     <string name="media_load_failed">تعذرت قراءة الوسائط المحلية.</string>
     <string name="delete_complete">تم تأكيد حذف الوسائط.</string>
     <string name="delete_cancelled">تم إلغاء حذف الوسائط.</string>
+    <string name="album_section_title">الألبومات</string>
+    <string name="all_media">كل الوسائط</string>
+    <string name="album_item">%1$s · %2$d</string>
+    <string name="unknown_album">وسائط أخرى</string>
     <string name="footer">by Swir · GitHub</string>
 </resources>
