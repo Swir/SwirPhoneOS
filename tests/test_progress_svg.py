@@ -1,5 +1,6 @@
 from dataclasses import replace
 from pathlib import Path
+import re
 import tempfile
 import unittest
 import xml.etree.ElementTree as ET
@@ -17,6 +18,7 @@ from swirphoneos.progress_svg import (
 
 ROOT = Path(__file__).resolve().parents[1]
 SVG_NS = {"svg": "http://www.w3.org/2000/svg"}
+LEGACY_METER = re.compile(r"(?:`?\[[\-=#\s]{5,}\]\s*\d+(?:\.\d+)?%`?|[█▓▒░■□▪▫]{3,}\s*\d+(?:\.\d+)?%)")
 
 
 def parse(svg: str) -> ET.Element:
@@ -108,12 +110,19 @@ class ProgressSvgTests(unittest.TestCase):
     def test_readme_and_roadmap_embed_generated_assets_with_text_fallback(self):
         readme = (ROOT / "README.md").read_text(encoding="utf-8")
         roadmap = (ROOT / "ROADMAP.md").read_text(encoding="utf-8")
-        self.assertIn('src="assets/readme/progress-card.svg"', readme)
-        self.assertIn('src="assets/readme/progress-mini.svg"', roadmap)
+        self.assertEqual(readme.count('src="assets/readme/progress-card.svg"'), 1)
+        self.assertEqual(roadmap.count('src="assets/readme/progress-mini.svg"'), 1)
+        self.assertNotIn("progress-template.svg", readme)
+        self.assertNotIn("progress-template.svg", roadmap)
         self.assertIn("2% — 1/10 weighted engineering milestones", readme)
         self.assertIn("Beta readiness: 0/9 gates passed", readme)
         self.assertIn("2% — weighted engineering milestones", roadmap)
         self.assertIn("Beta readiness remains **0/9 gates passed**", roadmap)
+
+    def test_maintained_status_docs_reject_legacy_character_meters(self):
+        for relative in ("README.md", "ROADMAP.md", "BUILD_STATUS.md"):
+            text = (ROOT / relative).read_text(encoding="utf-8")
+            self.assertIsNone(LEGACY_METER.search(text), f"legacy progress meter found in {relative}")
 
     def test_readme_pro_v2_and_search_keywords_are_preserved(self):
         readme = (ROOT / "README.md").read_text(encoding="utf-8")
