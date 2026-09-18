@@ -49,6 +49,7 @@ TOKENIZED_APPS = {
     "privacy": ("SwirPrivacy", "src/org/swir/phoneos/privacy/MainActivity.java"),
     "device_care": ("SwirDeviceCare", "src/org/swir/phoneos/device_care/MainActivity.java"),
     "calendar": ("SwirCalendar", "src/org/swir/phoneos/calendar/MainActivity.java"),
+    "clock": ("SwirClock", "src/org/swir/phoneos/clock/MainActivity.java"),
 }
 REQUIRED_TOKEN_REFERENCES = (
     "R.color.swir_background",
@@ -230,7 +231,7 @@ def validate_design_contract(product_root: Path | str = Path("platform/aosp_prod
 
     return {
         "status": "SOURCE_CONTRACT_READY_NOT_BUILT",
-        "design_contract": "swirphoneos-design-v6",
+        "design_contract": "swirphoneos-design-v7",
         "module": DESIGN_MODULE,
         "integrated_core_apps": integrated_core,
         "integrated_core_app_count": len(integrated_core),

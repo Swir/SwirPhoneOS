@@ -3,6 +3,8 @@
     <string name="app_name">Swir Clock</string>
     <string name="subtitle">Time, timers and alarms with a clear owner-controlled workflow.</string>
     <string name="now">Now</string>
+    <string name="world_clock">World clock</string>
+    <string name="next_zone_description">Switch world time zone</string>
     <string name="stopwatch">Stopwatch</string>
     <string name="timer">Timer</string>
     <string name="alarm">Alarm</string>

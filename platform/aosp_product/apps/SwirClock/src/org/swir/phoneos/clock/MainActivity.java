@@ -2,7 +2,6 @@ package org.swir.phoneos.clock;
 
 import android.app.Activity;
 import android.content.Intent;
-import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -17,24 +16,28 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
 import java.util.Locale;
 
-/** Permission-minimal daily clock with foreground timer/stopwatch and explicit alarm hand-off. */
+/** Permission-minimal daily clock with world time, foreground timer/stopwatch and explicit alarm hand-off. */
 public final class MainActivity extends Activity {
+    private static final String PREFS = "swir_clock_preferences";
+    private static final String KEY_WORLD_ZONE = "world_zone_index";
+
     private final Handler handler = new Handler(Looper.getMainLooper());
     private TextView localTime;
     private TextView localDate;
-    private TextView utcTime;
+    private TextView worldTime;
+    private Button worldZoneButton;
     private TextView stopwatchText;
     private TextView timerText;
     private EditText timerMinutes;
     private EditText alarmHour;
     private EditText alarmMinute;
     private Button stopwatchToggle;
+    private int worldZoneIndex;
     private long stopwatchAccumulated;
     private long stopwatchStartedAt;
     private boolean stopwatchRunning;
@@ -53,8 +56,10 @@ public final class MainActivity extends Activity {
 
     @Override protected void onCreate(Bundle state) {
         super.onCreate(state);
-        getWindow().setStatusBarColor(Color.rgb(4, 11, 23));
-        getWindow().setNavigationBarColor(Color.rgb(4, 11, 23));
+        worldZoneIndex = ClockCore.safeWorldZoneIndex(
+                getSharedPreferences(PREFS, MODE_PRIVATE).getInt(KEY_WORLD_ZONE, 0));
+        getWindow().setStatusBarColor(getColor(R.color.swir_background));
+        getWindow().setNavigationBarColor(getColor(R.color.swir_surface));
         setContentView(buildUi());
     }
 
@@ -70,36 +75,53 @@ public final class MainActivity extends Activity {
     }
 
     private View buildUi() {
+        int spaceXs = getResources().getDimensionPixelSize(R.dimen.swir_space_xs);
+        int spaceSm = getResources().getDimensionPixelSize(R.dimen.swir_space_sm);
+        int spaceMd = getResources().getDimensionPixelSize(R.dimen.swir_space_md);
+        int spaceLg = getResources().getDimensionPixelSize(R.dimen.swir_space_lg);
+
         ScrollView scroll = new ScrollView(this);
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
-        root.setPadding(dp(18), dp(18), dp(18), dp(24));
-        root.setBackgroundColor(Color.rgb(7, 18, 34));
+        root.setPadding(spaceMd, spaceMd, spaceMd, spaceLg);
+        root.setBackgroundColor(getColor(R.color.swir_background));
         root.setLayoutDirection(View.LAYOUT_DIRECTION_LOCALE);
         scroll.addView(root, new ScrollView.LayoutParams(ScrollView.LayoutParams.MATCH_PARENT, ScrollView.LayoutParams.WRAP_CONTENT));
 
-        root.addView(text(getString(R.string.app_name), 28, Color.rgb(105, 216, 255)), matchWrap());
-        TextView subtitle = text(getString(R.string.subtitle), 14, Color.rgb(180, 198, 217));
-        subtitle.setPadding(0, dp(4), 0, dp(16));
+        root.addView(text(getString(R.string.app_name), 28, getColor(R.color.swir_text_primary)), matchWrap());
+        TextView subtitle = text(getString(R.string.subtitle), 14, getColor(R.color.swir_text_secondary));
+        subtitle.setPadding(0, spaceXs, 0, spaceMd);
         root.addView(subtitle, matchWrap());
 
         LinearLayout nowCard = card();
-        nowCard.addView(text(getString(R.string.now), 13, Color.rgb(105, 216, 255)), matchWrap());
-        localTime = text(getString(R.string.clock_placeholder), 44, Color.WHITE);
+        nowCard.addView(text(getString(R.string.now), 13, getColor(R.color.swir_accent_cyan)), matchWrap());
+        localTime = text(getString(R.string.clock_placeholder), 44, getColor(R.color.swir_text_primary));
         localTime.setGravity(Gravity.CENTER_HORIZONTAL);
         nowCard.addView(localTime, matchWrap());
-        localDate = text("", 15, Color.rgb(180, 198, 217));
+        localDate = text("", 15, getColor(R.color.swir_text_secondary));
         localDate.setGravity(Gravity.CENTER_HORIZONTAL);
         nowCard.addView(localDate, matchWrap());
-        utcTime = text("", 14, Color.rgb(105, 216, 255));
-        utcTime.setGravity(Gravity.CENTER_HORIZONTAL);
-        utcTime.setPadding(0, dp(8), 0, 0);
-        nowCard.addView(utcTime, matchWrap());
         root.addView(nowCard, spaced());
 
+        LinearLayout worldCard = card();
+        worldCard.addView(text(getString(R.string.world_clock), 17, getColor(R.color.swir_accent_cyan)), matchWrap());
+        worldTime = text(getString(R.string.clock_placeholder), 34, getColor(R.color.swir_text_primary));
+        worldTime.setGravity(Gravity.CENTER_HORIZONTAL);
+        worldTime.setPadding(0, spaceXs, 0, spaceSm);
+        worldCard.addView(worldTime, matchWrap());
+        worldZoneButton = button(R.string.world_clock);
+        worldZoneButton.setContentDescription(getString(R.string.next_zone_description));
+        worldZoneButton.setOnClickListener(v -> {
+            worldZoneIndex = ClockCore.nextWorldZoneIndex(worldZoneIndex);
+            getSharedPreferences(PREFS, MODE_PRIVATE).edit().putInt(KEY_WORLD_ZONE, worldZoneIndex).apply();
+            renderTimes();
+        });
+        worldCard.addView(worldZoneButton, matchWrap());
+        root.addView(worldCard, spaced());
+
         LinearLayout stopwatchCard = card();
-        stopwatchCard.addView(text(getString(R.string.stopwatch), 17, Color.rgb(105, 216, 255)), matchWrap());
-        stopwatchText = text(getString(R.string.duration_zero), 34, Color.WHITE);
+        stopwatchCard.addView(text(getString(R.string.stopwatch), 17, getColor(R.color.swir_accent_cyan)), matchWrap());
+        stopwatchText = text(getString(R.string.duration_zero), 34, getColor(R.color.swir_text_primary));
         stopwatchText.setGravity(Gravity.CENTER_HORIZONTAL);
         stopwatchCard.addView(stopwatchText, matchWrap());
         LinearLayout stopwatchButtons = row();
@@ -113,8 +135,8 @@ public final class MainActivity extends Activity {
         root.addView(stopwatchCard, spaced());
 
         LinearLayout timerCard = card();
-        timerCard.addView(text(getString(R.string.timer), 17, Color.rgb(105, 216, 255)), matchWrap());
-        timerText = text(getString(R.string.duration_zero), 34, Color.WHITE);
+        timerCard.addView(text(getString(R.string.timer), 17, getColor(R.color.swir_accent_cyan)), matchWrap());
+        timerText = text(getString(R.string.duration_zero), 34, getColor(R.color.swir_text_primary));
         timerText.setGravity(Gravity.CENTER_HORIZONTAL);
         timerCard.addView(timerText, matchWrap());
         timerMinutes = input(R.string.timer_minutes_hint);
@@ -131,9 +153,9 @@ public final class MainActivity extends Activity {
         root.addView(timerCard, spaced());
 
         LinearLayout alarmCard = card();
-        alarmCard.addView(text(getString(R.string.alarm), 17, Color.rgb(105, 216, 255)), matchWrap());
-        TextView alarmBody = text(getString(R.string.alarm_body), 14, Color.rgb(180, 198, 217));
-        alarmBody.setPadding(0, dp(4), 0, dp(8));
+        alarmCard.addView(text(getString(R.string.alarm), 17, getColor(R.color.swir_accent_cyan)), matchWrap());
+        TextView alarmBody = text(getString(R.string.alarm_body), 14, getColor(R.color.swir_text_secondary));
+        alarmBody.setPadding(0, spaceXs, 0, spaceSm);
         alarmCard.addView(alarmBody, matchWrap());
         LinearLayout alarmInputs = row();
         alarmHour = input(R.string.hour_hint);
@@ -153,9 +175,12 @@ public final class MainActivity extends Activity {
     private void renderTimes() {
         Locale locale = getResources().getConfiguration().getLocales().get(0);
         ZonedDateTime now = ZonedDateTime.now();
+        long epochMillis = System.currentTimeMillis();
         localTime.setText(DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT).withLocale(locale).format(now));
         localDate.setText(DateTimeFormatter.ofLocalizedDate(FormatStyle.FULL).withLocale(locale).format(now));
-        utcTime.setText(getString(R.string.utc_format, ClockCore.worldTime("UTC", Instant.now().toEpochMilli(), locale)));
+        String zoneId = ClockCore.worldZoneId(worldZoneIndex);
+        worldTime.setText(ClockCore.worldTime(zoneId, epochMillis, locale));
+        worldZoneButton.setText(ClockCore.worldZoneLabel(zoneId, epochMillis, locale));
     }
 
     private void toggleStopwatch() {
@@ -234,10 +259,11 @@ public final class MainActivity extends Activity {
     }
 
     private LinearLayout card() {
+        int spaceMd = getResources().getDimensionPixelSize(R.dimen.swir_space_md);
         LinearLayout value = new LinearLayout(this);
         value.setOrientation(LinearLayout.VERTICAL);
-        value.setPadding(dp(14), dp(14), dp(14), dp(14));
-        value.setBackgroundColor(Color.rgb(13, 34, 55));
+        value.setPadding(spaceMd, spaceMd, spaceMd, spaceMd);
+        value.setBackgroundColor(getColor(R.color.swir_surface));
         return value;
     }
 
@@ -251,17 +277,18 @@ public final class MainActivity extends Activity {
         Button value = new Button(this);
         value.setAllCaps(false);
         value.setText(label);
-        value.setTextColor(Color.WHITE);
-        value.setBackgroundColor(Color.rgb(17, 61, 92));
-        value.setMinHeight(dp(48));
+        value.setTextColor(getColor(R.color.swir_text_primary));
+        value.setBackgroundColor(getColor(R.color.swir_surface_alt));
+        value.setMinHeight(getResources().getDimensionPixelSize(R.dimen.swir_touch_min));
         return value;
     }
 
     private EditText input(int hint) {
         EditText value = new EditText(this);
         value.setHint(hint);
-        value.setHintTextColor(Color.rgb(140, 160, 181));
-        value.setTextColor(Color.WHITE);
+        value.setHintTextColor(getColor(R.color.swir_text_secondary));
+        value.setTextColor(getColor(R.color.swir_text_primary));
+        value.setMinHeight(getResources().getDimensionPixelSize(R.dimen.swir_touch_min));
         value.setSingleLine(true);
         value.setContentDescription(getString(hint));
         return value;
@@ -281,17 +308,14 @@ public final class MainActivity extends Activity {
 
     private LinearLayout.LayoutParams spaced() {
         LinearLayout.LayoutParams params = matchWrap();
-        params.setMargins(0, 0, 0, dp(12));
+        params.setMargins(0, 0, 0, getResources().getDimensionPixelSize(R.dimen.swir_space_md));
         return params;
     }
 
     private LinearLayout.LayoutParams weighted() {
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
-        params.setMargins(dp(3), dp(6), dp(3), 0);
+        int margin = getResources().getDimensionPixelSize(R.dimen.swir_space_xs);
+        params.setMargins(margin, getResources().getDimensionPixelSize(R.dimen.swir_space_sm), margin, 0);
         return params;
-    }
-
-    private int dp(int value) {
-        return Math.round(value * getResources().getDisplayMetrics().density);
     }
 }

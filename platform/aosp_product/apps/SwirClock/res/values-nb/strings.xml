@@ -3,6 +3,8 @@
     <string name="app_name">Swir Clock</string>
     <string name="subtitle">Tid, tidtakere og alarmer med en tydelig brukerstyrt arbeidsflyt.</string>
     <string name="now">Nå</string>
+    <string name="world_clock">Verdensklokke</string>
+    <string name="next_zone_description">Bytt tidssone for verdensklokken</string>
     <string name="stopwatch">Stoppeklokke</string>
     <string name="timer">Tidtaker</string>
     <string name="alarm">Alarm</string>

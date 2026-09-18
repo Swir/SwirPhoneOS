@@ -3,6 +3,8 @@
     <string name="app_name">Swir Clock</string>
     <string name="subtitle">Heure, minuteurs et alarmes avec un parcours clair contrôlé par l’utilisateur.</string>
     <string name="now">Maintenant</string>
+    <string name="world_clock">Horloge mondiale</string>
+    <string name="next_zone_description">Changer le fuseau horaire de l’horloge mondiale</string>
     <string name="stopwatch">Chronomètre</string>
     <string name="timer">Minuteur</string>
     <string name="alarm">Alarme</string>
