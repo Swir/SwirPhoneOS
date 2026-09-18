@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.net.Uri;
 import android.telecom.Call;
 import android.telecom.InCallService;
+import android.telecom.TelecomManager;
 import android.telecom.VideoProfile;
 
 import java.util.List;
@@ -49,7 +50,9 @@ public final class SwirInCallService extends InCallService {
     public static String currentNumber() {
         Call call = currentCall();
         if (call == null || call.getDetails() == null) return "";
-        Uri handle = call.getDetails().getHandle();
+        Call.Details details = call.getDetails();
+        if (details.getHandlePresentation() != TelecomManager.PRESENTATION_ALLOWED) return "";
+        Uri handle = details.getHandle();
         if (handle == null) return "";
         String value = handle.getSchemeSpecificPart();
         if (value == null) return "";
