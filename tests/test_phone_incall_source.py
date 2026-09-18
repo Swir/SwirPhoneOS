@@ -24,10 +24,26 @@ class SwirPhoneInCallSourceTests(unittest.TestCase):
         self.assertIsNotNone(application)
         main = next(node for node in application.findall("activity") if node.get(ANDROID + "name") == ".MainActivity")
         filters = main.findall("intent-filter")
-        actions = {action.get(ANDROID + "name") for f in filters for action in f.findall("action")}
-        schemes = {data.get(ANDROID + "scheme") for f in filters for data in f.findall("data")}
-        self.assertIn("android.intent.action.DIAL", actions)
-        self.assertIn("tel", schemes)
+        dial_filters = [
+            intent_filter
+            for intent_filter in filters
+            if any(action.get(ANDROID + "name") == "android.intent.action.DIAL" for action in intent_filter.findall("action"))
+        ]
+        self.assertEqual(len(dial_filters), 2)
+        self.assertTrue(
+            any(not intent_filter.findall("data") for intent_filter in dial_filters),
+            "default-dialer role must expose a bare ACTION_DIAL surface",
+        )
+        self.assertTrue(
+            any(
+                any(data.get(ANDROID + "scheme") == "tel" for data in intent_filter.findall("data"))
+                for intent_filter in dial_filters
+            ),
+            "default-dialer role must expose ACTION_DIAL for tel: URIs",
+        )
+        for intent_filter in dial_filters:
+            categories = {node.get(ANDROID + "name") for node in intent_filter.findall("category")}
+            self.assertEqual(categories, {"android.intent.category.DEFAULT"})
 
         incall = next(node for node in application.findall("activity") if node.get(ANDROID + "name") == ".InCallActivity")
         self.assertEqual(incall.get(ANDROID + "exported"), "false")
