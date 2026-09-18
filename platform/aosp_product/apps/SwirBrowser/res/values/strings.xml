@@ -9,6 +9,10 @@
     <string name="reload">Reload</string>
     <string name="javascript">Enable JavaScript for this session</string>
     <string name="clear_data">Clear</string>
+    <string name="downloads">Downloads</string>
+    <string name="download_started">Download started.</string>
+    <string name="download_blocked">Download links must start with HTTPS.</string>
+    <string name="downloads_unavailable">Downloads are unavailable on this device.</string>
     <string name="invalid_address">Enter a valid HTTPS address or search phrase.</string>
     <string name="privacy_on">Privacy mode: JavaScript and DOM storage are off; third-party cookies are blocked.</string>
     <string name="privacy_off">JavaScript is enabled for this session. Third-party cookies remain blocked.</string>
