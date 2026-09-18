@@ -1,9 +1,8 @@
-"""Bind existing read-only safety evidence into a SwirRoot readiness report.
+"""Bind read-only safety evidence into a fail-closed SwirRoot readiness report.
 
-This module performs no device I/O and deliberately cannot authorize a root
-transition. It answers a narrower engineering question: which mandatory
-SwirRoot policy gates are already evidenced by the current recovery journal and
-read-only hardware correlation, and which gates still require stronger proof?
+No code in this module performs root, unroot, boot-image mutation, flashing,
+unlocking, rebooting or other device writes. Schema v2 also requires a fresh
+exact-byte rollback-material recheck before the rollback gate can pass.
 """
 from __future__ import annotations
 
@@ -13,6 +12,10 @@ from pathlib import Path
 
 from .hardware_evidence import load_hardware_evidence, validate_hardware_evidence
 from .journal_evidence import load_journal, validate_journal
+from .rollback_material_evidence import (
+    collect_rollback_material_evidence,
+    validate_rollback_material_evidence,
+)
 from .swirroot import (
     REQUIRED_ENABLE_GATES,
     REQUIRED_UNROOT_GATES,
@@ -50,6 +53,7 @@ _REPORT_KEYS = {
 }
 _WARNINGS = [
     "This report combines read-only/preparation evidence only and cannot verify physical SwirPhoneOS support.",
+    "A passed rollback gate means the exact local rollback files were re-hashed against the bound journal during this readiness collection.",
     "Owner confirmation, update-state safety and the expected non-root runtime state require independent durable evidence.",
     "No root, unroot, boot-image mutation, unlock, flash, erase, reboot or other device write is authorized or executed.",
 ]
@@ -78,6 +82,40 @@ def _canonical_sha256(value: dict[str, object]) -> str:
     return hashlib.sha256(encoded).hexdigest()
 
 
+def _rollback_matches_journal(
+    rollback_material: dict[str, object] | None,
+    journal: dict[str, object],
+) -> bool:
+    if rollback_material is None:
+        return False
+    try:
+        rollback = validate_rollback_material_evidence(rollback_material)
+    except ValueError as exc:
+        raise SwirRootReadinessError("Rollback material evidence failed validation.") from exc
+    expected = {
+        "transaction_id": journal["transaction_id"],
+        "profile_id": journal["profile_id"],
+        "device_codename": journal["device_codename"],
+        "device_model": journal["device_model"],
+        "expected_current_build": journal["expected_current_build"],
+        "target_build": journal["target_build"],
+        "journal_evidence_sha256": journal["evidence_sha256"],
+    }
+    if any(rollback.get(key) != value for key, value in expected.items()):
+        raise SwirRootReadinessError("Rollback material evidence is not bound to this recovery journal.")
+    if rollback.get("rollback_material_verified") is not True:
+        raise SwirRootReadinessError("Rollback material evidence is incomplete.")
+    journal_items = journal["rollback_artifacts"]
+    rollback_items = rollback["rollback_artifacts"]
+    if len(journal_items) != len(rollback_items):
+        raise SwirRootReadinessError("Rollback artifact inventory does not match the recovery journal.")
+    for expected_item, actual_item in zip(journal_items, rollback_items, strict=True):
+        for field in ("name", "path", "size", "sha256"):
+            if actual_item.get(field) != expected_item.get(field):
+                raise SwirRootReadinessError("Rollback artifact identity drifted from the recovery journal.")
+    return True
+
+
 def collect_swirroot_readiness(
     *,
     action: str,
@@ -85,6 +123,7 @@ def collect_swirroot_readiness(
     policy: SwirRootPolicy,
     journal: dict[str, object],
     hardware: dict[str, object],
+    rollback_material: dict[str, object] | None = None,
 ) -> dict[str, object]:
     """Create a tamper-evident, always-non-authorizing readiness projection."""
     if action not in _ACTIONS:
@@ -121,17 +160,14 @@ def collect_swirroot_readiness(
 
     hardware_evidence_sha = _sha256(hardware.get("evidence_sha256"), "hardware evidence sha256")
     journal_evidence_sha = _sha256(journal.get("evidence_sha256"), "journal evidence sha256")
+    rollback_rechecked = _rollback_matches_journal(rollback_material, journal)
 
-    # Current hardware evidence is intentionally correlation-only, so it cannot
-    # satisfy verified_device_profile or root authorization. Likewise, the
-    # recovery journal deliberately records no owner confirmation and contains
-    # no authoritative update-state or expected-nonroot-runtime proof.
     gates = {
         "exact_build_match": True,
         "verified_device_profile": hardware.get("hardware_verified") is True
         and hardware.get("swirphoneos_support") == "SUPPORTED",
         "owner_confirmation": journal.get("owner_confirmation_recorded") is True,
-        "rollback_material_verified": journal.get("rollback_ready") is True,
+        "rollback_material_verified": rollback_rechecked,
         "journal_available": True,
         "update_state_safe": False,
         "expected_nonroot_state_known": False,
@@ -140,15 +176,11 @@ def collect_swirroot_readiness(
     missing = sorted(name for name in required if gates.get(name) is not True)
     backend_available = policy.root_available and exact_build in policy.supported_builds
 
-    # validate_hardware_evidence() accepts only correlation-only schema v2,
-    # which deliberately requires root_allowed=false. A future authoritative
-    # hardware/root evidence type must be introduced explicitly instead of
-    # silently reinterpreting this report as authorization.
     hardware_root_authorized = hardware.get("root_allowed") is True
     transition_ready = False
 
     core: dict[str, object] = {
-        "schema_version": 1,
+        "schema_version": 2,
         "source": "swirphoneos_swirroot_readiness_projection",
         "action": action,
         "policy_id": policy.policy_id,
@@ -163,6 +195,7 @@ def collect_swirroot_readiness(
             "device_codename_matches": True,
             "observed_current_build_matches_journal": True,
             "journal_target_matches_exact_build": True,
+            "rollback_material_rechecked": rollback_rechecked,
         },
         "policy_gates": gates,
         "missing_requirements": missing,
@@ -182,8 +215,8 @@ def collect_swirroot_readiness(
 
 def validate_swirroot_readiness(report: object) -> dict[str, object]:
     if not isinstance(report, dict) or set(report) != _REPORT_KEYS:
-        raise SwirRootReadinessError("SwirRoot readiness report must match schema v1 exactly.")
-    if report["schema_version"] != 1 or report["source"] != "swirphoneos_swirroot_readiness_projection":
+        raise SwirRootReadinessError("SwirRoot readiness report must match schema v2 exactly.")
+    if report["schema_version"] != 2 or report["source"] != "swirphoneos_swirroot_readiness_projection":
         raise SwirRootReadinessError("SwirRoot readiness provenance is invalid.")
     action = report["action"]
     if action not in _ACTIONS:
@@ -194,15 +227,19 @@ def validate_swirroot_readiness(report: object) -> dict[str, object]:
         _sha256(report[key], key)
 
     bindings = report["evidence_bindings"]
-    expected_bindings = {
-        "profile_matches": True,
-        "device_model_matches": True,
-        "device_codename_matches": True,
-        "observed_current_build_matches_journal": True,
-        "journal_target_matches_exact_build": True,
+    binding_names = {
+        "profile_matches",
+        "device_model_matches",
+        "device_codename_matches",
+        "observed_current_build_matches_journal",
+        "journal_target_matches_exact_build",
+        "rollback_material_rechecked",
     }
-    if bindings != expected_bindings:
-        raise SwirRootReadinessError("SwirRoot evidence bindings were modified or are incomplete.")
+    if not isinstance(bindings, dict) or set(bindings) != binding_names or any(type(value) is not bool for value in bindings.values()):
+        raise SwirRootReadinessError("SwirRoot evidence bindings are malformed.")
+    for key in binding_names - {"rollback_material_rechecked"}:
+        if bindings[key] is not True:
+            raise SwirRootReadinessError("SwirRoot identity/build evidence bindings are incomplete.")
 
     gates = report["policy_gates"]
     gate_names = {
@@ -216,8 +253,10 @@ def validate_swirroot_readiness(report: object) -> dict[str, object]:
     }
     if not isinstance(gates, dict) or set(gates) != gate_names or any(type(value) is not bool for value in gates.values()):
         raise SwirRootReadinessError("SwirRoot policy-gate projection is invalid.")
-    if gates["exact_build_match"] is not True or gates["rollback_material_verified"] is not True or gates["journal_available"] is not True:
-        raise SwirRootReadinessError("SwirRoot readiness lost mandatory preparation evidence.")
+    if gates["exact_build_match"] is not True or gates["journal_available"] is not True:
+        raise SwirRootReadinessError("SwirRoot readiness lost mandatory identity/journal evidence.")
+    if gates["rollback_material_verified"] is not bindings["rollback_material_rechecked"]:
+        raise SwirRootReadinessError("Rollback policy gate is not bound to the fresh rollback recheck.")
 
     missing = report["missing_requirements"]
     if not isinstance(missing, list) or len(missing) > len(gate_names) or not all(isinstance(item, str) and item in gate_names for item in missing) or len(set(missing)) != len(missing) or missing != sorted(missing):
@@ -245,12 +284,25 @@ def validate_swirroot_readiness(report: object) -> dict[str, object]:
 
 
 def collect_swirroot_readiness_from_files(
-    *, action: str, exact_build: str, policy_path: Path, journal_path: Path, hardware_path: Path
+    *,
+    action: str,
+    exact_build: str,
+    policy_path: Path,
+    journal_path: Path,
+    hardware_path: Path,
+    artifact_root: Path | None = None,
 ) -> dict[str, object]:
+    journal = load_journal(journal_path)
+    rollback_material = (
+        collect_rollback_material_evidence(journal, artifact_root)
+        if artifact_root is not None
+        else None
+    )
     return collect_swirroot_readiness(
         action=action,
         exact_build=exact_build,
         policy=load_policy(policy_path),
-        journal=load_journal(journal_path),
+        journal=journal,
         hardware=load_hardware_evidence(hardware_path),
+        rollback_material=rollback_material,
     )
