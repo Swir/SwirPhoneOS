@@ -139,11 +139,11 @@ public final class MainActivity extends Activity {
             Toast.makeText(this, R.string.no_messaging_app, Toast.LENGTH_SHORT).show();
             return;
         }
+        saveDraft();
+        startActivity(intent);
         if (rememberHistory != null && rememberHistory.isChecked()) {
             recordHandoff(normalizedRecipients, normalizedBody);
         }
-        saveDraft();
-        startActivity(intent);
     }
 
     private void recordHandoff(String normalizedRecipients, String normalizedBody) {
