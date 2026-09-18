@@ -29,8 +29,14 @@ jobs:
         run: |
           python -m unittest discover -s tests -p 'test_phone_source.py' -v
           python -m unittest discover -s tests -p 'test_phone_incall_source.py' -v
-      - name: Host-test SwirPhone dial policy
+          python -m unittest discover -s tests -p 'test_phone_recent_calls_source.py' -v
+      - name: Host-test SwirPhone pure-Java policies
         run: |
           mkdir -p _phone-java-test
-          javac -d _phone-java-test platform/aosp_product/apps/SwirPhone/src/org/swir/phoneos/phone/DialerPolicy.java platform/aosp_product/apps/SwirPhone/hosttest/DialerPolicyHostTest.java
+          javac -d _phone-java-test \
+            platform/aosp_product/apps/SwirPhone/src/org/swir/phoneos/phone/DialerPolicy.java \
+            platform/aosp_product/apps/SwirPhone/hosttest/DialerPolicyHostTest.java \
+            platform/aosp_product/apps/SwirPhone/src/org/swir/phoneos/phone/CallHistoryPolicy.java \
+            platform/aosp_product/apps/SwirPhone/hosttest/CallHistoryPolicyHostTest.java
           java -cp _phone-java-test org.swir.phoneos.phone.DialerPolicyHostTest
+          java -cp _phone-java-test org.swir.phoneos.phone.CallHistoryPolicyHostTest
