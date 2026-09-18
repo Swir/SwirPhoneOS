@@ -10,20 +10,38 @@ ANDROID = "{http://schemas.android.com/apk/res/android}"
 
 
 class SwirPhoneSourceBoundaryTests(unittest.TestCase):
-    def test_manifest_is_launcher_only_and_permission_free(self):
+    def test_manifest_keeps_permission_free_launcher_and_explicit_dial_role_surface(self):
         manifest = ET.fromstring((ROOT / "AndroidManifest.xml").read_text(encoding="utf-8"))
         self.assertEqual(manifest.findall("uses-permission"), [])
+
+        main = next(
+            node
+            for node in manifest.findall("./application/activity")
+            if node.get(ANDROID + "name") == ".MainActivity"
+        )
+        filters = main.findall("intent-filter")
         actions = {
             node.get(ANDROID + "name")
-            for node in manifest.findall("./application/activity/intent-filter/action")
+            for intent_filter in filters
+            for node in intent_filter.findall("action")
         }
         categories = {
             node.get(ANDROID + "name")
-            for node in manifest.findall("./application/activity/intent-filter/category")
+            for intent_filter in filters
+            for node in intent_filter.findall("category")
         }
-        self.assertEqual(actions, {"android.intent.action.MAIN"})
-        self.assertEqual(categories, {"android.intent.category.LAUNCHER"})
-        self.assertNotIn("android.intent.action.DIAL", actions)
+        schemes = {
+            node.get(ANDROID + "scheme")
+            for intent_filter in filters
+            for node in intent_filter.findall("data")
+        }
+
+        self.assertEqual(actions, {"android.intent.action.MAIN", "android.intent.action.DIAL"})
+        self.assertEqual(
+            categories,
+            {"android.intent.category.LAUNCHER", "android.intent.category.DEFAULT"},
+        )
+        self.assertEqual(schemes, {"tel"})
         self.assertNotIn("android.intent.action.CALL", actions)
 
     def test_activity_hands_off_to_an_external_dialer(self):

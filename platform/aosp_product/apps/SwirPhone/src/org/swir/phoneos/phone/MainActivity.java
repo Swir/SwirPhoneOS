@@ -1,6 +1,7 @@
 package org.swir.phoneos.phone;
 
 import android.app.Activity;
+import android.app.role.RoleManager;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
@@ -15,14 +16,30 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 public final class MainActivity extends Activity {
+    private static final int REQUEST_DIALER_ROLE = 7101;
+
     private EditText number;
     private Button dial;
+    private Button roleButton;
+    private Button activeCallButton;
+    private TextView roleStatus;
 
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
         setTitle(R.string.app_name);
         setContentView(buildUi());
         refreshDialState();
+        refreshPhoneRoleState();
+    }
+
+    @Override protected void onResume() {
+        super.onResume();
+        refreshPhoneRoleState();
+    }
+
+    @Override protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == REQUEST_DIALER_ROLE) refreshPhoneRoleState();
     }
 
     private View buildUi() {
@@ -75,6 +92,23 @@ public final class MainActivity extends Activity {
         actions.addView(dial, weighted());
         root.addView(actions, matchWrap());
 
+        roleStatus = text(getString(R.string.role_inactive), 13, getColor(R.color.swir_text_secondary));
+        roleStatus.setGravity(Gravity.CENTER_HORIZONTAL);
+        LinearLayout.LayoutParams roleStatusParams = matchWrap();
+        roleStatusParams.topMargin = dim(R.dimen.swir_space_sm);
+        root.addView(roleStatus, roleStatusParams);
+
+        LinearLayout phoneActions = new LinearLayout(this);
+        phoneActions.setOrientation(LinearLayout.HORIZONTAL);
+        phoneActions.setGravity(Gravity.CENTER);
+        roleButton = actionButton(R.string.request_default_phone);
+        roleButton.setOnClickListener(v -> requestDefaultPhoneRole());
+        phoneActions.addView(roleButton, weighted());
+        activeCallButton = actionButton(R.string.open_active_call);
+        activeCallButton.setOnClickListener(v -> openActiveCall());
+        phoneActions.addView(activeCallButton, weighted());
+        root.addView(phoneActions, matchWrap());
+
         TextView safety = text(getString(R.string.handoff_notice), 13, getColor(R.color.swir_text_secondary));
         safety.setGravity(Gravity.CENTER_HORIZONTAL);
         root.addView(safety, matchWrap());
@@ -108,6 +142,39 @@ public final class MainActivity extends Activity {
             return;
         }
         startActivity(intent);
+    }
+
+    private void requestDefaultPhoneRole() {
+        RoleManager roleManager = getSystemService(RoleManager.class);
+        if (roleManager == null || !roleManager.isRoleAvailable(RoleManager.ROLE_DIALER)) {
+            Toast.makeText(this, R.string.role_unavailable, Toast.LENGTH_SHORT).show();
+            return;
+        }
+        if (roleManager.isRoleHeld(RoleManager.ROLE_DIALER)) {
+            refreshPhoneRoleState();
+            return;
+        }
+        Intent request = roleManager.createRequestRoleIntent(RoleManager.ROLE_DIALER);
+        startActivityForResult(request, REQUEST_DIALER_ROLE);
+    }
+
+    private void openActiveCall() {
+        if (!SwirInCallService.hasActiveCall()) {
+            Toast.makeText(this, R.string.no_active_call, Toast.LENGTH_SHORT).show();
+            refreshPhoneRoleState();
+            return;
+        }
+        startActivity(new Intent(this, InCallActivity.class));
+    }
+
+    private void refreshPhoneRoleState() {
+        if (roleStatus == null || roleButton == null || activeCallButton == null) return;
+        RoleManager roleManager = getSystemService(RoleManager.class);
+        boolean available = roleManager != null && roleManager.isRoleAvailable(RoleManager.ROLE_DIALER);
+        boolean held = available && roleManager.isRoleHeld(RoleManager.ROLE_DIALER);
+        roleStatus.setText(held ? R.string.role_active : R.string.role_inactive);
+        roleButton.setEnabled(available && !held);
+        activeCallButton.setEnabled(held && SwirInCallService.hasActiveCall());
     }
 
     private void refreshDialState() {

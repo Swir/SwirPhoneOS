@@ -25,6 +25,10 @@ jobs:
         run: python -m unittest discover -s tests -p 'test_android_i18n.py' -v
       - name: Validate Android app source regressions
         run: python -m unittest discover -s tests -p 'test_android_apps.py' -v
+      - name: Validate SwirPhone source boundaries
+        run: |
+          python -m unittest discover -s tests -p 'test_phone_source.py' -v
+          python -m unittest discover -s tests -p 'test_phone_incall_source.py' -v
       - name: Host-test SwirPhone dial policy
         run: |
           mkdir -p _phone-java-test
