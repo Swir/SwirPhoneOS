@@ -90,6 +90,7 @@ public final class UpdatePolicy {
             int headerBytes = 0;
             long total = 0L;
             while (true) {
+                if (Thread.currentThread().isInterrupted()) return readFailure();
                 int read = input.read(buffer);
                 if (read < 0) break;
                 if (read == 0) continue;
