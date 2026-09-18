@@ -38,6 +38,10 @@ jobs:
         run: |
           $hash = (Get-FileHash -Algorithm SHA256 dist\SwirPhoneStudio.exe).Hash.ToLowerInvariant()
           "$hash  SwirPhoneStudio.exe" | Set-Content -Encoding ascii dist\SHA256SUMS.txt
+      - name: Record and revalidate package provenance
+        run: |
+          python -m swirphoneos.studio_package_evidence collect --exe dist\SwirPhoneStudio.exe --checksums dist\SHA256SUMS.txt --output dist\SwirPhoneStudio-evidence.json
+          python -m swirphoneos.studio_package_evidence verify --report dist\SwirPhoneStudio-evidence.json --exe dist\SwirPhoneStudio.exe --checksums dist\SHA256SUMS.txt
       - name: Upload developer artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
@@ -45,5 +49,6 @@ jobs:
           path: |
             dist/SwirPhoneStudio.exe
             dist/SHA256SUMS.txt
+            dist/SwirPhoneStudio-evidence.json
           if-no-files-found: error
           retention-days: 14
