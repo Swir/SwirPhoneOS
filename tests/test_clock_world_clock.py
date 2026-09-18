@@ -25,22 +25,35 @@ class SwirClockWorldClockTests(unittest.TestCase):
         for zone in ("UTC", "Europe/Oslo", "Europe/Warsaw", "America/New_York", "Asia/Tokyo"):
             self.assertEqual(core.count(f'"{zone}"'), 1)
             self.assertIn(f'"{zone}"', host)
-        for token in ("worldZoneCount", "worldZoneId", "nextWorldZoneIndex", "worldTime", "worldZoneLabel", "ZoneId.of"):
+        for token in (
+            "worldZoneCount",
+            "safeWorldZoneIndex",
+            "worldZoneId",
+            "nextWorldZoneIndex",
+            "worldTime",
+            "worldZoneLabel",
+            "ZoneId.of",
+        ):
             self.assertIn(token, core)
         self.assertIn("world zone index out of range", core)
+        self.assertIn("safeWorldZoneIndex(-1) == 0", host)
+        self.assertIn("safeWorldZoneIndex(99) == 0", host)
         self.assertIn("nextWorldZoneIndex(4) == 0", host)
         self.assertIn('worldTime("Not/AZone"', host)
 
-    def test_activity_exposes_owner_visible_zone_switch_without_new_permissions(self):
+    def test_activity_exposes_and_persists_owner_visible_zone_switch_without_new_permissions(self):
         activity = (ROOT / "src/org/swir/phoneos/clock/MainActivity.java").read_text(encoding="utf-8")
         manifest = (ROOT / "AndroidManifest.xml").read_text(encoding="utf-8")
         for token in (
             "R.string.world_clock",
             "R.string.next_zone_description",
+            "getSharedPreferences(PREFS, MODE_PRIVATE)",
+            "ClockCore.safeWorldZoneIndex",
             "ClockCore.nextWorldZoneIndex",
             "ClockCore.worldZoneId",
             "ClockCore.worldZoneLabel",
             "ClockCore.worldTime",
+            "putInt(KEY_WORLD_ZONE, worldZoneIndex)",
         ):
             self.assertIn(token, activity)
         self.assertNotIn("android.permission.INTERNET", manifest)
