@@ -1,27 +1,30 @@
 # SwirRoot readiness evidence
 
-SwirRoot readiness evidence is a **read-only engineering projection**. It binds the existing recovery journal, read-only ADB/Fastboot correlation and SwirRoot policy to one exact SwirPhoneOS build and reports which policy gates are still missing.
+SwirRoot readiness evidence is a **read-only engineering projection**. Schema v2 binds the recovery journal, a fresh exact-byte rollback-material recheck, read-only ADB/Fastboot correlation and SwirRoot policy to one exact SwirPhoneOS build, then reports which policy gates are still missing.
 
 It does **not** perform root, unroot, boot-image modification, bootloader unlock, flash, erase, reboot or any other device write. It does not turn the current `oneplus/avicii` profile into a supported device and it does not make the current SwirRoot source a working root implementation.
 
 ## Why this exists
 
-Before an owner-facing enable/unroot workflow can be trusted, evidence from different subsystems must refer to the same device profile and build. A recovery journal alone can prove that reviewed local target/rollback files were hashed. Read-only hardware correlation alone can show that ADB and Fastboot observations are internally consistent. Neither is sufficient to authorize root.
+Before an owner-facing enable/unroot workflow can be trusted, evidence from different subsystems must refer to the same device profile and build. A recovery journal proves that reviewed local target/rollback files matched their declared digests when the journal was created, but those files can later change. Read-only hardware correlation can show that ADB and Fastboot observations are internally consistent. Neither is sufficient to authorize root.
 
-`swirphoneos.swirroot_readiness` combines those two evidence classes without weakening either one. It rejects cross-profile, cross-model, cross-codename, current-firmware or target-build mismatches and produces a canonical SHA-256 over the final projection.
+`swirphoneos.swirroot_readiness` combines those evidence classes without weakening either one. Schema v2 additionally requires a fresh rollback-file recheck before `rollback_material_verified` can pass. It rejects cross-profile, cross-model, cross-codename, current-firmware, target-build, journal or rollback-inventory mismatches and produces a canonical SHA-256 over the final projection.
 
 ## Evidence bindings
 
-A report is created only when all of these preparation bindings are exact:
+A report keeps these preparation bindings explicit:
 
 - recovery journal `profile_id` equals hardware evidence `profile_id`;
 - journal device model matches the ADB-reported model;
 - journal codename matches the ADB-reported codename;
 - the ADB-observed firmware fingerprint equals the journal's `expected_current_build`;
 - the requested exact SwirPhoneOS build equals the journal's `target_build`;
-- both source reports pass their own integrity/schema validation.
+- both source reports pass their own integrity/schema validation;
+- `rollback_material_rechecked=true` only when every rollback file has just been re-read and still matches the journal's exact size and SHA-256.
 
-The report stores the SHA-256 identifiers of both input evidence records so later review can identify exactly which inputs were projected.
+The readiness report stores the SHA-256 identifiers of its journal and hardware evidence. The rollback recheck itself is bound to the journal digest and the same transaction/profile/model/codename/current-build/target-build tuple; see `SWIRROOT_ROLLBACK_RECHECK.md`.
+
+If the fresh rollback recheck is omitted, the report remains a useful diagnostic projection but `rollback_material_verified=false` and that requirement remains missing.
 
 ## Policy-gate projection
 
@@ -42,25 +45,26 @@ For `unroot`, the current policy requires:
 - `journal_available`;
 - `expected_nonroot_state_known`.
 
-The current recovery journal can establish verified rollback material and journal availability. The current cross-transport hardware evidence is intentionally only `CORRELATED_READ_ONLY_NOT_VERIFIED`, so it cannot establish a verified device profile or root authorization. The journal also deliberately records `owner_confirmation_recorded=false`. No current evidence object proves update-state safety or the authoritative expected non-root runtime state.
+A journal by itself no longer satisfies `rollback_material_verified`. That gate passes only after the exact rollback bytes are rechecked against the bound journal during readiness collection. The current cross-transport hardware evidence is intentionally only `CORRELATED_READ_ONLY_NOT_VERIFIED`, so it cannot establish a verified device profile or root authorization. The journal also deliberately records `owner_confirmation_recorded=false`. No current evidence object proves update-state safety or the authoritative expected non-root runtime state.
 
-Therefore a valid report can still—and currently must—be **blocked**. This is useful: it distinguishes "the existing evidence agrees" from "root is safe to execute".
+Therefore a valid report can still—and currently must—be **blocked**. This distinguishes "the preparation evidence agrees" from "root is safe to execute".
 
 ## CLI
 
-After creating a recovery journal and read-only hardware evidence for the same reviewed device/build tuple:
+After creating a recovery journal and read-only hardware evidence for the same reviewed device/build tuple, keep the exact reviewed rollback files under one trusted absolute artifact directory and run:
 
 ```sh
 python -m swirphoneos.root_readiness_cli \
   --action enable \
   --exact-build '<exact SwirPhoneOS fingerprint/build identity>' \
   --journal /absolute/path/to/recovery-journal.json \
-  --hardware /absolute/path/to/hardware-evidence.json
+  --hardware /absolute/path/to/hardware-evidence.json \
+  --artifact-root /absolute/path/to/reviewed-artifacts
 ```
 
-For unroot planning use `--action unroot` with the same exact-build binding.
+For unroot planning use `--action unroot` with the same exact-build binding. `--artifact-root` is mandatory in the CLI so the normal operator path cannot silently rely on stale journal metadata.
 
-The command prints JSON only after all input evidence and bindings validate. The output always keeps:
+The command prints JSON only after all input evidence, current rollback bytes and bindings validate. The output always keeps:
 
 ```text
 device_write_allowed=false
