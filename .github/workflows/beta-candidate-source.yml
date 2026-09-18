@@ -23,7 +23,7 @@ jobs:
       - name: Compile candidate verifier
         run: python -m compileall -q swirphoneos/beta_candidate.py swirphoneos/beta_candidate_cli.py tests/test_beta_candidate.py
       - name: Test candidate trust boundaries
-        run: python -m unittest tests.test_beta_candidate -v
+        run: python -m unittest discover -s tests -p test_beta_candidate.py -v
       - name: Confirm project ledger remains blocked
         run: python -m swirphoneos gate || test $? -eq 2
       - name: Confirm deterministic SVG presentation
