@@ -1,0 +1,58 @@
+name: AOSP post-run artifact continuity
+
+on:
+  workflow_run:
+    workflows: ["AOSP build evidence"]
+    types: [completed]
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: swir-aosp-builder
+  cancel-in-progress: false
+
+jobs:
+  continuity:
+    name: Re-verify exact retained AOSP artifact bytes
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: [self-hosted, linux, x64, swir-aosp-builder]
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          path: tools
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.14'
+      - name: Download immutable evidence from the triggering AOSP run
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: swirphoneos-aosp-evidence-${{ github.event.workflow_run.head_sha }}
+          path: evidence
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          repository: ${{ github.repository }}
+          run-id: ${{ github.event.workflow_run.id }}
+      - name: Re-verify exact post-run build artifact bytes
+        shell: bash
+        run: |
+          set -euo pipefail
+          : "${SWIR_AOSP_WORKSPACE:?Set SWIR_AOSP_WORKSPACE on the dedicated self-hosted runner}"
+          test -f "$GITHUB_WORKSPACE/evidence/aosp-run-evidence.json"
+          test -f "$GITHUB_WORKSPACE/evidence/build-evidence.json"
+          PYTHONPATH="$GITHUB_WORKSPACE/tools" python -m swirphoneos.aosp_artifact_continuity \
+            --workspace "$SWIR_AOSP_WORKSPACE" \
+            --run-evidence "$GITHUB_WORKSPACE/evidence/aosp-run-evidence.json" \
+            --build-evidence "$GITHUB_WORKSPACE/evidence/build-evidence.json" \
+            --source-commit "${{ github.event.workflow_run.head_sha }}" \
+            > "$GITHUB_WORKSPACE/aosp-artifact-continuity.json"
+      - name: Upload immutable post-run continuity evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: swirphoneos-aosp-postrun-continuity-${{ github.event.workflow_run.head_sha }}
+          if-no-files-found: error
+          retention-days: 30
+          path: aosp-artifact-continuity.json
