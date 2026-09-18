@@ -22,12 +22,12 @@ class AndroidAppExpansionTests(unittest.TestCase):
         self.assertEqual(summary["localized_catalogs"], 160)
         for app_id in ("phone", "messages", "camera", "browser", "weather", "backup", "notes", "calendar", "gallery", "recorder", "contacts", "apps", "swirroot"):
             self.assertIn(app_id, summary["source_ready_apps"])
-        for capability in ("dialer", "sms", "camera_capability_report", "web_browsing", "privacy_controls", "forecast", "provider_attribution", "unit_preferences", "supported_data_backup", "recovery_metadata", "offline_notes", "local_calendar", "local_media", "audio_recording", "microphone_state", "file_export", "local_contacts", "import_export", "package_catalog", "signature_provenance", "root_state", "authorization_audit"):
+        for capability in ("dialer", "sms", "camera_capability_report", "web_browsing", "downloads", "privacy_controls", "forecast", "provider_attribution", "unit_preferences", "supported_data_backup", "recovery_metadata", "offline_notes", "local_calendar", "local_media", "audio_recording", "microphone_state", "file_export", "local_contacts", "import_export", "package_catalog", "signature_provenance", "root_state", "authorization_audit"):
             self.assertIn(capability, summary["implemented_capabilities"])
-        for capability in ("in_call", "recent_calls", "mms", "conversation_history", "photo_capture", "video_capture", "downloads", "restore_orchestration", "albums", "provider_bridge", "update_status", "guided_enable", "guided_unroot"):
+        for capability in ("in_call", "recent_calls", "mms", "conversation_history", "photo_capture", "video_capture", "restore_orchestration", "albums", "provider_bridge", "update_status", "guided_enable", "guided_unroot"):
             self.assertIn(capability, summary["remaining_target_capabilities"])
         self.assertIn("camera:photo_capture", summary["remaining_app_capabilities"])
-        self.assertIn("browser:downloads", summary["remaining_app_capabilities"])
+        self.assertNotIn("browser:downloads", summary["remaining_app_capabilities"])
         self.assertIn("backup:restore_orchestration", summary["remaining_app_capabilities"])
         self.assertIn("calendar:provider_bridge", summary["remaining_app_capabilities"])
         self.assertFalse(summary["android_build_verified"]); self.assertFalse(summary["runtime_verified"])
