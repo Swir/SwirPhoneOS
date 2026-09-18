@@ -23,12 +23,15 @@ class AospVisualWorkflowIntegrationTests(unittest.TestCase):
         self.assertIn("swirphoneos.runtime_visual_trust_bundle", self.text)
         self.assertIn("swirphoneos.runtime_visual_review template", self.text)
         self.assertIn("runtime-visual-review-template.json", self.text)
+        self.assertIn("swirphoneos.runtime_accessibility_review template", self.text)
+        self.assertIn("runtime-accessibility-review-template.json", self.text)
         self.assertIn("runtime-visual/*.png", self.text)
         self.assertIn("stop_cvd", self.text)
 
     def test_workflow_does_not_auto_attest_human_review_or_add_write_primitives(self):
         lowered = self.text.lower()
         self.assertNotIn("runtime_visual_review verify", lowered)
+        self.assertNotIn("runtime_accessibility_review verify", lowered)
         for forbidden in (
             "fastboot flash",
             "fastboot erase",
