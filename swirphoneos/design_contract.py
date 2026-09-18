@@ -40,6 +40,7 @@ TOKENIZED_APPS = {
     "phone": ("SwirPhone", "src/org/swir/phoneos/phone/MainActivity.java"),
     "messages": ("SwirMessages", "src/org/swir/phoneos/messages/MainActivity.java"),
     "camera": ("SwirCamera", "src/org/swir/phoneos/camera/MainActivity.java"),
+    "calculator": ("SwirCalculator", "src/org/swir/phoneos/calculator/MainActivity.java"),
     "settings": ("SwirSettings", "src/org/swir/phoneos/settings/MainActivity.java"),
     "files": ("SwirFiles", "src/org/swir/phoneos/files/MainActivity.java"),
     "browser": ("SwirBrowser", "src/org/swir/phoneos/browser/MainActivity.java"),
@@ -47,6 +48,7 @@ TOKENIZED_APPS = {
     "update": ("SwirUpdate", "src/org/swir/phoneos/update/MainActivity.java"),
     "privacy": ("SwirPrivacy", "src/org/swir/phoneos/privacy/MainActivity.java"),
     "device_care": ("SwirDeviceCare", "src/org/swir/phoneos/device_care/MainActivity.java"),
+    "calendar": ("SwirCalendar", "src/org/swir/phoneos/calendar/MainActivity.java"),
 }
 REQUIRED_TOKEN_REFERENCES = (
     "R.color.swir_background",
@@ -228,7 +230,7 @@ def validate_design_contract(product_root: Path | str = Path("platform/aosp_prod
 
     return {
         "status": "SOURCE_CONTRACT_READY_NOT_BUILT",
-        "design_contract": "swirphoneos-design-v5",
+        "design_contract": "swirphoneos-design-v6",
         "module": DESIGN_MODULE,
         "integrated_core_apps": integrated_core,
         "integrated_core_app_count": len(integrated_core),
