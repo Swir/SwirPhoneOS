@@ -26,8 +26,12 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--build", type=Path, default=None)
     parser.add_argument("--runtime", type=Path, default=None)
     parser.add_argument("--smoke", type=Path, default=None)
+    parser.add_argument("--i18n", type=Path, default=None)
+    parser.add_argument("--runtime-review", type=Path, default=None)
     parser.add_argument("--bundle", type=Path, default=None)
     parser.add_argument("--run-evidence", type=Path, default=None)
+    parser.add_argument("--runtime-trust", type=Path, default=None)
+    parser.add_argument("--runtime-review-trust", type=Path, default=None)
     parser.add_argument("--diagnostic-log", type=Path, default=None)
     args = parser.parse_args(argv)
     evidence_paths = {
@@ -40,8 +44,12 @@ def main(argv: list[str] | None = None) -> int:
         "build_evidence": args.build,
         "runtime_evidence": args.runtime,
         "app_smoke": args.smoke,
+        "runtime_i18n": args.i18n,
+        "runtime_review": args.runtime_review,
         "runtime_bundle": args.bundle,
         "aosp_run_evidence": args.run_evidence,
+        "runtime_trust_bundle": args.runtime_trust,
+        "runtime_review_trust_bundle": args.runtime_review_trust,
     }
     try:
         result = collect_failure_evidence(
