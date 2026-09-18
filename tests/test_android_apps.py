@@ -24,7 +24,7 @@ class AndroidAppSourceTests(unittest.TestCase):
         self.assertEqual(summary["source_ready_count"], 20)
         self.assertEqual(summary["localized_catalogs"], 160)
         for capability in (
-            "dialer", "sms", "camera_capability_report", "basic_math", "system_settings", "search", "device_status",
+            "dialer", "in_call", "recent_calls", "sms", "camera_capability_report", "basic_math", "system_settings", "search", "device_status",
             "browse", "copy_move_rename", "share", "safe_delete", "web_browsing", "downloads", "privacy_controls", "storage_status",
             "battery_status", "thermal_status", "hardware_diagnostics", "channel_status", "signed_metadata", "permission_review",
             "alarms", "timers", "stopwatch", "world_clock", "offline_notes", "export", "local_calendar", "forecast",
@@ -34,18 +34,19 @@ class AndroidAppSourceTests(unittest.TestCase):
         ):
             self.assertIn(capability, summary["implemented_capabilities"])
         self.assertEqual(summary["remaining_target_capabilities"], [
-            "access_history", "albums", "conversation_history", "guided_enable", "guided_unroot", "in_call",
-            "mms", "photo_capture", "privacy_indicators", "recent_calls", "recovery_handoff",
-            "restore_orchestration", "scientific_math", "staged_update_state", "update_status", "video_capture",
+            "access_history", "albums", "conversation_history", "guided_enable", "guided_unroot", "mms",
+            "photo_capture", "privacy_indicators", "recovery_handoff", "restore_orchestration", "scientific_math",
+            "staged_update_state", "update_status", "video_capture",
         ])
         for item in (
-            "phone:in_call", "phone:recent_calls", "messages:mms", "messages:conversation_history",
-            "camera:photo_capture", "camera:video_capture", "backup:restore_orchestration", "apps:update_status",
+            "messages:mms", "messages:conversation_history", "camera:photo_capture", "camera:video_capture",
+            "backup:restore_orchestration", "apps:update_status",
         ):
             self.assertIn(item, summary["remaining_app_capabilities"])
         for item in (
-            "messages:sms", "camera:camera_capability_report", "browser:web_browsing", "browser:downloads", "browser:privacy_controls",
-            "weather:forecast", "weather:provider_attribution", "weather:unit_preferences", "backup:supported_data_backup",
+            "phone:dialer", "phone:in_call", "phone:recent_calls", "messages:sms", "camera:camera_capability_report",
+            "browser:web_browsing", "browser:downloads", "browser:privacy_controls", "weather:forecast",
+            "weather:provider_attribution", "weather:unit_preferences", "backup:supported_data_backup",
             "backup:recovery_metadata", "contacts:provider_bridge", "calendar:provider_bridge",
         ):
             self.assertNotIn(item, summary["remaining_app_capabilities"])
@@ -74,8 +75,14 @@ class AndroidAppSourceTests(unittest.TestCase):
     def test_phone_cannot_gain_direct_call_permission(self):
         self._replace_and_reject("apps/SwirPhone/AndroidManifest.xml", "<application", '<uses-permission android:name="android.permission.CALL_PHONE"/>\n    <application')
 
+    def test_phone_cannot_gain_call_log_write_permission(self):
+        self._replace_and_reject("apps/SwirPhone/AndroidManifest.xml", "<application", '<uses-permission android:name="android.permission.WRITE_CALL_LOG"/>\n    <application')
+
     def test_phone_must_keep_user_visible_dial_handoff(self):
         self._replace_and_reject("apps/SwirPhone/src/org/swir/phoneos/phone/MainActivity.java", "Intent.ACTION_DIAL", "Intent.ACTION_CALL")
+
+    def test_phone_must_keep_read_only_call_history_query(self):
+        self._replace_and_reject("apps/SwirPhone/src/org/swir/phoneos/phone/MainActivity.java", "getContentResolver().query", "getContentResolver().delete")
 
     def test_messages_cannot_gain_direct_sms_permission(self):
         self._replace_and_reject("apps/SwirMessages/AndroidManifest.xml", "<application", '<uses-permission android:name="android.permission.SEND_SMS"/>\n    <application')
