@@ -30,8 +30,11 @@ ALLOWED_PHASES = (
     "RUNTIME_LAUNCH",
     "RUNTIME_WAIT",
     "APP_SMOKE",
+    "APP_I18N",
+    "RUNTIME_REVIEW",
     "RUNTIME_BIND",
     "RUN_BIND",
+    "TRUST_BIND",
 )
 EVIDENCE_IDS = (
     "run_context",
@@ -43,8 +46,12 @@ EVIDENCE_IDS = (
     "build_evidence",
     "runtime_evidence",
     "app_smoke",
+    "runtime_i18n",
+    "runtime_review",
     "runtime_bundle",
     "aosp_run_evidence",
+    "runtime_trust_bundle",
+    "runtime_review_trust_bundle",
 )
 NEXT_ACTION = {
     "BOOTSTRAP": "Inspect runner availability and checkout diagnostics before retrying.",
@@ -58,8 +65,11 @@ NEXT_ACTION = {
     "RUNTIME_LAUNCH": "Inspect Cuttlefish host prerequisites and launch output for the exact built product.",
     "RUNTIME_WAIT": "Inspect boot failure while preserving exact product/fingerprint/runtime identity checks.",
     "APP_SMOKE": "Fix the first source-ready app that fails package-local launch or resumed-activity confirmation.",
+    "APP_I18N": "Fix the first package/locale failure and verify every captured locale override is restored; reset the disposable guest if restoration cannot be proven.",
+    "RUNTIME_REVIEW": "Resolve boot/launch/locale/manifest continuity without promoting app status or visual/accessibility claims.",
     "RUNTIME_BIND": "Resolve build/runtime fingerprint continuity failure; never mix evidence from different builds.",
     "RUN_BIND": "Resolve cross-report continuity mismatch before considering any runtime status promotion.",
+    "TRUST_BIND": "Resolve exact adb/run/runtime-review continuity; do not weaken tool or localization trust checks.",
 }
 
 
