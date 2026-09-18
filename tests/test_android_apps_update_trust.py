@@ -1,13 +1,16 @@
 from pathlib import Path
 import unittest
+import xml.etree.ElementTree as ET
 
 
 ROOT = Path(__file__).resolve().parents[1]
 UPDATE_ROOT = ROOT / "platform" / "aosp_product" / "apps" / "SwirUpdate"
 TRUST = UPDATE_ROOT / "src" / "org" / "swir" / "phoneos" / "update" / "OtaTrustStore.java"
 DEFAULT = UPDATE_ROOT / "src" / "org" / "swir" / "phoneos" / "update" / "DefaultOtaTrustStore.java"
+MAIN = UPDATE_ROOT / "src" / "org" / "swir" / "phoneos" / "update" / "MainActivity.java"
 WORKFLOW = ROOT / ".github" / "workflows" / "essential-source-suite.yml"
 DOC = ROOT / "docs" / "OTA_TRUST_STORE.md"
+LOCALE_DIRS = ("values", "values-pl", "values-nb", "values-de", "values-es", "values-fr", "values-pt", "values-ar")
 
 
 class SwirUpdateTrustStorePolicyTest(unittest.TestCase):
@@ -30,6 +33,23 @@ class SwirUpdateTrustStorePolicyTest(unittest.TestCase):
         self.assertNotIn("new OtaTrustStore.Entry", text)
         self.assertNotIn("BEGIN PUBLIC KEY", text)
         self.assertNotIn("BEGIN PRIVATE KEY", text)
+
+    def test_updater_surfaces_default_trust_state_to_owner(self):
+        text = MAIN.read_text(encoding="utf-8")
+        self.assertIn("DefaultOtaTrustStore.create()", text)
+        self.assertIn("addCard(R.string.ota_trust_store, trustStoreLabel())", text)
+        self.assertIn("otaTrustStore.hasProvisionedKeys()", text)
+        self.assertIn("R.string.ota_trust_store_empty", text)
+        self.assertIn("R.string.ota_trust_store_ready", text)
+
+    def test_trust_state_strings_exist_in_every_supported_locale(self):
+        required = {"ota_trust_store", "ota_trust_store_ready", "ota_trust_store_empty"}
+        for locale in LOCALE_DIRS:
+            path = UPDATE_ROOT / "res" / locale / "strings.xml"
+            root = ET.parse(path).getroot()
+            keys = {node.attrib.get("name") for node in root.findall("string")}
+            with self.subTest(locale=locale):
+                self.assertTrue(required.issubset(keys))
 
     def test_production_updater_source_contains_no_private_signing_material_or_write_primitives(self):
         dangerous = (
