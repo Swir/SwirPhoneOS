@@ -148,6 +148,7 @@ class SwirRootReadinessTests(unittest.TestCase):
         self.assertIn("verified_device_profile", result["missing_requirements"])
         self.assertIn("owner_confirmation", result["missing_requirements"])
         self.assertIn("update_state_safe", result["missing_requirements"])
+        self.assertIn("expected_nonroot_state_known", result["missing_requirements"])
         self.assertFalse(result["policy_backend_available"])
         self.assertFalse(result["hardware_root_authorized"])
         self.assertFalse(result["transition_ready"])
@@ -181,13 +182,19 @@ class SwirRootReadinessTests(unittest.TestCase):
             with self.assertRaises(RollbackMaterialEvidenceError):
                 collect_rollback_material_evidence(journal, root)
 
-    def test_unroot_projection_requires_expected_nonroot_state(self):
+    def test_unroot_projection_uses_same_recovery_safe_gate_set(self):
         result = self._ready("unroot")
+        self.assertIn("verified_device_profile", result["missing_requirements"])
         self.assertIn("owner_confirmation", result["missing_requirements"])
+        self.assertIn("update_state_safe", result["missing_requirements"])
         self.assertIn("expected_nonroot_state_known", result["missing_requirements"])
-        self.assertNotIn("update_state_safe", result["missing_requirements"])
         self.assertNotIn("rollback_material_verified", result["missing_requirements"])
         self.assertFalse(result["transition_ready"])
+
+    def test_enable_and_unroot_project_identical_required_gate_names(self):
+        enable = self._ready("enable")
+        unroot = self._ready("unroot")
+        self.assertEqual(set(enable["required_gates"]), set(unroot["required_gates"]))
 
     def test_rejects_hardware_and_journal_build_mismatch(self):
         journal = _journal()
