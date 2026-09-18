@@ -24,6 +24,7 @@ public final class MainActivity extends Activity {
     private static final int REQUEST_LOCAL_PACKAGE = 410;
 
     private final ExecutorService inspectionExecutor = Executors.newSingleThreadExecutor();
+    private final OtaTrustStore otaTrustStore = DefaultOtaTrustStore.create();
     private LinearLayout cards;
     private volatile boolean destroyed;
     private boolean packageInspecting;
@@ -85,6 +86,7 @@ public final class MainActivity extends Activity {
         addCard(R.string.fingerprint, Build.FINGERPRINT);
         addCard(R.string.security_patch, Build.VERSION.SECURITY_PATCH);
         addCard(R.string.signature_engine, getString(R.string.signature_engine_ready));
+        addCard(R.string.ota_trust_store, trustStoreLabel());
         addCard(R.string.install_state, getString(R.string.no_package_staged));
         addCard(R.string.local_package, packageStatusLabel());
         if (packageDisplayName != null) addCard(R.string.package_name, packageDisplayName);
@@ -94,6 +96,12 @@ public final class MainActivity extends Activity {
         if (packageInspection != null && !packageInspection.sha256().isEmpty()) {
             addCard(R.string.package_sha256, packageInspection.sha256());
         }
+    }
+
+    private String trustStoreLabel() {
+        return otaTrustStore.hasProvisionedKeys()
+                ? getString(R.string.ota_trust_store_ready)
+                : getString(R.string.ota_trust_store_empty);
     }
 
     private String packageStatusLabel() {
