@@ -65,7 +65,7 @@ def evaluate(data: dict) -> dict:
     if any(g["passed"] for g in gates) and (not isinstance(candidate, str) or not re.fullmatch(r"[0-9a-f]{40}", candidate)):
         raise ValueError("Beta evidence must identify an exact candidate commit.")
     # A ledger alone cannot prove test execution, artifact trust or hardware state.
-    # Keep release publication disabled until an evidence verifier is implemented.
+    # Exact candidate-file binding exists, but semantic gate verification is still incomplete.
     return {
         "progress_percent": done,
         "completed_milestones": sum(m["complete"] for m in milestones),
@@ -75,5 +75,5 @@ def evaluate(data: dict) -> dict:
         "blockers": blockers,
         "ledger_gates_complete": not blockers,
         "beta_release_allowed": False,
-        "publication_blocker": "Independent candidate/artifact/evidence verifier not implemented.",
+        "publication_blocker": "Candidate file binding exists, but gate-specific semantic evidence verification is not complete.",
     }
