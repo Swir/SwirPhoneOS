@@ -1,5 +1,6 @@
 package org.swir.phoneos.clock;
 
+import java.time.DateTimeException;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -86,18 +87,29 @@ public final class ClockCore {
     }
 
     public static String worldTime(String zoneId, long epochMillis, Locale locale) {
-        if (zoneId == null || locale == null) throw new IllegalArgumentException("zone/locale required");
-        ZoneId zone = ZoneId.of(zoneId);
+        if (locale == null) throw new IllegalArgumentException("locale required");
+        ZoneId zone = requireZoneId(zoneId);
         ZonedDateTime value = ZonedDateTime.ofInstant(Instant.ofEpochMilli(epochMillis), zone);
         DateTimeFormatter formatter = DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT).withLocale(locale);
         return formatter.format(value);
     }
 
     public static String worldZoneLabel(String zoneId, long epochMillis, Locale locale) {
-        if (zoneId == null || locale == null) throw new IllegalArgumentException("zone/locale required");
-        ZoneId.of(zoneId);
+        if (locale == null) throw new IllegalArgumentException("locale required");
+        requireZoneId(zoneId);
         TimeZone timeZone = TimeZone.getTimeZone(zoneId);
         boolean daylight = timeZone.inDaylightTime(new Date(epochMillis));
         return timeZone.getDisplayName(daylight, TimeZone.LONG, locale);
+    }
+
+    private static ZoneId requireZoneId(String zoneId) {
+        if (zoneId == null || zoneId.trim().isEmpty()) {
+            throw new IllegalArgumentException("zone required");
+        }
+        try {
+            return ZoneId.of(zoneId);
+        } catch (DateTimeException exc) {
+            throw new IllegalArgumentException("invalid world zone", exc);
+        }
     }
 }
