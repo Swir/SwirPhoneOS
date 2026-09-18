@@ -68,6 +68,15 @@ class SwirPhoneInCallSourceTests(unittest.TestCase):
         for forbidden in ("TelecomManager.placeCall", "Intent.ACTION_CALL", "Runtime.getRuntime", "ProcessBuilder", "getContentResolver().insert", "getContentResolver().delete"):
             self.assertNotIn(forbidden, source)
 
+    def test_private_or_restricted_caller_identity_is_not_exposed(self):
+        source = (ROOT / "src/org/swir/phoneos/phone/SwirInCallService.java").read_text(encoding="utf-8")
+        presentation = source.index("getHandlePresentation()")
+        allowed = source.index("TelecomManager.PRESENTATION_ALLOWED")
+        handle = source.index("details.getHandle()")
+        self.assertLess(presentation, handle)
+        self.assertLess(allowed, handle)
+        self.assertIn('if (details.getHandlePresentation() != TelecomManager.PRESENTATION_ALLOWED) return "";', source)
+
     def test_incall_activity_is_resource_backed_and_owner_controlled(self):
         source = (ROOT / "src/org/swir/phoneos/phone/InCallActivity.java").read_text(encoding="utf-8")
         for token in ("R.string.answer_call", "R.string.reject_call", "R.string.end_call", "SwirInCallService.answerActiveCall", "SwirInCallService.rejectActiveCall", "SwirInCallService.disconnectActiveCall"):
