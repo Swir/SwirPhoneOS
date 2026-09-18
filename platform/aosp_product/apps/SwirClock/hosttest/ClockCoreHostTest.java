@@ -44,7 +44,8 @@ public final class ClockCoreHostTest {
         require(ClockCore.nextWorldZoneIndex(4) == 0, "world zone selection wraps");
         requireThrows(() -> ClockCore.worldZoneId(-1), "negative world zone rejected");
         requireThrows(() -> ClockCore.nextWorldZoneIndex(5), "overflow world zone rejected");
-        requireThrows(() -> ClockCore.worldTime("Not/AZone", 0L, Locale.US), "invalid IANA zone rejected");
+        requireThrows(() -> ClockCore.worldTime("Not/AZone", 0L, Locale.US), "invalid IANA world-time zone rejected");
+        requireThrows(() -> ClockCore.worldZoneLabel("Not/AZone", 0L, Locale.US), "invalid IANA world-label zone rejected");
         require(ClockCore.worldTime("UTC", 0L, Locale.US).startsWith("12:00"), "UTC epoch formatting");
         require(ClockCore.worldTime("Asia/Tokyo", 0L, Locale.US).startsWith("9:00"), "Tokyo epoch formatting");
         require(!ClockCore.worldZoneLabel("Europe/Oslo", 0L, Locale.US).trim().isEmpty(), "localized zone label");
