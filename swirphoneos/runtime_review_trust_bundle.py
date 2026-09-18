@@ -61,6 +61,16 @@ def _hex64(value: object, field: str) -> str:
     return value
 
 
+def _fingerprint_digest(value: object, field: str) -> str:
+    if not isinstance(value, str) or not value or len(value) > 512:
+        raise RuntimeReviewTrustBundleError(f"{field} is missing or oversized.")
+    try:
+        encoded = value.encode("ascii", "strict")
+    except UnicodeEncodeError as exc:
+        raise RuntimeReviewTrustBundleError(f"{field} must be ASCII.") from exc
+    return hashlib.sha256(encoded).hexdigest()
+
+
 def _canonical_sha256(report: dict[str, object], excluded: set[str]) -> str:
     canonical = {key: value for key, value in report.items() if key not in excluded}
     encoded = json.dumps(canonical, sort_keys=True, separators=(",", ":"), ensure_ascii=True).encode("utf-8")
@@ -102,6 +112,8 @@ def _validate_run(report: dict[str, object]) -> tuple[str, str, str, list[str]]:
     if run_digest != _canonical_sha256(report, {"run_evidence_sha256", "run_evidence_complete"}):
         raise RuntimeReviewTrustBundleError("AOSP run evidence canonical digest is invalid.")
     fingerprint_digest = _hex64(report.get("build_fingerprint_sha256"), "build_fingerprint_sha256")
+    if fingerprint_digest != _fingerprint_digest(report.get("build_fingerprint"), "build_fingerprint"):
+        raise RuntimeReviewTrustBundleError("AOSP run build fingerprint digest is internally inconsistent.")
     manifest_digest = _hex64(report.get("app_manifest_sha256"), "app_manifest_sha256")
     packages = _unique_strings(report.get("source_ready_packages"), "source_ready_packages")
     if packages != sorted(packages):
@@ -169,6 +181,8 @@ def _validate_runtime_review(
         raise RuntimeReviewTrustBundleError("Runtime localization review overclaims visual/accessibility/support state.")
     if report.get("build_fingerprint_sha256") != fingerprint_digest:
         raise RuntimeReviewTrustBundleError("Runtime localization review belongs to a different build fingerprint.")
+    if _fingerprint_digest(report.get("build_fingerprint"), "runtime review build_fingerprint") != fingerprint_digest:
+        raise RuntimeReviewTrustBundleError("Runtime localization review fingerprint text is inconsistent with the bound digest.")
     if report.get("app_manifest_sha256") != manifest_digest:
         raise RuntimeReviewTrustBundleError("Runtime localization review belongs to a different system-app manifest.")
     if _unique_strings(report.get("source_ready_packages"), "source_ready_packages") != packages:
