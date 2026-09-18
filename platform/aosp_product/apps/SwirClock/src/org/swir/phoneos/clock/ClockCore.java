@@ -67,6 +67,10 @@ public final class ClockCore {
         return WORLD_ZONE_IDS.length;
     }
 
+    public static int safeWorldZoneIndex(int index) {
+        return index >= 0 && index < WORLD_ZONE_IDS.length ? index : 0;
+    }
+
     public static String worldZoneId(int index) {
         if (index < 0 || index >= WORLD_ZONE_IDS.length) {
             throw new IllegalArgumentException("world zone index out of range");
