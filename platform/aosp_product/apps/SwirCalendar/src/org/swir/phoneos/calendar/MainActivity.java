@@ -10,9 +10,9 @@ import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
-import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
+import android.provider.CalendarContract;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.View;
@@ -23,8 +23,12 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.ByteBuffer;
+import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
 import java.text.DateFormat;
 import java.util.Calendar;
@@ -32,6 +36,7 @@ import java.util.Date;
 
 public final class MainActivity extends Activity {
     private static final int EXPORT_REQUEST = 51;
+    private static final int IMPORT_REQUEST = 52;
     private EventDb db;
     private LinearLayout eventList;
     private EditText search;
@@ -41,43 +46,63 @@ public final class MainActivity extends Activity {
     protected void onCreate(Bundle state) {
         super.onCreate(state);
         db = new EventDb(this);
+        setTitle(R.string.app_name);
+        getWindow().setStatusBarColor(getColor(R.color.swir_background));
+        getWindow().setNavigationBarColor(getColor(R.color.swir_surface));
         setContentView(buildUi());
         reload();
     }
 
     private View buildUi() {
+        int spaceXs = getResources().getDimensionPixelSize(R.dimen.swir_space_xs);
+        int spaceSm = getResources().getDimensionPixelSize(R.dimen.swir_space_sm);
+        int spaceMd = getResources().getDimensionPixelSize(R.dimen.swir_space_md);
+
         ScrollView scroll = new ScrollView(this);
-        scroll.setBackgroundColor(Color.rgb(7, 16, 29));
-        LinearLayout root = column(24);
+        scroll.setBackgroundColor(getColor(R.color.swir_background));
+        LinearLayout root = column(spaceMd);
         scroll.addView(root);
-        root.addView(text(getString(R.string.app_name), 30, Color.WHITE));
-        root.addView(text(getString(R.string.subtitle), 15, Color.rgb(122, 214, 255)));
+
+        TextView title = text(getString(R.string.app_name), 30, getColor(R.color.swir_text_primary));
+        title.setPadding(0, spaceXs, 0, spaceXs);
+        root.addView(title);
+        TextView subtitle = text(getString(R.string.subtitle), 15, getColor(R.color.swir_text_secondary));
+        subtitle.setPadding(0, 0, 0, spaceSm);
+        root.addView(subtitle);
+
         search = new EditText(this);
         search.setHint(R.string.search_hint);
-        search.setTextColor(Color.WHITE);
-        search.setHintTextColor(Color.rgb(125, 143, 161));
+        search.setTextColor(getColor(R.color.swir_text_primary));
+        search.setHintTextColor(getColor(R.color.swir_text_secondary));
         search.setSingleLine(true);
+        search.setMinHeight(getResources().getDimensionPixelSize(R.dimen.swir_touch_min));
         search.addTextChangedListener(new TextWatcher() {
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
             public void onTextChanged(CharSequence s, int start, int before, int count) { reload(); }
             public void afterTextChanged(Editable s) {}
         });
         root.addView(search);
+
         Button add = actionButton(getString(R.string.add_event));
         add.setOnClickListener(v -> {
             long start = System.currentTimeMillis() + 60L * 60L * 1000L;
             showEditor(null, "", "", start, start + EventPolicy.DEFAULT_DURATION_MS);
         });
         root.addView(add);
-        eventList = column(10);
+
+        Button importEvent = actionButton(getString(R.string.import_event));
+        importEvent.setOnClickListener(v -> chooseImport());
+        root.addView(importEvent);
+
+        eventList = column(spaceSm);
         root.addView(eventList);
         return scroll;
     }
 
-    private LinearLayout column(int padding) {
+    private LinearLayout column(int paddingPx) {
         LinearLayout layout = new LinearLayout(this);
         layout.setOrientation(LinearLayout.VERTICAL);
-        layout.setPadding(padding, padding, padding, padding);
+        layout.setPadding(paddingPx, paddingPx, paddingPx, paddingPx);
         return layout;
     }
 
@@ -93,6 +118,7 @@ public final class MainActivity extends Activity {
         Button button = new Button(this);
         button.setText(label);
         button.setAllCaps(false);
+        button.setMinHeight(getResources().getDimensionPixelSize(R.dimen.swir_touch_min));
         return button;
     }
 
@@ -125,18 +151,28 @@ public final class MainActivity extends Activity {
                 shown++;
             }
         }
-        if (shown == 0) eventList.addView(text(getString(R.string.empty_state), 15, Color.LTGRAY));
+        if (shown == 0) {
+            TextView empty = text(getString(R.string.empty_state), 15, getColor(R.color.swir_text_secondary));
+            eventList.addView(empty);
+        }
     }
 
     private void showEditor(Long id, String oldTitle, String oldLocation, long oldStart, long oldEnd) {
-        LinearLayout form = column(12);
+        int spaceSm = getResources().getDimensionPixelSize(R.dimen.swir_space_sm);
+        LinearLayout form = column(spaceSm);
         EditText title = new EditText(this);
         title.setHint(R.string.title_hint);
         title.setText(oldTitle);
+        title.setTextColor(getColor(R.color.swir_text_primary));
+        title.setHintTextColor(getColor(R.color.swir_text_secondary));
+        title.setMinHeight(getResources().getDimensionPixelSize(R.dimen.swir_touch_min));
         form.addView(title);
         EditText location = new EditText(this);
         location.setHint(R.string.location_hint);
         location.setText(oldLocation);
+        location.setTextColor(getColor(R.color.swir_text_primary));
+        location.setHintTextColor(getColor(R.color.swir_text_secondary));
+        location.setMinHeight(getResources().getDimensionPixelSize(R.dimen.swir_touch_min));
         form.addView(location);
         long[] times = {oldStart, oldEnd};
         Button start = actionButton(getString(R.string.start) + ": " + formatPoint(times[0]));
@@ -161,11 +197,7 @@ public final class MainActivity extends Activity {
                 Toast.makeText(this, R.string.invalid_event, Toast.LENGTH_SHORT).show();
                 return;
             }
-            ContentValues values = new ContentValues();
-            values.put("title", nextTitle);
-            values.put("location", nextLocation);
-            values.put("start_ms", times[0]);
-            values.put("end_ms", nextEnd);
+            ContentValues values = eventValues(nextTitle, nextLocation, times[0], nextEnd);
             SQLiteDatabase writable = db.getWritableDatabase();
             if (id == null) writable.insertOrThrow("events", null, values);
             else writable.update("events", values, "id=?", new String[]{Long.toString(id)});
@@ -173,6 +205,15 @@ public final class MainActivity extends Activity {
             reload();
         }));
         dialog.show();
+    }
+
+    private static ContentValues eventValues(String title, String location, long start, long end) {
+        ContentValues values = new ContentValues();
+        values.put("title", title);
+        values.put("location", location);
+        values.put("start_ms", start);
+        values.put("end_ms", end);
+        return values;
     }
 
     private String formatPoint(long millis) {
@@ -199,8 +240,14 @@ public final class MainActivity extends Activity {
 
     private void showActions(long id, String title, String location, long start, long end) {
         new AlertDialog.Builder(this).setTitle(R.string.event_actions)
-                .setItems(new String[]{getString(R.string.share), getString(R.string.export)}, (d, which) -> {
-                    if (which == 0) share(id, title, location, start, end); else export(id, title, location, start, end);
+                .setItems(new String[]{
+                        getString(R.string.share),
+                        getString(R.string.export),
+                        getString(R.string.add_to_device_calendar)
+                }, (d, which) -> {
+                    if (which == 0) share(id, title, location, start, end);
+                    else if (which == 1) export(id, title, location, start, end);
+                    else addToDeviceCalendar(title, location, start, end);
                 }).show();
     }
 
@@ -224,6 +271,61 @@ public final class MainActivity extends Activity {
         startActivityForResult(intent, EXPORT_REQUEST);
     }
 
+    private void chooseImport() {
+        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        intent.setType("text/calendar");
+        startActivityForResult(intent, IMPORT_REQUEST);
+    }
+
+    private void importLocalEvent(Uri uri) {
+        try {
+            String source = readUtf8Bounded(uri, EventPolicy.MAX_ICS_BYTES);
+            EventPolicy.ImportedEvent imported = EventPolicy.parseSingleEvent(source);
+            if (imported == null) throw new IllegalArgumentException("unsupported calendar file");
+            db.getWritableDatabase().insertOrThrow("events", null, eventValues(
+                    imported.title(), imported.location(), imported.startMillis(), imported.endMillis()));
+            Toast.makeText(this, R.string.imported_event, Toast.LENGTH_SHORT).show();
+            reload();
+        } catch (Exception error) {
+            Toast.makeText(this, R.string.import_failed, Toast.LENGTH_LONG).show();
+        }
+    }
+
+    private String readUtf8Bounded(Uri uri, int maxBytes) throws Exception {
+        try (InputStream input = getContentResolver().openInputStream(uri);
+             ByteArrayOutputStream output = new ByteArrayOutputStream()) {
+            if (input == null) throw new IOException("no input stream");
+            byte[] buffer = new byte[8192];
+            int total = 0;
+            int read;
+            while ((read = input.read(buffer)) != -1) {
+                total += read;
+                if (total > maxBytes) throw new IOException("calendar file too large");
+                output.write(buffer, 0, read);
+            }
+            return StandardCharsets.UTF_8.newDecoder()
+                    .onMalformedInput(CodingErrorAction.REPORT)
+                    .onUnmappableCharacter(CodingErrorAction.REPORT)
+                    .decode(ByteBuffer.wrap(output.toByteArray()))
+                    .toString();
+        }
+    }
+
+    private void addToDeviceCalendar(String title, String location, long start, long end) {
+        Intent intent = new Intent(Intent.ACTION_INSERT);
+        intent.setData(CalendarContract.Events.CONTENT_URI);
+        intent.putExtra(CalendarContract.Events.TITLE, title);
+        intent.putExtra(CalendarContract.Events.EVENT_LOCATION, location);
+        intent.putExtra(CalendarContract.EXTRA_EVENT_BEGIN_TIME, start);
+        intent.putExtra(CalendarContract.EXTRA_EVENT_END_TIME, end);
+        if (intent.resolveActivity(getPackageManager()) == null) {
+            Toast.makeText(this, R.string.device_calendar_unavailable, Toast.LENGTH_LONG).show();
+            return;
+        }
+        startActivity(intent);
+    }
+
     private void confirmDelete(long id) {
         new AlertDialog.Builder(this).setTitle(R.string.delete_title).setMessage(R.string.delete_message)
                 .setNegativeButton(R.string.cancel, null)
@@ -236,8 +338,13 @@ public final class MainActivity extends Activity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode != EXPORT_REQUEST || resultCode != RESULT_OK || data == null || data.getData() == null || pendingExport == null) return;
+        if (resultCode != RESULT_OK || data == null || data.getData() == null) return;
         Uri uri = data.getData();
+        if (requestCode == IMPORT_REQUEST) {
+            importLocalEvent(uri);
+            return;
+        }
+        if (requestCode != EXPORT_REQUEST || pendingExport == null) return;
         try (OutputStream out = getContentResolver().openOutputStream(uri, "w")) {
             if (out == null) throw new IOException("no output stream");
             out.write(pendingExport.getBytes(StandardCharsets.UTF_8));
