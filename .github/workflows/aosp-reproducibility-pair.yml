@@ -1,0 +1,121 @@
+name: AOSP reproducibility pair evidence
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_sha:
+        description: Exact 40-character SwirPhoneOS source commit shared by both completed AOSP builds
+        required: true
+        type: string
+      build_run_a_id:
+        description: AOSP build evidence workflow run ID for independent run A
+        required: true
+        type: string
+      continuity_run_a_id:
+        description: Post-run artifact continuity workflow run ID for run A
+        required: true
+        type: string
+      build_run_b_id:
+        description: AOSP build evidence workflow run ID for independent run B
+        required: true
+        type: string
+      continuity_run_b_id:
+        description: Post-run artifact continuity workflow run ID for run B
+        required: true
+        type: string
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  compare:
+    name: Compare two exact retained AOSP build chains
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Validate immutable comparison identity
+        shell: bash
+        env:
+          SOURCE_SHA: ${{ inputs.source_sha }}
+          BUILD_A: ${{ inputs.build_run_a_id }}
+          CONTINUITY_A: ${{ inputs.continuity_run_a_id }}
+          BUILD_B: ${{ inputs.build_run_b_id }}
+          CONTINUITY_B: ${{ inputs.continuity_run_b_id }}
+        run: |
+          set -euo pipefail
+          [[ "$SOURCE_SHA" =~ ^[0-9a-f]{40}$ ]]
+          for run_id in "$BUILD_A" "$CONTINUITY_A" "$BUILD_B" "$CONTINUITY_B"; do
+            [[ "$run_id" =~ ^[1-9][0-9]*$ ]]
+          done
+          test "$BUILD_A" != "$BUILD_B"
+          test "$CONTINUITY_A" != "$CONTINUITY_B"
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.source_sha }}
+          persist-credentials: false
+
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.14'
+
+      - name: Download immutable build evidence for run A
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: swirphoneos-aosp-evidence-${{ inputs.source_sha }}
+          path: evidence/run-a
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.build_run_a_id }}
+
+      - name: Download immutable post-run continuity for run A
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: swirphoneos-aosp-postrun-continuity-${{ inputs.source_sha }}
+          path: continuity/run-a
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.continuity_run_a_id }}
+
+      - name: Download immutable build evidence for run B
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: swirphoneos-aosp-evidence-${{ inputs.source_sha }}
+          path: evidence/run-b
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.build_run_b_id }}
+
+      - name: Download immutable post-run continuity for run B
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: swirphoneos-aosp-postrun-continuity-${{ inputs.source_sha }}
+          path: continuity/run-b
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.continuity_run_b_id }}
+
+      - name: Compare exact reviewed inputs and complete retained artifact inventories
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f "$GITHUB_WORKSPACE/evidence/run-a/aosp-run-evidence.json"
+          test -f "$GITHUB_WORKSPACE/evidence/run-b/aosp-run-evidence.json"
+          test -f "$GITHUB_WORKSPACE/continuity/run-a/aosp-artifact-continuity.json"
+          test -f "$GITHUB_WORKSPACE/continuity/run-b/aosp-artifact-continuity.json"
+          python -m swirphoneos.aosp_reproducibility \
+            --run-a "$GITHUB_WORKSPACE/evidence/run-a/aosp-run-evidence.json" \
+            --continuity-a "$GITHUB_WORKSPACE/continuity/run-a/aosp-artifact-continuity.json" \
+            --run-b "$GITHUB_WORKSPACE/evidence/run-b/aosp-run-evidence.json" \
+            --continuity-b "$GITHUB_WORKSPACE/continuity/run-b/aosp-artifact-continuity.json" \
+            --source-commit "${{ inputs.source_sha }}" \
+            > "$GITHUB_WORKSPACE/aosp-reproducibility-pair.json"
+
+      - name: Upload bounded reproducibility observation
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: swirphoneos-aosp-reproducibility-pair-${{ inputs.source_sha }}
+          if-no-files-found: error
+          retention-days: 30
+          path: aosp-reproducibility-pair.json
