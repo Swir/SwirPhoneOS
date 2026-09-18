@@ -1,5 +1,5 @@
 """Frozen Windows entry point for SwirPhoneStudio."""
-from swirphoneos.studio import main
+from swirphoneos.studio_desktop import main
 
 
 if __name__ == "__main__":
