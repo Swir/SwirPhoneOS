@@ -10,7 +10,7 @@ APP_ID = re.compile(r"[a-z][a-z0-9_]{1,31}\Z")
 PACKAGE = re.compile(r"org\.swir\.phoneos\.[a-z][a-z0-9_.]{1,63}\Z")
 ALLOWED_PHASES = {"emulator_core", "reference_hardware", "beta_integration"}
 ALLOWED_STATUS = {"PLANNED", "HOST_CONTRACT", "ANDROID_SOURCE", "ANDROID_RUNTIME", "HARDWARE_VERIFIED"}
-EXPECTED_DESIGN_CONTRACT = "swirphoneos-design-v5"
+EXPECTED_DESIGN_CONTRACT = "swirphoneos-design-v6"
 REQUIRED_APP_IDS = frozenset({"phone","contacts","messages","camera","gallery","files","settings","browser","clock","calculator","notes","recorder","calendar","weather","update","backup","privacy","device_care","apps","swirroot"})
 REQUIRED_KEYS = {"id","package","display_name","phase","status","hardware_dependent","critical_for_beta","capabilities"}
 
