@@ -12,7 +12,7 @@ public final class BrowserPolicyHostTest {
         check(!BrowserPolicy.isSafeUrl("file:///tmp/demo"), "file URLs must be rejected");
         check(BrowserPolicy.normalizeUrl("https://user:pass@example.com").isEmpty(), "userinfo must be rejected");
         check("example.com".equals(BrowserPolicy.displayHost("https://example.com/a")), "host display mismatch");
-        check(BrowserPolicy.searchUrl("swir phone").startsWith("https://www.google.com/search?q="), "search must be HTTPS");
+        check(BrowserPolicy.searchUrl("swir phone").startsWith("https://duckduckgo.com/?q="), "search must preserve the reviewed HTTPS provider");
         check(BrowserPolicy.searchUrl("   ").isEmpty(), "blank search must fail closed");
 
         check(BrowserPolicy.isSafeDownloadUrl("https://example.com/file.zip"), "explicit HTTPS download should be accepted");
