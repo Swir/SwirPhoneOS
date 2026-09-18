@@ -8,7 +8,9 @@ Swir Phone now contains a first-party **source-stage** Android default-phone/in-
 
 `SwirInCallService` is exported only through Android's `BIND_INCALL_SERVICE` service permission and declares `android.telecom.IN_CALL_SERVICE_UI=true`. When Android binds the service as the approved phone app, it keeps only the current in-process `Call` reference. Owner-visible controls can answer a ringing audio call, reject a ringing call or disconnect the active call. No call is placed from this service, no call log is read or written, and no call state is persisted.
 
-`InCallActivity` is not exported. It presents the active number and Android call state using localized resources and shared SwirPhoneOS design/touch tokens. Answer, reject and end-call actions are enabled only for compatible call states. The activity polls only the in-process service state and contains no network, storage, shell or provider I/O.
+Caller identity is shown only when Android reports `TelecomManager.PRESENTATION_ALLOWED`. Restricted, unknown, payphone or otherwise non-allowed presentations fail closed to the localized unknown-number label; the service checks presentation before reading the call handle so a private number is not exposed by this UI path.
+
+`InCallActivity` is not exported. It presents the allowed active number and Android call state using localized resources and shared SwirPhoneOS design/touch tokens. Answer, reject and end-call actions are enabled only for compatible call states. The activity polls only the in-process service state and contains no network, storage, shell or provider I/O.
 
 The service may request the in-call activity for ringing/dialing/connecting calls. Whether Android permits that launch, whether role eligibility is accepted, and how the exact telephony/IMS stack behaves are runtime properties and are not inferred from source.
 
@@ -22,7 +24,7 @@ The source contract deliberately does not implement recent-call history, multipl
 
 ## Localization and verification
 
-All owner-visible strings are resource-backed across the existing EN/PL/NB/DE/ES/FR/PT/AR catalogs. `tests/test_phone_incall_source.py` checks the manifest role/service boundary, explicit role request, no direct outgoing-call primitive, owner-visible call controls, staging closure and exact locale-key parity. The focused `SwirPhone source checks` workflow executes this contract alongside the existing Android source validator, localization checks and pure-Java dial policy.
+All owner-visible strings are resource-backed across the existing EN/PL/NB/DE/ES/FR/PT/AR catalogs. `tests/test_phone_incall_source.py` checks the manifest role/service boundary, explicit role request, no direct outgoing-call primitive, caller-presentation privacy gate, owner-visible call controls, staging closure and exact locale-key parity. The focused `SwirPhone source checks` workflow executes this contract alongside the existing Android source validator, localization checks and pure-Java dial policy.
 
 ## Truthful status
 
