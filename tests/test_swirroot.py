@@ -10,6 +10,15 @@ import unittest
 from swirphoneos.swirroot import SwirRootPolicyError, load_policy, public_policy_summary, validate_policy
 
 POLICY = Path("swirroot/policy.json")
+FULL_TRANSITION_GATES = {
+    "exact_build_match",
+    "verified_device_profile",
+    "owner_confirmation",
+    "rollback_material_verified",
+    "journal_available",
+    "update_state_safe",
+    "expected_nonroot_state_known",
+}
 
 
 class SwirRootPolicyTests(unittest.TestCase):
@@ -23,6 +32,11 @@ class SwirRootPolicyTests(unittest.TestCase):
         self.assertFalse(summary["write_operations_enabled"])
         self.assertFalse(summary["root_available"])
         self.assertEqual(summary["supported_build_count"], 0)
+
+    def test_enable_and_unroot_require_full_recovery_safe_gate_set(self):
+        summary = public_policy_summary(load_policy(POLICY))
+        self.assertEqual(set(summary["enable_requirements"]), FULL_TRANSITION_GATES)
+        self.assertEqual(set(summary["unroot_requirements"]), FULL_TRANSITION_GATES)
 
     def test_root_writes_without_exact_supported_build_are_rejected(self):
         bad = deepcopy(self.data)
@@ -47,6 +61,20 @@ class SwirRootPolicyTests(unittest.TestCase):
         bad["enable_requirements"].remove("rollback_material_verified")
         with self.assertRaises(SwirRootPolicyError):
             validate_policy(bad)
+
+    def test_expected_nonroot_gate_cannot_be_removed_from_enable(self):
+        bad = deepcopy(self.data)
+        bad["enable_requirements"].remove("expected_nonroot_state_known")
+        with self.assertRaises(SwirRootPolicyError):
+            validate_policy(bad)
+
+    def test_verified_profile_and_update_gate_cannot_be_removed_from_unroot(self):
+        for gate in ("verified_device_profile", "update_state_safe"):
+            with self.subTest(gate=gate):
+                bad = deepcopy(self.data)
+                bad["unroot_requirements"].remove(gate)
+                with self.assertRaises(SwirRootPolicyError):
+                    validate_policy(bad)
 
     def test_forbidden_exploit_policy_cannot_be_removed(self):
         bad = deepcopy(self.data)
