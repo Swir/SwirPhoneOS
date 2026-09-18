@@ -6,7 +6,6 @@ import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 
 public final class BackupPolicy {
     public static final int MAX_FILES = 64;
@@ -32,7 +31,8 @@ public final class BackupPolicy {
             char c = value.charAt(i);
             if (!Character.isISOControl(c) && c != '/' && c != '\\' && c != ':') out.append(c);
         }
-        return out.length() == 0 ? "document" : out.toString();
+        String safe = out.toString().trim();
+        return safe.isEmpty() || safe.equals(".") || safe.equals("..") ? "document" : safe;
     }
 
     public static String safeEntryName(String displayName, int index) {
@@ -131,7 +131,7 @@ public final class BackupPolicy {
     }
 
     public static boolean isLegacyManifest(String text) {
-        return text != null && text.startsWith("schema=1\n") && text.length() <= MAX_MANIFEST_BYTES;
+        return text != null && text.startsWith("schema=1\n") && text.getBytes(StandardCharsets.UTF_8).length <= MAX_MANIFEST_BYTES;
     }
 
     private static void validateRecord(FileRecord record, int index) {
@@ -188,7 +188,7 @@ public final class BackupPolicy {
             this.entryName = entryName;
             this.displayName = displayName;
             this.size = size;
-            this.sha256 = sha256 == null ? "" : sha256.toLowerCase(Locale.ROOT);
+            this.sha256 = sha256 == null ? "" : sha256;
         }
     }
 
