@@ -25,19 +25,22 @@ class RuntimeTrustBundleTests(unittest.TestCase):
         adb = adb.resolve()
         tool = capture_runtime_tool(adb)
         verification = verify_runtime_tool(adb, tool)
-        run = {
+        fingerprint = "swirphoneos_cf_x86_64/runtime-test:userdebug/test-keys"
+        run: dict[str, object] = {
             "schema_version": 1,
             "source": "local_aosp_run_evidence_chain",
             "scope": "BUILD_AND_RUNTIME",
+            "build_fingerprint": fingerprint,
+            "build_fingerprint_sha256": hashlib.sha256(fingerprint.encode("ascii")).hexdigest(),
             "build_chain_complete": True,
             "runtime_chain_complete": True,
-            "run_evidence_complete": True,
-            "run_evidence_sha256": "1" * 64,
-            "build_fingerprint_sha256": "2" * 64,
             "device_write_allowed": False,
             "physical_device_support_claimed": False,
             "status_promotion_performed": False,
         }
+        canonical = json.dumps(run, sort_keys=True, separators=(",", ":"), ensure_ascii=True).encode("utf-8")
+        run["run_evidence_sha256"] = hashlib.sha256(canonical).hexdigest()
+        run["run_evidence_complete"] = True
         return (
             _write(root / "run.json", run),
             _write(root / "tool.json", tool),
@@ -66,7 +69,8 @@ class RuntimeTrustBundleTests(unittest.TestCase):
             _write(run, value)
             with self.assertRaises(RuntimeTrustBundleError):
                 create_runtime_trust_bundle(run, tool, pre, post)
-            value["scope"] = "BUILD_AND_RUNTIME"
+            run, tool, pre, post = self._fixtures(root)
+            value = json.loads(run.read_text())
             value["device_write_allowed"] = True
             _write(run, value)
             with self.assertRaises(RuntimeTrustBundleError):
@@ -81,6 +85,7 @@ class RuntimeTrustBundleTests(unittest.TestCase):
             _write(post, value)
             with self.assertRaises(RuntimeTrustBundleError):
                 create_runtime_trust_bundle(run, tool, pre, post)
+            run, tool, pre, post = self._fixtures(root)
             value = json.loads(pre.read_text())
             value["device_write_allowed"] = True
             _write(pre, value)
@@ -94,10 +99,29 @@ class RuntimeTrustBundleTests(unittest.TestCase):
             post.write_text('{"schema_version":1,"schema_version":1}', encoding="utf-8")
             with self.assertRaises(RuntimeTrustBundleError):
                 create_runtime_trust_bundle(run, tool, pre, post)
+            run, tool, pre, post = self._fixtures(root)
             link = root / "run-link.json"
             link.symlink_to(run)
             with self.assertRaises(RuntimeTrustBundleError):
                 create_runtime_trust_bundle(link, tool, pre, post)
+
+    def test_rejects_rehashed_but_semantically_tampered_run(self) -> None:
+        with TemporaryDirectory() as folder:
+            root = Path(folder).resolve()
+            run, tool, pre, post = self._fixtures(root)
+            value = json.loads(run.read_text())
+            value["build_fingerprint"] = "forged/nonmatching"
+            canonical = {
+                key: item
+                for key, item in value.items()
+                if key not in {"run_evidence_sha256", "run_evidence_complete"}
+            }
+            value["run_evidence_sha256"] = hashlib.sha256(
+                json.dumps(canonical, sort_keys=True, separators=(",", ":"), ensure_ascii=True).encode("utf-8")
+            ).hexdigest()
+            _write(run, value)
+            with self.assertRaises(RuntimeTrustBundleError):
+                create_runtime_trust_bundle(run, tool, pre, post)
 
 
 if __name__ == "__main__":
