@@ -191,7 +191,7 @@ public final class MainActivity extends Activity {
                         DigestResult written;
                         try (InputStream input = getContentResolver().openInputStream(document.uri)) {
                             if (input == null) throw new IllegalStateException("source unavailable");
-                            written = copyDigest(input, zip, BackupPolicy.MAX_ENTRY_BYTES);
+                            written = copyLimited(input, zip, BackupPolicy.MAX_ENTRY_BYTES);
                         }
                         requireIntegrity(document.record, written);
                         zip.closeEntry();
@@ -215,7 +215,7 @@ public final class MainActivity extends Activity {
             DigestResult digest;
             try (InputStream input = getContentResolver().openInputStream(uri)) {
                 if (input == null) throw new IllegalStateException("source unavailable");
-                digest = copyDigest(input, null, BackupPolicy.MAX_ENTRY_BYTES);
+                digest = copyLimited(input, null, BackupPolicy.MAX_ENTRY_BYTES);
             }
             if (info.size >= 0 && info.size != digest.size) throw new IllegalStateException("source size changed");
             total += digest.size;
@@ -285,7 +285,7 @@ public final class MainActivity extends Activity {
             if (entry.isDirectory() || !entry.getName().startsWith("files/") || !BackupPolicy.validEntryName(entry.getName())) {
                 throw new IllegalStateException("legacy entry rejected");
             }
-            DigestResult result = copyDigest(zip, null, BackupPolicy.MAX_ENTRY_BYTES);
+            DigestResult result = copyLimited(zip, null, BackupPolicy.MAX_ENTRY_BYTES);
             total += result.size;
             if (!BackupPolicy.sizeAllowed(result.size, total)) throw new IllegalStateException("legacy size limit");
             count++;
@@ -303,7 +303,7 @@ public final class MainActivity extends Activity {
                 throw new IllegalStateException("archive entry mismatch");
             }
             DigestResult result = writer == null
-                    ? copyDigest(zip, null, BackupPolicy.MAX_ENTRY_BYTES)
+                    ? copyLimited(zip, null, BackupPolicy.MAX_ENTRY_BYTES)
                     : writer.write(record, zip);
             requireIntegrity(record, result);
             total += result.size;
@@ -344,7 +344,7 @@ public final class MainActivity extends Activity {
                         DigestResult result;
                         try (OutputStream output = getContentResolver().openOutputStream(temp, "w")) {
                             if (output == null) throw new IllegalStateException("restore destination unavailable");
-                            result = copyDigest(input, output, BackupPolicy.MAX_ENTRY_BYTES);
+                            result = copyLimited(input, output, BackupPolicy.MAX_ENTRY_BYTES);
                         }
                         index[0]++;
                         return result;
@@ -388,7 +388,7 @@ public final class MainActivity extends Activity {
         return output.toByteArray();
     }
 
-    private static DigestResult copyDigest(InputStream input, OutputStream output, long limit) throws Exception {
+    private static DigestResult copyLimited(InputStream input, OutputStream output, long limit) throws Exception {
         MessageDigest digest = MessageDigest.getInstance("SHA-256");
         byte[] buffer = new byte[8192];
         long total = 0;
