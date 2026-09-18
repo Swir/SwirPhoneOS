@@ -25,7 +25,7 @@ Version: **0.0.2.dev0 + unreleased Android-source/platform hardening**. Updated:
 | Cuttlefish product | `PRODUCT_PACKAGES` includes all 20 essential first-party apps; **not built or booted** |
 | ARM64 GSI product | Source contract registered as `swirphoneos_gsi_arm64-aosp_current-userdebug`; standard AOSP ARM64 + GSI-release inheritance, all 20 apps, exact staging and `systemimage` plan implemented; **not built, Treble/VTS-validated or physically tested** |
 | ARM64 GSI build evidence | Manual-only self-hosted workflow and fail-closed `system.img` SHA-256/build-identity collector implemented; compatibility/install/rollback/write/release flags remain false; no successful GSI build evidence recorded |
-| Shared Swir Android design | `SwirDesign` source contract v6 is statically linked and `Theme.SwirPhoneOS` declared by all 20 system apps; twelve activities directly consume the shared palette/touch tokens, including all 5/5 beta-critical core apps, Swir Backup, Swir Calendar and Swir Calculator; Android build, visual/runtime and accessibility review remain unverified |
+| Shared Swir Android design | `SwirDesign` source contract v7 is statically linked and `Theme.SwirPhoneOS` declared by all 20 system apps; thirteen activities directly consume the shared palette/touch tokens, including all 5/5 beta-critical core apps, Swir Backup, Swir Calendar, Swir Calculator and Swir Clock; Android build, visual/runtime and accessibility review remain unverified |
 | Swir Phone | `ANDROID_SOURCE`; permission-free keypad + explicit `ACTION_DIAL`; in-call/default-role/recent calls open |
 | Swir Contacts | `ANDROID_SOURCE`; exactly `READ_CONTACTS`, scoped provider browse/search, Android-managed create/edit, vCard import/export; runtime unverified |
 | Swir Messages | `ANDROID_SOURCE`; permission-free local compose/draft + explicit `ACTION_SENDTO`/`smsto:`; MMS/history/runtime/carrier behavior open |
@@ -34,7 +34,7 @@ Version: **0.0.2.dev0 + unreleased Android-source/platform hardening**. Updated:
 | Swir Files | `ANDROID_SOURCE`; user-granted SAF browse/search/copy/move/rename/create/share/delete flows; shared Swir design/touch tokens at source stage; provider/runtime/accessibility behavior unverified |
 | Swir Settings | `ANDROID_SOURCE`; reviewed settings routes/search/device state; runtime unverified |
 | Swir Browser | `ANDROID_SOURCE`; exactly `INTERNET`, HTTPS-first WebView with conservative privacy defaults plus app-scoped owner-visible `DownloadManager` downloads; no broad storage permission or WebView-cookie forwarding; runtime/redirect behavior unverified |
-| Swir Clock | `ANDROID_SOURCE`; localized time/stopwatch/timer/user-visible alarm hand-off |
+| Swir Clock | `ANDROID_SOURCE`; localized local/world time with owner-selected private zone persistence, stopwatch, timer and user-visible alarm hand-off; shared Swir design/touch tokens at source stage; Android runtime/timezone-database/visual/accessibility behavior unverified |
 | Swir Calculator | `ANDROID_SOURCE`; basic arithmetic plus host-tested source-stage scientific engine/keypad (`sin`, `cos`, `tan`, square root, logarithms, reciprocal, constants, DEG/RAD) and shared Swir design tokens; capability-ledger promotion and Android runtime/visual/accessibility review remain unverified |
 | Swir Notes | `ANDROID_SOURCE`; local SQLite CRUD/search/share/Markdown export |
 | Swir Recorder | `ANDROID_SOURCE`; exactly `RECORD_AUDIO`, foreground-only private AAC/MPEG-4 capture/playback/export; exact-device audio unverified |
