@@ -31,10 +31,25 @@ _CHECKS = (
 )
 _FINAL = {"PASS", "FAIL"}
 _PENDING = "PENDING"
-_ASSISTIVE_TECHNOLOGY = "TalkBack"
+_MAX_ASSISTIVE_TECHNOLOGY = 128
 _INPUT_METHODS = ["touch", "keyboard"]
 
 RuntimeAccessibilityReviewError = RuntimeVisualReviewError
+
+
+def _clean_assistive_technology(value: object) -> str:
+    if not isinstance(value, str):
+        raise RuntimeAccessibilityReviewError("assistive_technology must be text")
+    clean = value.strip()
+    if (
+        not clean
+        or len(clean) > _MAX_ASSISTIVE_TECHNOLOGY
+        or any(ord(ch) < 32 or ord(ch) == 127 for ch in clean)
+    ):
+        raise RuntimeAccessibilityReviewError(
+            "assistive_technology is empty, too long, or contains control characters"
+        )
+    return clean
 
 
 def create_accessibility_template(
@@ -63,7 +78,7 @@ def create_accessibility_template(
         "capture_count": count,
         "reviewer": "",
         "reviewed_at_utc": "",
-        "assistive_technology": _ASSISTIVE_TECHNOLOGY,
+        "assistive_technology": "",
         "input_methods": list(_INPUT_METHODS),
         "items": items,
     }
@@ -147,10 +162,6 @@ def verify_completed_accessibility_review(
         raise RuntimeAccessibilityReviewError(
             "accessibility review contains missing or unknown top-level fields"
         )
-    if review.get("assistive_technology") != _ASSISTIVE_TECHNOLOGY:
-        raise RuntimeAccessibilityReviewError(
-            "accessibility review must use the canonical assistive-technology scope"
-        )
     if review.get("input_methods") != _INPUT_METHODS:
         raise RuntimeAccessibilityReviewError(
             "accessibility review input-method scope is not canonical"
@@ -158,6 +169,9 @@ def verify_completed_accessibility_review(
 
     reviewer = _clean_reviewer(review.get("reviewer"))
     reviewed_at = _clean_reviewed_at(review.get("reviewed_at_utc"))
+    assistive_technology = _clean_assistive_technology(
+        review.get("assistive_technology")
+    )
     items = review.get("items")
     if not isinstance(items, list) or len(items) != count:
         raise RuntimeAccessibilityReviewError(
@@ -193,7 +207,7 @@ def verify_completed_accessibility_review(
         "capture_count": count,
         "reviewer": reviewer,
         "reviewed_at_utc": reviewed_at,
-        "assistive_technology": _ASSISTIVE_TECHNOLOGY,
+        "assistive_technology": assistive_technology,
         "input_methods": list(_INPUT_METHODS),
         "human_review_complete": all_complete,
         "accessibility_review_complete": all_complete,
@@ -218,6 +232,7 @@ def verify_completed_accessibility_review(
         "release_artifact_authorized": False,
         "warnings": [
             "This is a human accessibility attestation bound to exact Cuttlefish PNG evidence and the reviewed guest state, not an automated accessibility-quality claim.",
+            "The reviewer must record the actual accessibility service used; the template does not assume a proprietary service is preinstalled in AOSP.",
             "Visual translation/clipping and RTL mirroring remain separate evidence and are not promoted by this accessibility review.",
             "This evidence never authorizes physical-device writes, root, application status promotion or release publication.",
         ],
