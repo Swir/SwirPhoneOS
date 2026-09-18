@@ -13,6 +13,8 @@ import re
 import sys
 from typing import Any
 
+from .runtime_tool_evidence import MAX_TOOL_BYTES
+
 MAX_REPORT_BYTES = 16 * 1024 * 1024
 _HEX64 = re.compile(r"[0-9a-f]{64}\Z")
 
@@ -72,7 +74,26 @@ def _validate_run(report: dict[str, object]) -> tuple[str, str]:
     if report.get("physical_device_support_claimed") is not False or report.get("status_promotion_performed") is not False:
         raise RuntimeTrustBundleError("AOSP runtime evidence overclaims physical support or promotion.")
     run_digest = _hex64(report.get("run_evidence_sha256"), "run_evidence_sha256")
+    canonical_run = {
+        key: value
+        for key, value in report.items()
+        if key not in {"run_evidence_sha256", "run_evidence_complete"}
+    }
+    expected_run_digest = hashlib.sha256(
+        json.dumps(canonical_run, sort_keys=True, separators=(",", ":"), ensure_ascii=True).encode("utf-8")
+    ).hexdigest()
+    if run_digest != expected_run_digest:
+        raise RuntimeTrustBundleError("AOSP run evidence canonical digest is invalid.")
+    fingerprint = report.get("build_fingerprint")
+    if not isinstance(fingerprint, str) or not fingerprint or len(fingerprint) > 512:
+        raise RuntimeTrustBundleError("AOSP run evidence build fingerprint is invalid.")
     fingerprint_digest = _hex64(report.get("build_fingerprint_sha256"), "build_fingerprint_sha256")
+    try:
+        expected_fingerprint_digest = hashlib.sha256(fingerprint.encode("ascii", "strict")).hexdigest()
+    except UnicodeEncodeError as exc:
+        raise RuntimeTrustBundleError("AOSP run evidence build fingerprint must be ASCII.") from exc
+    if fingerprint_digest != expected_fingerprint_digest:
+        raise RuntimeTrustBundleError("AOSP run evidence build fingerprint digest is invalid.")
     return run_digest, fingerprint_digest
 
 
@@ -96,7 +117,7 @@ def _validate_capture(report: dict[str, object]) -> tuple[str, str, int]:
     ):
         raise RuntimeTrustBundleError("Captured adb evidence violates the read-only trust contract.")
     size = report.get("size")
-    if not isinstance(size, int) or isinstance(size, bool) or size <= 0:
+    if not isinstance(size, int) or isinstance(size, bool) or size <= 0 or size > MAX_TOOL_BYTES:
         raise RuntimeTrustBundleError("Captured adb evidence size is invalid.")
     return _hex64(report.get("sha256"), "adb sha256"), _hex64(report.get("path_identity_sha256"), "adb path identity"), size
 
