@@ -66,6 +66,7 @@ public final class RootPolicy {
         if (!gates.rollbackMaterialVerified) return deny("rollback_material_verified");
         if (!gates.journalAvailable) return deny("journal_available");
         if (!gates.updateStateSafe) return deny("update_state_safe");
+        if (!gates.expectedNonRootStateKnown) return deny("expected_nonroot_state_known");
         return new Decision(true, State.TRANSITION, "ready_enable");
     }
 
@@ -75,9 +76,11 @@ public final class RootPolicy {
             return deny("unsupported_build");
         }
         if (!gates.exactBuildMatch) return deny("exact_build_match");
+        if (!gates.verifiedDeviceProfile) return deny("verified_device_profile");
         if (!gates.ownerConfirmed) return deny("owner_confirmation");
         if (!gates.rollbackMaterialVerified) return deny("rollback_material_verified");
         if (!gates.journalAvailable) return deny("journal_available");
+        if (!gates.updateStateSafe) return deny("update_state_safe");
         if (!gates.expectedNonRootStateKnown) return deny("expected_nonroot_state_known");
         return new Decision(true, State.TRANSITION, "ready_unroot");
     }
