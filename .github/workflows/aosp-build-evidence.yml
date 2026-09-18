@@ -14,7 +14,7 @@ on:
         default: false
         type: boolean
       adb_path:
-        description: Absolute trusted adb path on the self-hosted builder when collect_runtime is enabled
+        description: Absolute canonical trusted adb path on the self-hosted builder when collect_runtime is enabled
         required: false
         default: /opt/android-sdk/platform-tools/adb
         type: string
@@ -31,12 +31,13 @@ jobs:
     name: Pinned Android 17 build evidence
     runs-on: [self-hosted, linux, x64, swir-aosp-builder]
     timeout-minutes: 720
+    env:
+      SWIR_REQUESTED_JOBS: ${{ inputs.jobs }}
+      SWIR_COLLECT_RUNTIME: ${{ inputs.collect_runtime }}
+      SWIR_ADB_PATH: ${{ inputs.adb_path }}
     steps:
       - name: Initialize bounded run diagnostics
         shell: bash
-        env:
-          SWIR_REQUESTED_JOBS: ${{ inputs.jobs }}
-          SWIR_COLLECT_RUNTIME: ${{ inputs.collect_runtime }}
         run: |
           set -euo pipefail
           printf '%s\n' "BOOTSTRAP" > "$GITHUB_WORKSPACE/aosp-phase.txt"
@@ -61,15 +62,21 @@ jobs:
           set -euo pipefail
           printf '%s\n' "PREFLIGHT" > "$GITHUB_WORKSPACE/aosp-phase.txt"
           : "${SWIR_AOSP_WORKSPACE:?Set SWIR_AOSP_WORKSPACE on the dedicated self-hosted runner}"
-          test "${{ inputs.jobs }}" -ge 1
-          test "${{ inputs.jobs }}" -le 256
-          if ${{ inputs.collect_runtime }}; then
-            test -x "${{ inputs.adb_path }}"
-            test "$(basename "${{ inputs.adb_path }}")" = "adb"
-          fi
+          case "$SWIR_REQUESTED_JOBS" in
+            ''|*[!0-9]*) printf 'Parallel job count must be an integer.\n' >&2; exit 1 ;;
+          esac
+          test "$SWIR_REQUESTED_JOBS" -ge 1
+          test "$SWIR_REQUESTED_JOBS" -le 256
+          case "$SWIR_COLLECT_RUNTIME" in
+            true|false) ;;
+            *) printf 'Runtime collection flag is invalid.\n' >&2; exit 1 ;;
+          esac
           cd tools
           python -m swirphoneos build-preflight --workspace "$SWIR_AOSP_WORKSPACE" > "$GITHUB_WORKSPACE/builder-preflight.json"
-          python - "$GITHUB_WORKSPACE/builder-preflight.json" "${{ inputs.collect_runtime }}" <<'PY'
+          if [[ "$SWIR_COLLECT_RUNTIME" == "true" ]]; then
+            python -m swirphoneos.runtime_tool_evidence capture --adb "$SWIR_ADB_PATH" > "$GITHUB_WORKSPACE/runtime-tool-evidence.json"
+          fi
+          python - "$GITHUB_WORKSPACE/builder-preflight.json" "$SWIR_COLLECT_RUNTIME" <<'PY'
           import json
           import pathlib
           import sys
@@ -91,7 +98,7 @@ jobs:
           if sys.argv[2].lower() == "true" and report.get("cuttlefish_kvm_available") is not True:
               raise SystemExit("Runtime collection requires writable/readable KVM on the dedicated builder.")
           PY
-          python -m swirphoneos aosp-plan --workspace "$SWIR_AOSP_WORKSPACE" --jobs "${{ inputs.jobs }}" > "$GITHUB_WORKSPACE/aosp-plan.json"
+          python -m swirphoneos aosp-plan --workspace "$SWIR_AOSP_WORKSPACE" --jobs "$SWIR_REQUESTED_JOBS" > "$GITHUB_WORKSPACE/aosp-plan.json"
       - name: Initialize and synchronize exact Android 17 tag
         shell: bash
         run: |
@@ -99,7 +106,7 @@ jobs:
           printf '%s\n' "SOURCE_SYNC" > "$GITHUB_WORKSPACE/aosp-phase.txt"
           cd "$SWIR_AOSP_WORKSPACE"
           repo init -u https://android.googlesource.com/platform/manifest -b android-17.0.0_r1
-          repo sync -c --no-tags --optimized-fetch --prune -j"${{ inputs.jobs }}"
+          repo sync -c --no-tags --optimized-fetch --prune -j"$SWIR_REQUESTED_JOBS"
           repo manifest -r -o swirphoneos-pinned-manifest.xml
           PYTHONPATH="$GITHUB_WORKSPACE/tools" python -m swirphoneos aosp-manifest --file swirphoneos-pinned-manifest.xml > "$GITHUB_WORKSPACE/resolved-manifest.json"
       - name: Stage reviewed SwirPhoneOS source
@@ -143,7 +150,7 @@ jobs:
           lunch swirphoneos_cf_x86_64-aosp_current-userdebug
           BUILD_LOG="$GITHUB_WORKSPACE/aosp-build-full.log"
           rm -f "$BUILD_LOG" "$GITHUB_WORKSPACE/aosp-build-tail.log"
-          if ! m -j"${{ inputs.jobs }}" 2>&1 | tee "$BUILD_LOG"; then
+          if ! m -j"$SWIR_REQUESTED_JOBS" 2>&1 | tee "$BUILD_LOG"; then
             tail -c 262144 "$BUILD_LOG" > "$GITHUB_WORKSPACE/aosp-build-tail.log" || true
             rm -f "$BUILD_LOG"
             exit 1
@@ -161,6 +168,15 @@ jobs:
           set -euo pipefail
           printf '%s\n' "BUILD_EVIDENCE" > "$GITHUB_WORKSPACE/aosp-phase.txt"
           PYTHONPATH="$GITHUB_WORKSPACE/tools" python -m swirphoneos build-evidence --workspace "$SWIR_AOSP_WORKSPACE" --manifest "$SWIR_AOSP_WORKSPACE/swirphoneos-pinned-manifest.xml" --baseline "$GITHUB_WORKSPACE/tools/platform/aosp_baseline.json" > "$GITHUB_WORKSPACE/build-evidence.json"
+      - name: Re-verify trusted adb before Cuttlefish runtime
+        if: ${{ inputs.collect_runtime }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH="$GITHUB_WORKSPACE/tools" python -m swirphoneos.runtime_tool_evidence verify \
+            --adb "$SWIR_ADB_PATH" \
+            --evidence "$GITHUB_WORKSPACE/runtime-tool-evidence.json" \
+            > "$GITHUB_WORKSPACE/runtime-tool-prelaunch-verification.json"
       - name: Launch exact built Cuttlefish product
         if: ${{ inputs.collect_runtime }}
         shell: bash
@@ -188,7 +204,7 @@ jobs:
           rm -f "$GITHUB_WORKSPACE/runtime-evidence.json" "$GITHUB_WORKSPACE/runtime-evidence.tmp"
           ready=0
           for attempt in $(seq 1 180); do
-            if PYTHONPATH="$GITHUB_WORKSPACE/tools" python -m swirphoneos cuttlefish-evidence --adb "${{ inputs.adb_path }}" --manifest "$GITHUB_WORKSPACE/tools/system_apps/manifest.json" > "$GITHUB_WORKSPACE/runtime-evidence.tmp" 2>/dev/null; then
+            if PYTHONPATH="$GITHUB_WORKSPACE/tools" python -m swirphoneos cuttlefish-evidence --adb "$SWIR_ADB_PATH" --manifest "$GITHUB_WORKSPACE/tools/system_apps/manifest.json" > "$GITHUB_WORKSPACE/runtime-evidence.tmp" 2>/dev/null; then
               if python - "$GITHUB_WORKSPACE/runtime-evidence.tmp" <<'PY'
           import json
           import pathlib
@@ -211,7 +227,16 @@ jobs:
         run: |
           set -euo pipefail
           printf '%s\n' "APP_SMOKE" > "$GITHUB_WORKSPACE/aosp-phase.txt"
-          PYTHONPATH="$GITHUB_WORKSPACE/tools" python -m swirphoneos.cuttlefish_smoke --adb "${{ inputs.adb_path }}" --manifest "$GITHUB_WORKSPACE/tools/system_apps/manifest.json" > "$GITHUB_WORKSPACE/app-smoke-evidence.json"
+          PYTHONPATH="$GITHUB_WORKSPACE/tools" python -m swirphoneos.cuttlefish_smoke --adb "$SWIR_ADB_PATH" --manifest "$GITHUB_WORKSPACE/tools/system_apps/manifest.json" > "$GITHUB_WORKSPACE/app-smoke-evidence.json"
+      - name: Re-verify trusted adb after runtime smoke
+        if: ${{ inputs.collect_runtime }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH="$GITHUB_WORKSPACE/tools" python -m swirphoneos.runtime_tool_evidence verify \
+            --adb "$SWIR_ADB_PATH" \
+            --evidence "$GITHUB_WORKSPACE/runtime-tool-evidence.json" \
+            > "$GITHUB_WORKSPACE/runtime-tool-post-verification.json"
       - name: Bind build and runtime evidence
         if: ${{ inputs.collect_runtime }}
         shell: bash
@@ -234,7 +259,7 @@ jobs:
             --build "$GITHUB_WORKSPACE/build-evidence.json"
             --app-manifest "$GITHUB_WORKSPACE/tools/system_apps/manifest.json"
           )
-          if ${{ inputs.collect_runtime }}; then
+          if [[ "$SWIR_COLLECT_RUNTIME" == "true" ]]; then
             args+=(
               --runtime "$GITHUB_WORKSPACE/runtime-evidence.json"
               --smoke "$GITHUB_WORKSPACE/app-smoke-evidence.json"
@@ -242,6 +267,17 @@ jobs:
             )
           fi
           PYTHONPATH="$GITHUB_WORKSPACE/tools" python -m swirphoneos aosp-run-evidence "${args[@]}" > "$GITHUB_WORKSPACE/aosp-run-evidence.json"
+      - name: Bind exact adb trust to completed runtime evidence
+        if: ${{ inputs.collect_runtime }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH="$GITHUB_WORKSPACE/tools" python -m swirphoneos.runtime_trust_bundle \
+            --run-evidence "$GITHUB_WORKSPACE/aosp-run-evidence.json" \
+            --tool-evidence "$GITHUB_WORKSPACE/runtime-tool-evidence.json" \
+            --prelaunch "$GITHUB_WORKSPACE/runtime-tool-prelaunch-verification.json" \
+            --post "$GITHUB_WORKSPACE/runtime-tool-post-verification.json" \
+            > "$GITHUB_WORKSPACE/runtime-trust-bundle.json"
       - name: Stop local Cuttlefish instance
         if: ${{ always() && inputs.collect_runtime }}
         shell: bash
@@ -305,6 +341,10 @@ jobs:
             aosp-run-context.txt
             aosp-phase.txt
             builder-preflight.json
+            runtime-tool-evidence.json
+            runtime-tool-prelaunch-verification.json
+            runtime-tool-post-verification.json
+            runtime-trust-bundle.json
             aosp-plan.json
             resolved-manifest.json
             stage-report.json
