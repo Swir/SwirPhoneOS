@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from contextlib import redirect_stderr, redirect_stdout
+import hashlib
 from io import StringIO
 import json
 import os
@@ -11,6 +12,7 @@ import unittest
 from swirphoneos.aosp_failure_cli import main as failure_cli_main
 from swirphoneos.aosp_failure_evidence import (
     AospFailureEvidenceError,
+    LEGACY_EVIDENCE_IDS_V1,
     MAX_DIAGNOSTIC_BYTES,
     collect_failure_evidence,
     validate_failure_evidence,
@@ -48,6 +50,7 @@ class AospFailureEvidenceTests(unittest.TestCase):
             first = self._collect(root)
             second = self._collect(root)
         self.assertEqual(first, second)
+        self.assertEqual(first["schema_version"], 2)
         self.assertEqual(first["state"], "FAILED_NOT_READY")
         self.assertEqual(first["failed_phase"], "BUILD")
         self.assertFalse(first["build_succeeded"])
@@ -69,6 +72,20 @@ class AospFailureEvidenceTests(unittest.TestCase):
         self.assertFalse(inventory["runtime_review_trust_bundle"]["requested"])
         self.assertTrue(first["diagnostic_tail"]["present"])
         self.assertIs(validate_failure_evidence(first), first)
+
+    def test_schema_v1_failure_evidence_still_revalidates(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            current = self._collect(Path(temporary))
+        legacy = json.loads(json.dumps(current))
+        legacy["schema_version"] = 1
+        legacy["evidence_inventory"] = [
+            item for item in legacy["evidence_inventory"] if item["id"] in LEGACY_EVIDENCE_IDS_V1
+        ]
+        legacy.pop("failure_evidence_sha256")
+        legacy["failure_evidence_sha256"] = hashlib.sha256(
+            json.dumps(legacy, sort_keys=True, separators=(",", ":"), ensure_ascii=True).encode("utf-8")
+        ).hexdigest()
+        self.assertIs(validate_failure_evidence(legacy), legacy)
 
     def test_integrity_digest_rejects_safety_flag_tampering(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -172,6 +189,7 @@ class AospFailureEvidenceTests(unittest.TestCase):
                 ])
             self.assertEqual(code, 0, error.getvalue())
             report = json.loads(output.getvalue())
+            self.assertEqual(report["schema_version"], 2)
             self.assertEqual(report["failed_phase"], "TRUST_BIND")
             self.assertFalse(report["build_succeeded"])
             self.assertFalse(report["status_promotion_allowed"])
