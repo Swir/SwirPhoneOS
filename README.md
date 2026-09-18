@@ -39,7 +39,7 @@ The authoritative progress ledger is [`project.json`](project.json). Host CI, so
 | Cuttlefish | Product source integrated; not built or booted |
 | ARM64 GSI | Source/build-evidence path exists; no real `system.img` evidence yet |
 | System apps | 20 `ANDROID_SOURCE`, 0 `ANDROID_RUNTIME`, 0 hardware-verified |
-| SwirPhoneStudio | Read-only ADB/Fastboot diagnostics, local SwirRoot-readiness review, Windows developer packaging |
+| SwirPhoneStudio | Read-only ADB/Fastboot diagnostics, owner-visible physical capture wizard, local SwirRoot-readiness review, Windows developer packaging |
 | Device support | No supported phone yet; `oneplus/avicii` is `PLANNED_NOT_SUPPORTED` |
 | SwirRoot | Source-stage UI/policy/readiness evidence only; mutation backend disabled, supported builds = 0 |
 | Release | No public beta or OS image |
@@ -51,8 +51,8 @@ Detailed evidence status: [`BUILD_STATUS.md`](BUILD_STATUS.md).
 - **Own mobile OS direction:** Linux kernel + AOSP/Android-compatible userspace and HAL/device integration where practical, with SwirPhoneOS UI, services, apps and branding on top.
 - **Common core + exact device profiles:** broad compatibility is a goal, but one generic image or flashing recipe is never advertised as safe for every Android device.
 - **20 first-party system apps:** every required everyday-app slot has meaningful Android source integrated into the developer product; none is counted as runtime before the image actually builds and exercises it.
-- **Fail-closed build provenance:** exact Android 17 baseline, bounded `vendor/swir/` staging, stale-tree rejection, pinned build identity and Cuttlefish/GSI evidence contracts.
-- **SwirPhoneStudio:** dark/electric-cyan Windows-first companion with trusted ADB/Fastboot selection, read-only diagnostics and local validation of SwirRoot readiness evidence. It exposes no flash/root controls today.
+- **Fail-closed build provenance:** exact Android 17 baseline, resolved Repo manifest, clean exact Git worktree verification before and after the build, bounded `vendor/swir/` staging, stale-tree rejection, pinned build identity and Cuttlefish/GSI evidence contracts.
+- **SwirPhoneStudio:** dark/electric-cyan Windows-first companion with trusted ADB/Fastboot selection, read-only diagnostics, a manual ADB → Fastboot/FastbootD evidence capture wizard and local validation of SwirRoot readiness evidence. It exposes no flash/root controls today.
 - **SwirRoot safety model:** deny-by-default, exact-build policy, rollback/journal requirements, explicit owner confirmation design and a reliable unroot requirement before any supported root claim.
 - **Worldwide localization architecture:** shared host catalogs plus EN/PL/NB/DE/ES/FR/PT/AR Android resources, English fallback, RTL-aware Android configuration and localization linting.
 
@@ -62,7 +62,7 @@ All twenty required app slots are currently **source-ready only** and included i
 
 | App | Current source-stage capability |
 |---|---|
-| Phone | Permission-free keypad + explicit Android `ACTION_DIAL`; in-call/default-role/history still open |
+| Phone | Permission-free keypad + explicit Android `ACTION_DIAL`, owner-controlled default-dialer role request and in-call answer/reject/end source; recent-call history and runtime telephony remain open |
 | Contacts | Scoped `READ_CONTACTS`, browse/search, Android-managed edit/create, vCard import/export |
 | Messages | Local draft/composer + explicit `ACTION_SENDTO`; no silent SMS; MMS/history still open |
 | Camera | Camera2 capability inspection + explicit system photo/video capture hand-off; direct capture unverified |
@@ -111,12 +111,13 @@ python -m swirphoneos root-policy
 python -m swirphoneos build-preflight --workspace /path/to/aosp
 python -m swirphoneos aosp-plan --workspace /path/to/aosp --jobs 16
 python -m swirphoneos aosp-manifest --file /path/to/aosp/swirphoneos-pinned-manifest.xml
+python -m swirphoneos.aosp_source_evidence --workspace /path/to/aosp --manifest /path/to/aosp/swirphoneos-pinned-manifest.xml
 python -m swirphoneos build-evidence --workspace /path/to/aosp --manifest /path/to/aosp/swirphoneos-pinned-manifest.xml
 python -m swirphoneos cuttlefish-evidence --adb /absolute/path/to/adb > runtime-evidence.json
 python -m swirphoneos.cuttlefish_smoke --adb /absolute/path/to/adb > app-smoke-evidence.json
 ```
 
-The manual self-hosted build workflow expects a clean, dedicated Linux x86-64 builder with adequate RAM/disk and KVM/Cuttlefish support. It fails closed on local-manifest injection, stale `out/`, unsafe workspace roots and unreviewed `vendor/swir/` files.
+The manual self-hosted build workflow expects a clean, dedicated Linux x86-64 builder with adequate RAM/disk and KVM/Cuttlefish support. It fails closed on local-manifest injection, stale `out/`, unsafe workspace roots, dirty or revision-mismatched manifest projects, unreviewed `vendor/swir/` files, and source/Git identity drift across the build evidence window.
 
 ### Read-only physical-device evidence
 
@@ -126,7 +127,7 @@ python -m swirphoneos inspect-device --transport fastboot --tool /absolute/path/
 python -m swirphoneos hardware-evidence --adb-report adb-observation.json --fastboot-report fastboot-observation.json > hardware-evidence.json
 ```
 
-These reports correlate observations only. They do not certify a phone, enable flashing or authorize SwirRoot.
+These reports correlate observations only. SwirPhoneStudio also exposes the same create-only evidence path as an owner-visible ADB → manual mode change → Fastboot/FastbootD capture wizard. Neither route certifies a phone, enables flashing or authorizes SwirRoot.
 
 ### Recovery preparation and SwirRoot readiness
 
@@ -144,7 +145,7 @@ python -m swirphoneos.root_readiness_cli \
   --hardware /absolute/path/to/hardware-evidence.json
 ```
 
-SwirPhoneStudio can now open a validated SwirRoot readiness JSON locally and present its missing gates without performing Android SDK/device I/O. The current evidence model keeps `transition_ready=false` and `device_write_allowed=false` by design.
+SwirPhoneStudio can open a validated SwirRoot readiness JSON locally and present its missing gates without performing Android SDK/device writes. The current evidence model keeps `transition_ready=false` and `device_write_allowed=false` by design.
 
 ## ✅ Compatibility and device support
 
@@ -176,7 +177,7 @@ SwirPhoneOS product, services, design language and system apps
 
 PC side
    └── SwirPhoneStudio
-       ├── read-only ADB/Fastboot diagnostics
+       ├── read-only ADB/Fastboot diagnostics and evidence capture
        ├── local recovery/readiness evidence review
        └── future install/restore execution only after physical validation
 
@@ -185,7 +186,7 @@ Privilege side
        └── exact-build policy → rollback/journal evidence → future physically validated backend only
 ```
 
-Engineering references: [`ARCHITECTURE.md`](ARCHITECTURE.md) · [`docs/AOSP_BUILD_WORKSPACE.md`](docs/AOSP_BUILD_WORKSPACE.md) · [`docs/HARDWARE_EVIDENCE.md`](docs/HARDWARE_EVIDENCE.md) · [`docs/RECOVERY_TRANSACTIONS.md`](docs/RECOVERY_TRANSACTIONS.md) · [`docs/SWIR_BACKUP_RESTORE.md`](docs/SWIR_BACKUP_RESTORE.md) · [`docs/SWIR_CALENDAR_PROVIDER_BRIDGE.md`](docs/SWIR_CALENDAR_PROVIDER_BRIDGE.md) · [`docs/SWIRROOT.md`](docs/SWIRROOT.md).
+Engineering references: [`ARCHITECTURE.md`](ARCHITECTURE.md) · [`docs/AOSP_BUILD_WORKSPACE.md`](docs/AOSP_BUILD_WORKSPACE.md) · [`docs/AOSP_SOURCE_INTEGRITY.md`](docs/AOSP_SOURCE_INTEGRITY.md) · [`docs/HARDWARE_EVIDENCE.md`](docs/HARDWARE_EVIDENCE.md) · [`docs/RECOVERY_TRANSACTIONS.md`](docs/RECOVERY_TRANSACTIONS.md) · [`docs/SWIR_BACKUP_RESTORE.md`](docs/SWIR_BACKUP_RESTORE.md) · [`docs/SWIR_CALENDAR_PROVIDER_BRIDGE.md`](docs/SWIR_CALENDAR_PROVIDER_BRIDGE.md) · [`docs/SWIRROOT.md`](docs/SWIRROOT.md).
 
 ## 🌍 Localization
 
@@ -230,7 +231,7 @@ tests/              fail-closed host regression suite
 
 ## 🔎 Search Keywords
 
-`SwirPhoneOS` • `AOSP Android 17 custom OS` • `Linux mobile operating system` • `Android GSI ARM64` • `Cuttlefish AOSP build` • `SwirPhoneStudio` • `SwirRoot` • `Android device profiles` • `safe Android flashing design` • `Android recovery rollback` • `Treble GSI validation` • `Android system apps` • `Android localization RTL` • `OnePlus Nord avicii port` • `reproducible AOSP build`
+`SwirPhoneOS` • `AOSP Android 17 custom OS` • `Linux mobile operating system` • `Android GSI ARM64` • `Cuttlefish AOSP build` • `AOSP source integrity` • `SwirPhoneStudio` • `SwirRoot` • `Android device profiles` • `safe Android flashing design` • `Android recovery rollback` • `Treble GSI validation` • `Android system apps` • `Android localization RTL` • `OnePlus Nord avicii port` • `reproducible AOSP build`
 
 <img width="100%" src="https://raw.githubusercontent.com/Swir/Swir/main/assets/power-divider-v4.svg" alt="SWIR electric divider" />
 
