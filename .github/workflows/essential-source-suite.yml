@@ -48,3 +48,17 @@ jobs:
             package_name="${package_path//\//.}"
             java -cp "$out" "${package_name}.${test}"
           done
+      - name: Host-test Swir Update trust and package policies
+        shell: bash
+        run: |
+          set -euo pipefail
+          out="_java-SwirUpdate"
+          mkdir -p "$out"
+          javac -d "$out" \
+            platform/aosp_product/apps/SwirUpdate/src/org/swir/phoneos/update/UpdatePolicy.java \
+            platform/aosp_product/apps/SwirUpdate/src/org/swir/phoneos/update/OtaTrustStore.java \
+            platform/aosp_product/apps/SwirUpdate/src/org/swir/phoneos/update/DefaultOtaTrustStore.java \
+            platform/aosp_product/apps/SwirUpdate/hosttest/UpdatePolicyHostTest.java \
+            platform/aosp_product/apps/SwirUpdate/hosttest/OtaTrustStoreHostTest.java
+          java -cp "$out" org.swir.phoneos.update.UpdatePolicyHostTest
+          java -cp "$out" org.swir.phoneos.update.OtaTrustStoreHostTest
