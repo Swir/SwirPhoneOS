@@ -9,7 +9,7 @@ on:
         default: '16'
         type: string
       collect_runtime:
-        description: Launch the exact built Cuttlefish product, wait for verified boot, and collect runtime plus app-launch smoke evidence
+        description: Launch the exact built Cuttlefish product and collect boot, app-launch, localization-review and exact-adb trust evidence
         required: true
         default: false
         type: boolean
@@ -228,7 +228,29 @@ jobs:
           set -euo pipefail
           printf '%s\n' "APP_SMOKE" > "$GITHUB_WORKSPACE/aosp-phase.txt"
           PYTHONPATH="$GITHUB_WORKSPACE/tools" python -m swirphoneos.cuttlefish_smoke --adb "$SWIR_ADB_PATH" --manifest "$GITHUB_WORKSPACE/tools/system_apps/manifest.json" > "$GITHUB_WORKSPACE/app-smoke-evidence.json"
-      - name: Re-verify trusted adb after runtime smoke
+      - name: Exercise every source-ready app across the checked-in locale matrix
+        if: ${{ inputs.collect_runtime }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          printf '%s\n' "APP_I18N" > "$GITHUB_WORKSPACE/aosp-phase.txt"
+          PYTHONPATH="$GITHUB_WORKSPACE/tools" python -m swirphoneos.cuttlefish_i18n \
+            --adb "$SWIR_ADB_PATH" \
+            --manifest "$GITHUB_WORKSPACE/tools/system_apps/manifest.json" \
+            > "$GITHUB_WORKSPACE/runtime-i18n-evidence.json"
+      - name: Bind exact boot launch and localization runtime review
+        if: ${{ inputs.collect_runtime }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          printf '%s\n' "RUNTIME_REVIEW" > "$GITHUB_WORKSPACE/aosp-phase.txt"
+          PYTHONPATH="$GITHUB_WORKSPACE/tools" python -m swirphoneos.runtime_review_evidence \
+            --runtime "$GITHUB_WORKSPACE/runtime-evidence.json" \
+            --smoke "$GITHUB_WORKSPACE/app-smoke-evidence.json" \
+            --i18n "$GITHUB_WORKSPACE/runtime-i18n-evidence.json" \
+            --manifest "$GITHUB_WORKSPACE/tools/system_apps/manifest.json" \
+            > "$GITHUB_WORKSPACE/runtime-review-evidence.json"
+      - name: Re-verify trusted adb after complete runtime review
         if: ${{ inputs.collect_runtime }}
         shell: bash
         run: |
@@ -272,12 +294,24 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          printf '%s\n' "TRUST_BIND" > "$GITHUB_WORKSPACE/aosp-phase.txt"
           PYTHONPATH="$GITHUB_WORKSPACE/tools" python -m swirphoneos.runtime_trust_bundle \
             --run-evidence "$GITHUB_WORKSPACE/aosp-run-evidence.json" \
             --tool-evidence "$GITHUB_WORKSPACE/runtime-tool-evidence.json" \
             --prelaunch "$GITHUB_WORKSPACE/runtime-tool-prelaunch-verification.json" \
             --post "$GITHUB_WORKSPACE/runtime-tool-post-verification.json" \
             > "$GITHUB_WORKSPACE/runtime-trust-bundle.json"
+      - name: Bind trusted runtime localization review evidence
+        if: ${{ inputs.collect_runtime }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          printf '%s\n' "TRUST_BIND" > "$GITHUB_WORKSPACE/aosp-phase.txt"
+          PYTHONPATH="$GITHUB_WORKSPACE/tools" python -m swirphoneos.runtime_review_trust_bundle \
+            --run-evidence "$GITHUB_WORKSPACE/aosp-run-evidence.json" \
+            --runtime-trust "$GITHUB_WORKSPACE/runtime-trust-bundle.json" \
+            --runtime-review "$GITHUB_WORKSPACE/runtime-review-evidence.json" \
+            > "$GITHUB_WORKSPACE/runtime-review-trust-bundle.json"
       - name: Stop local Cuttlefish instance
         if: ${{ always() && inputs.collect_runtime }}
         shell: bash
@@ -320,8 +354,12 @@ jobs:
             --build "$GITHUB_WORKSPACE/build-evidence.json" \
             --runtime "$GITHUB_WORKSPACE/runtime-evidence.json" \
             --smoke "$GITHUB_WORKSPACE/app-smoke-evidence.json" \
+            --i18n "$GITHUB_WORKSPACE/runtime-i18n-evidence.json" \
+            --runtime-review "$GITHUB_WORKSPACE/runtime-review-evidence.json" \
             --bundle "$GITHUB_WORKSPACE/evidence-bundle.json" \
             --run-evidence "$GITHUB_WORKSPACE/aosp-run-evidence.json" \
+            --runtime-trust "$GITHUB_WORKSPACE/runtime-trust-bundle.json" \
+            --runtime-review-trust "$GITHUB_WORKSPACE/runtime-review-trust-bundle.json" \
             --diagnostic-log "$GITHUB_WORKSPACE/aosp-build-tail.log" \
             > "$GITHUB_WORKSPACE/aosp-failure-evidence.json"
           status=$?
@@ -345,6 +383,9 @@ jobs:
             runtime-tool-prelaunch-verification.json
             runtime-tool-post-verification.json
             runtime-trust-bundle.json
+            runtime-i18n-evidence.json
+            runtime-review-evidence.json
+            runtime-review-trust-bundle.json
             aosp-plan.json
             resolved-manifest.json
             stage-report.json
