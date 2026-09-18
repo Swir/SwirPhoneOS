@@ -62,10 +62,13 @@ class AospReproducibilityWorkflowIntegrationTests(unittest.TestCase):
         self.assertIn('--source-commit "${{ inputs.source_sha }}"', self.text)
 
     def test_uploads_only_bounded_pair_report(self) -> None:
-        self.assertIn("swirphoneos-aosp-reproducibility-pair-${{ inputs.source_sha }}", self.text)
-        self.assertIn("path: aosp-reproducibility-pair.json", self.text)
-        self.assertNotIn("path: evidence", self.text)
-        self.assertNotIn("path: continuity", self.text)
+        marker = "- name: Upload bounded reproducibility observation"
+        self.assertIn(marker, self.text)
+        upload = self.text.split(marker, 1)[1]
+        self.assertIn("swirphoneos-aosp-reproducibility-pair-${{ inputs.source_sha }}", upload)
+        self.assertIn("path: aosp-reproducibility-pair.json", upload)
+        self.assertNotIn("path: evidence", upload)
+        self.assertNotIn("path: continuity", upload)
 
 
 if __name__ == "__main__":
