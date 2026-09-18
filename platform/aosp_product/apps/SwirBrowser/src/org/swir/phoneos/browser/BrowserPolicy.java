@@ -7,10 +7,10 @@ import java.nio.charset.StandardCharsets;
 import java.util.Locale;
 
 public final class BrowserPolicy {
-    static final int MAX_URL_LENGTH = 2048;
-    static final int MAX_QUERY_LENGTH = 512;
-    static final int MAX_DOWNLOAD_FILENAME_LENGTH = 120;
-    static final int MAX_MIME_TYPE_LENGTH = 128;
+    public static final int MAX_URL_LENGTH = 2048;
+    public static final int MAX_QUERY_LENGTH = 512;
+    public static final int MAX_DOWNLOAD_FILENAME_LENGTH = 120;
+    public static final int MAX_MIME_TYPE_LENGTH = 128;
 
     private BrowserPolicy() {}
 
@@ -33,7 +33,7 @@ public final class BrowserPolicy {
         if (query == null) return "";
         String value = query.trim();
         if (value.isEmpty() || value.length() > MAX_QUERY_LENGTH || hasControl(value)) return "";
-        return "https://www.google.com/search?q=" + URLEncoder.encode(value, StandardCharsets.UTF_8);
+        return "https://duckduckgo.com/?q=" + URLEncoder.encode(value, StandardCharsets.UTF_8);
     }
 
     public static boolean isSafeUrl(String url) {
