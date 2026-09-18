@@ -3,6 +3,8 @@
     <string name="app_name">Swir Clock</string>
     <string name="subtitle">الوقت والمؤقتات والمنبهات ضمن مسار واضح يتحكم فيه المستخدم.</string>
     <string name="now">الآن</string>
+    <string name="world_clock">الساعة العالمية</string>
+    <string name="next_zone_description">تغيير المنطقة الزمنية للساعة العالمية</string>
     <string name="stopwatch">ساعة إيقاف</string>
     <string name="timer">مؤقت</string>
     <string name="alarm">منبه</string>
