@@ -3,6 +3,7 @@ package org.swir.phoneos.camera;
 import android.Manifest;
 import android.app.Activity;
 import android.content.ContentValues;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.ImageFormat;
 import android.graphics.SurfaceTexture;
@@ -16,7 +17,10 @@ import android.hardware.camera2.TotalCaptureResult;
 import android.hardware.camera2.params.StreamConfigurationMap;
 import android.media.Image;
 import android.media.ImageReader;
-import android.media.MediaRecorder;
+import android.media.MediaCodec;
+import android.media.MediaCodecInfo;
+import android.media.MediaFormat;
+import android.media.MediaMuxer;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
@@ -43,7 +47,7 @@ import java.util.Locale;
 
 public final class MainActivity extends Activity {
     private static final int CAMERA_PERMISSION_REQUEST = 4101;
-    private static final int AUDIO_PERMISSION_REQUEST = 4102;
+    private static final long VIDEO_DRAIN_TIMEOUT_US = 10_000L;
 
     private TextureView preview;
     private TextView status;
@@ -61,14 +65,18 @@ public final class MainActivity extends Activity {
     private Uri pendingPhotoUri;
     private Uri pendingVideoUri;
     private ParcelFileDescriptor pendingVideoFile;
-    private MediaRecorder mediaRecorder;
-    private Surface recorderSurface;
+    private MediaCodec videoEncoder;
+    private MediaMuxer videoMuxer;
+    private Surface videoEncoderSurface;
+    private Thread videoDrainThread;
+    private volatile boolean videoStopRequested;
+    private volatile boolean recordingVideo;
+    private boolean videoMuxerStarted;
     private Size activeVideoSize;
     private int preferredLens = CameraPolicy.LENS_BACK;
     private boolean activeFrontFacing;
     private int activeSensorOrientation;
     private boolean opening;
-    private boolean recordingVideo;
 
     private final TextureView.SurfaceTextureListener textureListener = new TextureView.SurfaceTextureListener() {
         @Override public void onSurfaceTextureAvailable(SurfaceTexture surface, int width, int height) { openCameraIfReady(); }
@@ -138,22 +146,13 @@ public final class MainActivity extends Activity {
 
     @Override public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == CAMERA_PERMISSION_REQUEST) {
-            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                openCameraIfReady();
-            } else {
-                status.setText(R.string.permission_required);
-                capture.setEnabled(false);
-                video.setEnabled(false);
-            }
-            return;
-        }
-        if (requestCode == AUDIO_PERMISSION_REQUEST) {
-            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                startVideo();
-            } else {
-                status.setText(R.string.microphone_permission_required);
-            }
+        if (requestCode != CAMERA_PERMISSION_REQUEST) return;
+        if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            openCameraIfReady();
+        } else {
+            status.setText(R.string.permission_required);
+            capture.setEnabled(false);
+            video.setEnabled(false);
         }
     }
 
@@ -211,7 +210,7 @@ public final class MainActivity extends Activity {
             StreamConfigurationMap map = info.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
             Size jpeg = largestJpeg(map == null ? null : map.getOutputSizes(ImageFormat.JPEG));
             Size previewSize = choosePreviewSize(map == null ? null : map.getOutputSizes(SurfaceTexture.class));
-            Size videoSize = chooseVideoSize(map == null ? null : map.getOutputSizes(MediaRecorder.class));
+            Size videoSize = chooseVideoSize(map == null ? null : map.getOutputSizes(MediaCodec.class));
             if (jpeg == null || previewSize == null) {
                 status.setText(R.string.capture_configuration_unavailable);
                 return;
@@ -298,9 +297,9 @@ public final class MainActivity extends Activity {
                         session.setRepeatingRequest(previewRequest.build(), null, backgroundHandler);
                         runOnUiThread(() -> {
                             capture.setEnabled(true);
-                            video.setEnabled(activeVideoSize != null);
+                            video.setEnabled(true);
                             video.setText(R.string.record_video);
-                            status.setText(activeVideoSize == null ? R.string.video_configuration_unavailable : R.string.camera_ready);
+                            status.setText(activeVideoSize == null ? R.string.video_fallback_available : R.string.camera_ready);
                         });
                     } catch (CameraAccessException error) {
                         runOnUiThread(() -> status.setText(R.string.camera_open_failed));
@@ -410,25 +409,21 @@ public final class MainActivity extends Activity {
 
     private void toggleVideo() {
         if (recordingVideo) {
-            stopVideo(true, true);
+            requestStopVideo(true);
             return;
         }
-        if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
-            requestPermissions(new String[] { Manifest.permission.RECORD_AUDIO }, AUDIO_PERMISSION_REQUEST);
+        if (activeVideoSize == null) {
+            captureHandoff(MediaStore.ACTION_VIDEO_CAPTURE);
             return;
         }
-        startVideo();
+        startDirectVideo();
     }
 
-    private void startVideo() {
+    private void startDirectVideo() {
         CameraDevice camera = cameraDevice;
         Surface surface = previewSurface;
-        Size videoSize = activeVideoSize;
-        if (recordingVideo || camera == null || surface == null || videoSize == null || pendingPhotoUri != null) return;
-        if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
-            status.setText(R.string.microphone_permission_required);
-            return;
-        }
+        Size size = activeVideoSize;
+        if (recordingVideo || camera == null || surface == null || size == null || pendingPhotoUri != null) return;
         Uri uri = createPendingVideo();
         if (uri == null) {
             status.setText(R.string.video_save_failed);
@@ -438,61 +433,60 @@ public final class MainActivity extends Activity {
         try {
             pendingVideoFile = getContentResolver().openFileDescriptor(uri, "rw");
             if (pendingVideoFile == null) throw new IllegalStateException("MediaStore video output unavailable");
-            mediaRecorder = new MediaRecorder(this);
-            mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
-            mediaRecorder.setVideoSource(MediaRecorder.VideoSource.SURFACE);
-            mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
-            mediaRecorder.setOutputFile(pendingVideoFile.getFileDescriptor());
-            mediaRecorder.setVideoEncodingBitRate(CameraPolicy.videoBitRate(videoSize.getWidth(), videoSize.getHeight()));
-            mediaRecorder.setVideoFrameRate(CameraPolicy.VIDEO_FRAME_RATE);
-            mediaRecorder.setVideoSize(videoSize.getWidth(), videoSize.getHeight());
-            mediaRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
-            mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
-            mediaRecorder.setOrientationHint(
-                    CameraPolicy.jpegOrientation(activeSensorOrientation, displayRotationDegrees(), activeFrontFacing));
-            mediaRecorder.prepare();
-            recorderSurface = mediaRecorder.getSurface();
+
+            MediaFormat format = MediaFormat.createVideoFormat(MediaFormat.MIMETYPE_VIDEO_AVC, size.getWidth(), size.getHeight());
+            format.setInteger(MediaFormat.KEY_COLOR_FORMAT, MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface);
+            format.setInteger(MediaFormat.KEY_BIT_RATE, CameraPolicy.videoBitRate(size.getWidth(), size.getHeight()));
+            format.setInteger(MediaFormat.KEY_FRAME_RATE, CameraPolicy.VIDEO_FRAME_RATE);
+            format.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, 2);
+            videoEncoder = MediaCodec.createEncoderByType(MediaFormat.MIMETYPE_VIDEO_AVC);
+            videoEncoder.configure(format, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
+            videoEncoderSurface = videoEncoder.createInputSurface();
+            videoMuxer = new MediaMuxer(pendingVideoFile.getFileDescriptor(), MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4);
+            videoEncoder.start();
+            videoStopRequested = false;
+            videoMuxerStarted = false;
 
             CameraCaptureSession old = captureSession;
             captureSession = null;
             if (old != null) old.close();
             CaptureRequest.Builder recordRequest = camera.createCaptureRequest(CameraDevice.TEMPLATE_RECORD);
             recordRequest.addTarget(surface);
-            recordRequest.addTarget(recorderSurface);
+            recordRequest.addTarget(videoEncoderSurface);
             recordRequest.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_VIDEO);
             List<Surface> outputs = new ArrayList<>();
             outputs.add(surface);
-            outputs.add(recorderSurface);
+            outputs.add(videoEncoderSurface);
             camera.createCaptureSession(outputs, new CameraCaptureSession.StateCallback() {
                 @Override public void onConfigured(CameraCaptureSession session) {
-                    if (cameraDevice == null || mediaRecorder == null) {
+                    if (cameraDevice == null || videoEncoder == null) {
                         session.close();
-                        failPendingVideo(true);
+                        abortVideoSetup();
                         return;
                     }
                     captureSession = session;
                     try {
                         session.setRepeatingRequest(recordRequest.build(), null, backgroundHandler);
-                        mediaRecorder.start();
                         recordingVideo = true;
+                        startVideoDrainThread();
                         runOnUiThread(() -> {
                             capture.setEnabled(false);
                             switchLens.setEnabled(false);
                             video.setEnabled(true);
                             video.setText(R.string.stop_video);
-                            status.setText(R.string.recording_video);
+                            status.setText(R.string.recording_video_silent);
                         });
                     } catch (CameraAccessException | RuntimeException error) {
-                        failPendingVideo(true);
+                        abortVideoSetup();
                     }
                 }
 
                 @Override public void onConfigureFailed(CameraCaptureSession session) {
-                    failPendingVideo(true);
+                    abortVideoSetup();
                 }
             }, backgroundHandler);
         } catch (Exception error) {
-            failPendingVideo(true);
+            abortVideoSetup();
         }
     }
 
@@ -510,82 +504,148 @@ public final class MainActivity extends Activity {
         }
     }
 
-    private void stopVideo(boolean ownerVisible, boolean recreatePreview) {
+    private void startVideoDrainThread() {
+        videoDrainThread = new Thread(this::drainVideoEncoder, "SwirCameraVideoDrain");
+        videoDrainThread.start();
+    }
+
+    private void drainVideoEncoder() {
+        MediaCodec encoder = videoEncoder;
+        MediaMuxer muxer = videoMuxer;
+        if (encoder == null || muxer == null) {
+            finishVideo(false, true);
+            return;
+        }
+        MediaCodec.BufferInfo info = new MediaCodec.BufferInfo();
+        int trackIndex = -1;
+        boolean eosSignaled = false;
+        boolean success = false;
+        try {
+            while (true) {
+                if (videoStopRequested && !eosSignaled) {
+                    encoder.signalEndOfInputStream();
+                    eosSignaled = true;
+                }
+                int index = encoder.dequeueOutputBuffer(info, VIDEO_DRAIN_TIMEOUT_US);
+                if (index == MediaCodec.INFO_TRY_AGAIN_LATER) {
+                    if (eosSignaled) continue;
+                    continue;
+                }
+                if (index == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
+                    if (videoMuxerStarted) throw new IllegalStateException("Video format changed twice");
+                    trackIndex = muxer.addTrack(encoder.getOutputFormat());
+                    muxer.start();
+                    videoMuxerStarted = true;
+                    continue;
+                }
+                if (index < 0) continue;
+                ByteBuffer data = encoder.getOutputBuffer(index);
+                if ((info.flags & MediaCodec.BUFFER_FLAG_CODEC_CONFIG) != 0) info.size = 0;
+                if (info.size > 0) {
+                    if (!videoMuxerStarted || trackIndex < 0 || data == null) {
+                        throw new IllegalStateException("Video encoder produced data before muxer start");
+                    }
+                    data.position(info.offset);
+                    data.limit(info.offset + info.size);
+                    muxer.writeSampleData(trackIndex, data, info);
+                }
+                boolean eos = (info.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0;
+                encoder.releaseOutputBuffer(index, false);
+                if (eos) {
+                    success = videoMuxerStarted;
+                    break;
+                }
+            }
+        } catch (Exception ignored) {
+            success = false;
+        }
+        finishVideo(success, true);
+    }
+
+    private void requestStopVideo(boolean ownerVisible) {
+        if (!recordingVideo) return;
+        recordingVideo = false;
+        CameraCaptureSession session = captureSession;
+        if (session != null) {
+            try { session.stopRepeating(); } catch (CameraAccessException | IllegalStateException ignored) { }
+        }
+        videoStopRequested = true;
+        runOnUiThread(() -> {
+            video.setEnabled(false);
+            status.setText(ownerVisible ? R.string.finalizing_video : R.string.camera_starting);
+        });
+    }
+
+    private void abortVideoSetup() {
+        recordingVideo = false;
+        videoStopRequested = false;
+        finishVideo(false, true);
+    }
+
+    private synchronized void finishVideo(boolean success, boolean recreatePreview) {
         Uri uri = pendingVideoUri;
-        boolean saved = false;
-        MediaRecorder recorder = mediaRecorder;
-        if (recorder != null && recordingVideo) {
+        pendingVideoUri = null;
+        recordingVideo = false;
+        videoStopRequested = false;
+        releaseVideoEncoder();
+        boolean saved = success && uri != null;
+        if (uri != null && saved) {
             try {
-                recorder.stop();
-                saved = true;
-            } catch (RuntimeException ignored) {
+                ContentValues done = new ContentValues();
+                done.put(MediaStore.Video.Media.IS_PENDING, 0);
+                saved = getContentResolver().update(uri, done, null, null) > 0;
+            } catch (RuntimeException error) {
                 saved = false;
             }
         }
-        recordingVideo = false;
-        releaseRecorder();
-        if (uri != null) {
-            if (saved) {
-                try {
-                    ContentValues done = new ContentValues();
-                    done.put(MediaStore.Video.Media.IS_PENDING, 0);
-                    if (getContentResolver().update(uri, done, null, null) <= 0) saved = false;
-                } catch (RuntimeException error) {
-                    saved = false;
-                }
-            }
-            if (!saved) {
-                try { getContentResolver().delete(uri, null, null); } catch (RuntimeException ignored) { }
-            }
+        if (uri != null && !saved) {
+            try { getContentResolver().delete(uri, null, null); } catch (RuntimeException ignored) { }
         }
-        pendingVideoUri = null;
         final boolean videoSaved = saved;
         runOnUiThread(() -> {
             switchLens.setEnabled(true);
             video.setText(R.string.record_video);
-            if (ownerVisible) {
-                status.setText(videoSaved ? R.string.video_saved : R.string.video_save_failed);
-                if (videoSaved) Toast.makeText(this, R.string.video_saved, Toast.LENGTH_SHORT).show();
+            status.setText(videoSaved ? R.string.video_saved_silent : R.string.video_save_failed);
+            if (videoSaved) Toast.makeText(this, R.string.video_saved_silent, Toast.LENGTH_SHORT).show();
+            if (recreatePreview && cameraDevice != null) createPreviewSession();
+        });
+    }
+
+    private void releaseVideoEncoder() {
+        MediaCodec encoder = videoEncoder;
+        videoEncoder = null;
+        if (encoder != null) {
+            try { encoder.stop(); } catch (RuntimeException ignored) { }
+            encoder.release();
+        }
+        MediaMuxer muxer = videoMuxer;
+        videoMuxer = null;
+        if (muxer != null) {
+            if (videoMuxerStarted) {
+                try { muxer.stop(); } catch (RuntimeException ignored) { }
             }
-            if (recreatePreview && cameraDevice != null) createPreviewSession();
-        });
-    }
-
-    private void failPendingVideo(boolean recreatePreview) {
-        recordingVideo = false;
-        releaseRecorder();
-        Uri uri = pendingVideoUri;
-        pendingVideoUri = null;
-        if (uri != null) {
-            try { getContentResolver().delete(uri, null, null); } catch (RuntimeException ignored) { }
+            muxer.release();
         }
-        runOnUiThread(() -> {
-            switchLens.setEnabled(true);
-            video.setText(R.string.record_video);
-            status.setText(R.string.video_save_failed);
-            if (recreatePreview && cameraDevice != null) createPreviewSession();
-        });
-    }
-
-    private void releaseRecorder() {
-        MediaRecorder recorder = mediaRecorder;
-        mediaRecorder = null;
-        if (recorder != null) {
-            try { recorder.reset(); } catch (RuntimeException ignored) { }
-            recorder.release();
-        }
-        Surface surface = recorderSurface;
-        recorderSurface = null;
+        videoMuxerStarted = false;
+        Surface surface = videoEncoderSurface;
+        videoEncoderSurface = null;
         if (surface != null) surface.release();
         ParcelFileDescriptor file = pendingVideoFile;
         pendingVideoFile = null;
         if (file != null) {
             try { file.close(); } catch (Exception ignored) { }
         }
+        videoDrainThread = null;
+    }
+
+    private void captureHandoff(String action) {
+        Intent intent = new Intent(action);
+        if (intent.resolveActivity(getPackageManager()) != null) startActivity(intent);
+        else status.setText(R.string.video_fallback_unavailable);
     }
 
     private void switchCamera() {
-        if (recordingVideo) stopVideo(false, false);
+        if (recordingVideo) requestStopVideo(false);
         preferredLens = CameraPolicy.nextPreferredLens(preferredLens);
         closeCamera();
         status.setText(R.string.camera_starting);
@@ -615,7 +675,7 @@ public final class MainActivity extends Activity {
                 int facing = CameraPolicy.normalizeLensFacing(info.get(CameraCharacteristics.LENS_FACING));
                 StreamConfigurationMap map = info.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
                 Size largest = largestJpeg(map == null ? null : map.getOutputSizes(ImageFormat.JPEG));
-                Size videoSize = chooseVideoSize(map == null ? null : map.getOutputSizes(MediaRecorder.class));
+                Size videoSize = chooseVideoSize(map == null ? null : map.getOutputSizes(MediaCodec.class));
                 out.append(getString(R.string.camera_row, id, getString(lensString(facing)))).append('\n');
                 if (largest != null) {
                     out.append(getString(R.string.size_row, largest.getWidth(), largest.getHeight(),
@@ -701,7 +761,7 @@ public final class MainActivity extends Activity {
 
     private void closeCamera() {
         opening = false;
-        if (recordingVideo || pendingVideoUri != null) stopVideo(false, false);
+        if (recordingVideo) requestStopVideo(false);
         CameraCaptureSession session = captureSession;
         captureSession = null;
         if (session != null) session.close();
@@ -715,6 +775,7 @@ public final class MainActivity extends Activity {
         activeVideoSize = null;
         capture.setEnabled(false);
         video.setEnabled(false);
+        if (!recordingVideo && pendingVideoUri != null && videoDrainThread == null) finishVideo(false, false);
     }
 
     private void closeImageReader() {
