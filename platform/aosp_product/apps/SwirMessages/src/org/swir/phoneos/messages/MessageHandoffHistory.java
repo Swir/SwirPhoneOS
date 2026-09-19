@@ -7,10 +7,11 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * Bounded, local-only history for explicit compose handoffs.
+ * Bounded, local-only history for explicit text compose handoffs.
  *
- * This records that Swir Messages handed a compose intent to another messaging app.
- * It deliberately does not claim that an SMS was sent, delivered, or received.
+ * This records that Swir Messages handed text compose metadata to a compatible Android app.
+ * It deliberately does not claim that an SMS or MMS was sent, delivered, or received, and it never
+ * stores attached media bytes.
  */
 public final class MessageHandoffHistory {
     public static final int MAX_ENTRIES = 8;
