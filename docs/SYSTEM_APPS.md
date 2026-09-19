@@ -28,7 +28,7 @@ Permission-free local composer with private draft persistence, bounded recipient
 Permission-free Camera2 capability inspector that enumerates cameras, facing and largest JPEG output size. Photo/video buttons hand off to Android's visible capture surface. Direct Camera2 capture, camera permission ownership and exact-device photo/video validation remain open, so `photo_capture` and `video_capture` are not claimed.
 
 ### Swir Gallery
-Requests exactly `READ_MEDIA_IMAGES` and `READ_MEDIA_VIDEO`, browses scoped MediaStore content, supports search/open/share and delegates deletion to Android's owner-confirmed flow. Albums remain open.
+Requests exactly `READ_MEDIA_IMAGES` and `READ_MEDIA_VIDEO`, browses scoped MediaStore content, supports search/open/share, groups granted media by bounded MediaStore bucket metadata for local album filtering and delegates deletion to Android's owner-confirmed flow. Album behavior is source-implemented but remains Android-runtime/provider unverified.
 
 ### Swir Files
 Permission-free file manager using an owner-selected Storage Access Framework tree. It supports browse/search/create/rename/copy/move/delete/open/share without broad storage access.
@@ -43,7 +43,7 @@ Requests exactly `INTERNET`. The WebView path is HTTPS-only, disables cleartext/
 Permission-free locale-formatted clock with foreground stopwatch/timer and owner-visible Android alarm hand-off. It does not request exact-alarm privileges.
 
 ### Swir Calculator
-Permission-free BigDecimal arithmetic with host-tested source-stage scientific functions/keypad and locale-aware display. Android runtime, visual/accessibility review and conservative capability-ledger promotion remain open.
+Permission-free BigDecimal arithmetic with host-tested source-stage scientific functions/keypad, DEG/RAD handling and locale-aware display. Source capability accounting includes both `basic_math` and `scientific_math`; Android runtime and visual/accessibility review remain open.
 
 ### Swir Notes
 Permission-free private SQLite notes with create/edit/delete/search, explicit sharing and owner-selected Markdown export.
@@ -81,7 +81,7 @@ All twenty apps use original SwirPhoneOS icons/UI and Android resources for Engl
 
 Source validation requires package identity, exact least-privilege permission allowlists, product inclusion and complete bounded AOSP staging. Swir Phone is allowed only `READ_CALL_LOG`; Contacts only `READ_CONTACTS`; Gallery only `READ_MEDIA_IMAGES` + `READ_MEDIA_VIDEO`; Recorder only `RECORD_AUDIO`; Browser and Weather only `INTERNET`. The remaining source apps are permission-free. Network primitives are reviewed only for Swir Browser and Swir Weather; other apps fail closed on unreviewed network code. Broad-storage and process-execution primitives remain rejected. Swir Phone additionally rejects direct-call and call-log-write primitives, and SwirRoot receives additional hard-disabled mutation checks.
 
-Source-summary schema v3 records missing capabilities by **app + capability**. Swir Phone `dialer`, `in_call` and bounded read-only `recent_calls` are source-implemented. Important open items include `messages:mms`, `messages:conversation_history`, `camera:photo_capture`, `camera:video_capture`, `gallery:albums`, `backup:restore_orchestration`, `privacy:privacy_indicators`, `privacy:access_history`, `update:staged_update_state`, `update:recovery_handoff`, `apps:update_status`, `swirroot:guided_enable` and `swirroot:guided_unroot`.
+Source-summary schema v3 records missing capabilities by **app + capability**. Swir Phone `dialer`, `in_call` and bounded read-only `recent_calls`, Swir Gallery `albums`, and Swir Calculator `scientific_math` are source-implemented. Important open items include `messages:mms`, `messages:conversation_history`, `camera:photo_capture`, `camera:video_capture`, `backup:restore_orchestration`, `privacy:privacy_indicators`, `privacy:access_history`, `update:staged_update_state`, `update:recovery_handoff`, `apps:update_status`, `swirroot:guided_enable` and `swirroot:guided_unroot`.
 
 None of the twenty is `ANDROID_RUNTIME` until a real pinned-AOSP build and Cuttlefish exercise succeeds.
 
