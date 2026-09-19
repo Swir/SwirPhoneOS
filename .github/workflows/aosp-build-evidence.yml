@@ -9,7 +9,7 @@ on:
         default: '16'
         type: string
       collect_runtime:
-        description: Launch the exact built Cuttlefish product and collect boot, app-launch, localization-review and exact-adb trust evidence
+        description: Launch the exact built Cuttlefish product and collect boot, app-launch, localization-review, exact-adb and exact AOSP host-tool trust evidence
         required: true
         default: false
         type: boolean
@@ -209,6 +209,18 @@ jobs:
             --adb "$SWIR_ADB_PATH" \
             --evidence "$GITHUB_WORKSPACE/runtime-tool-evidence.json" \
             > "$GITHUB_WORKSPACE/runtime-tool-prelaunch-verification.json"
+      - name: Capture and pre-verify exact AOSP-built Cuttlefish host tools
+        if: ${{ inputs.collect_runtime }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH="$GITHUB_WORKSPACE/tools" python -m swirphoneos.cuttlefish_host_tool_evidence capture \
+            --workspace "$SWIR_AOSP_WORKSPACE" \
+            > "$GITHUB_WORKSPACE/cuttlefish-host-tool-evidence.json"
+          PYTHONPATH="$GITHUB_WORKSPACE/tools" python -m swirphoneos.cuttlefish_host_tool_evidence verify \
+            --workspace "$SWIR_AOSP_WORKSPACE" \
+            --evidence "$GITHUB_WORKSPACE/cuttlefish-host-tool-evidence.json" \
+            > "$GITHUB_WORKSPACE/cuttlefish-host-tool-prelaunch-verification.json"
       - name: Launch exact built Cuttlefish product
         if: ${{ inputs.collect_runtime }}
         shell: bash
@@ -223,9 +235,7 @@ jobs:
           source build/envsetup.sh
           lunch swirphoneos_cf_x86_64-aosp_current-userdebug >/dev/null
           export HOME="$SWIR_CVD_HOME"
-          LAUNCH_CVD="$(command -v launch_cvd || true)"
-          test -n "$LAUNCH_CVD"
-          test -x "$LAUNCH_CVD"
+          LAUNCH_CVD="$SWIR_AOSP_WORKSPACE/out/host/linux-x86/bin/launch_cvd"
           "$LAUNCH_CVD" --daemon --report_anonymous_usage_stats=n
       - name: Wait for exact runtime identity and verified Android boot
         if: ${{ inputs.collect_runtime }}
@@ -291,6 +301,15 @@ jobs:
             --adb "$SWIR_ADB_PATH" \
             --evidence "$GITHUB_WORKSPACE/runtime-tool-evidence.json" \
             > "$GITHUB_WORKSPACE/runtime-tool-post-verification.json"
+      - name: Re-verify exact AOSP-built Cuttlefish host tools after runtime review
+        if: ${{ inputs.collect_runtime }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH="$GITHUB_WORKSPACE/tools" python -m swirphoneos.cuttlefish_host_tool_evidence verify \
+            --workspace "$SWIR_AOSP_WORKSPACE" \
+            --evidence "$GITHUB_WORKSPACE/cuttlefish-host-tool-evidence.json" \
+            > "$GITHUB_WORKSPACE/cuttlefish-host-tool-postreview-verification.json"
       - name: Bind build and runtime evidence
         if: ${{ inputs.collect_runtime }}
         shell: bash
@@ -352,6 +371,17 @@ jobs:
             --prelaunch "$GITHUB_WORKSPACE/runtime-tool-prelaunch-verification.json" \
             --post "$GITHUB_WORKSPACE/runtime-tool-post-verification.json" \
             > "$GITHUB_WORKSPACE/runtime-trust-bundle.json"
+      - name: Bind exact Cuttlefish host-tool trust to completed runtime evidence
+        if: ${{ inputs.collect_runtime }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH="$GITHUB_WORKSPACE/tools" python -m swirphoneos.cuttlefish_host_tool_trust_bundle \
+            --run-evidence "$GITHUB_WORKSPACE/aosp-run-evidence.json" \
+            --tool-evidence "$GITHUB_WORKSPACE/cuttlefish-host-tool-evidence.json" \
+            --prelaunch "$GITHUB_WORKSPACE/cuttlefish-host-tool-prelaunch-verification.json" \
+            --postreview "$GITHUB_WORKSPACE/cuttlefish-host-tool-postreview-verification.json" \
+            > "$GITHUB_WORKSPACE/cuttlefish-host-tool-trust-bundle.json"
       - name: Bind trusted runtime localization review evidence
         if: ${{ inputs.collect_runtime }}
         shell: bash
@@ -374,9 +404,14 @@ jobs:
           source build/envsetup.sh
           lunch swirphoneos_cf_x86_64-aosp_current-userdebug >/dev/null 2>&1
           export HOME="$SWIR_CVD_HOME"
-          STOP_CVD="$(command -v stop_cvd || true)"
-          if test -n "$STOP_CVD" && test -x "$STOP_CVD"; then
-            "$STOP_CVD"
+          STOP_CVD="$SWIR_AOSP_WORKSPACE/out/host/linux-x86/bin/stop_cvd"
+          if test -f "$GITHUB_WORKSPACE/cuttlefish-host-tool-evidence.json"; then
+            if PYTHONPATH="$GITHUB_WORKSPACE/tools" python -m swirphoneos.cuttlefish_host_tool_evidence verify \
+              --workspace "$SWIR_AOSP_WORKSPACE" \
+              --evidence "$GITHUB_WORKSPACE/cuttlefish-host-tool-evidence.json" \
+              > "$GITHUB_WORKSPACE/cuttlefish-host-tool-prestop-verification.json"; then
+              "$STOP_CVD"
+            fi
           fi
           exit 0
       - name: Collect bounded failure evidence
@@ -433,6 +468,11 @@ jobs:
             aosp-host-pre.json
             aosp-host-post.json
             aosp-host-trust-bundle.json
+            cuttlefish-host-tool-evidence.json
+            cuttlefish-host-tool-prelaunch-verification.json
+            cuttlefish-host-tool-postreview-verification.json
+            cuttlefish-host-tool-prestop-verification.json
+            cuttlefish-host-tool-trust-bundle.json
             runtime-tool-evidence.json
             runtime-tool-prelaunch-verification.json
             runtime-tool-post-verification.json
