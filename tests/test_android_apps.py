@@ -139,7 +139,7 @@ class AndroidAppSourceTests(unittest.TestCase):
         self._replace_and_reject("apps/SwirGallery/src/org/swir/phoneos/gallery/MainActivity.java", "MediaStore.Images.ImageColumns.BUCKET_ID", "MediaStore.MediaColumns._ID")
 
     def test_gallery_album_name_policy_is_required(self):
-        self._replace_and_reject("apps/SwirGallery/src/org/swir/phoneos/gallery/MediaPolicy.java", "MAX_ALBUM_NAME_LENGTH", "MAX_ALBUM_LABEL_LENGTH")
+        self._replace_and_reject("apps/SwirGallery/src/org/swir/phoneos/gallery/MediaPolicy.java", "album.contains(needle)", "name.contains(needle)")
 
     def test_recorder_cannot_gain_network_permission(self):
         self._replace_and_reject("apps/SwirRecorder/AndroidManifest.xml", "<application", '<uses-permission android:name="android.permission.INTERNET" />\n    <application')
