@@ -22,14 +22,14 @@ class AndroidAppExpansionTests(unittest.TestCase):
         self.assertEqual(summary["localized_catalogs"], 160)
         for app_id in ("phone", "messages", "camera", "browser", "weather", "backup", "notes", "calendar", "gallery", "recorder", "contacts", "apps", "swirroot"):
             self.assertIn(app_id, summary["source_ready_apps"])
-        for capability in ("dialer", "in_call", "recent_calls", "sms", "camera_capability_report", "photo_capture", "scientific_math", "web_browsing", "downloads", "privacy_controls", "forecast", "provider_attribution", "unit_preferences", "supported_data_backup", "recovery_metadata", "offline_notes", "local_calendar", "provider_bridge", "local_media", "albums", "audio_recording", "microphone_state", "file_export", "local_contacts", "import_export", "package_catalog", "signature_provenance", "root_state", "authorization_audit"):
+        for capability in ("dialer", "in_call", "recent_calls", "sms", "camera_capability_report", "photo_capture", "video_capture", "scientific_math", "web_browsing", "downloads", "privacy_controls", "forecast", "provider_attribution", "unit_preferences", "supported_data_backup", "recovery_metadata", "offline_notes", "local_calendar", "provider_bridge", "local_media", "albums", "audio_recording", "microphone_state", "file_export", "local_contacts", "import_export", "package_catalog", "signature_provenance", "root_state", "authorization_audit"):
             self.assertIn(capability, summary["implemented_capabilities"])
-        for capability in ("mms", "conversation_history", "video_capture", "restore_orchestration", "update_status", "guided_enable", "guided_unroot"):
+        for capability in ("mms", "conversation_history", "restore_orchestration", "update_status", "guided_enable", "guided_unroot"):
             self.assertIn(capability, summary["remaining_target_capabilities"])
-        for capability in ("photo_capture", "in_call", "recent_calls", "albums", "scientific_math"):
+        for capability in ("photo_capture", "video_capture", "in_call", "recent_calls", "albums", "scientific_math"):
             self.assertNotIn(capability, summary["remaining_target_capabilities"])
         self.assertNotIn("camera:photo_capture", summary["remaining_app_capabilities"])
-        self.assertIn("camera:video_capture", summary["remaining_app_capabilities"])
+        self.assertNotIn("camera:video_capture", summary["remaining_app_capabilities"])
         self.assertNotIn("phone:in_call", summary["remaining_app_capabilities"])
         self.assertNotIn("phone:recent_calls", summary["remaining_app_capabilities"])
         self.assertNotIn("browser:downloads", summary["remaining_app_capabilities"])
