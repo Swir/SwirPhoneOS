@@ -99,7 +99,7 @@ class AndroidAppSourceTests(unittest.TestCase):
             with self.assertRaises(AndroidAppSourceError): validate_android_app_sources(product, registry)
 
     def test_calculator_scientific_engine_contract_is_required(self):
-        self._replace_and_reject("apps/SwirCalculator/src/org/swir/phoneos/calculator/CalculatorEngine.java", "Math.sin", "Math.sinh")
+        self._replace_and_reject("apps/SwirCalculator/src/org/swir/phoneos/calculator/CalculatorEngine.java", "result = Math.sin(toRadians(value));", "result = Math.cos(toRadians(value));")
 
     def test_calculator_scientific_ui_contract_is_required(self):
         self._replace_and_reject("apps/SwirCalculator/src/org/swir/phoneos/calculator/MainActivity.java", "CalculatorEngine.ScientificOperation.SIN", "CalculatorEngine.ScientificOperation.ABS")
@@ -136,7 +136,7 @@ class AndroidAppSourceTests(unittest.TestCase):
         self._replace_and_reject("apps/SwirGallery/AndroidManifest.xml", "android.permission.READ_MEDIA_VIDEO", "android.permission.READ_MEDIA_AUDIO")
 
     def test_gallery_album_contract_is_required(self):
-        self._replace_and_reject("apps/SwirGallery/src/org/swir/phoneos/gallery/MainActivity.java", "MediaStore.Images.ImageColumns.BUCKET_ID", "MediaStore.MediaColumns._ID")
+        self._replace_and_reject("apps/SwirGallery/src/org/swir/phoneos/gallery/MainActivity.java", "MediaPolicy.safeAlbumName", "String.valueOf")
 
     def test_gallery_album_name_policy_is_required(self):
         self._replace_and_reject("apps/SwirGallery/src/org/swir/phoneos/gallery/MediaPolicy.java", "album.contains(needle)", "name.contains(needle)")
