@@ -95,7 +95,7 @@ class AndroidAppSourceTests(unittest.TestCase):
         self._replace_and_reject("apps/SwirCamera/AndroidManifest.xml", "android.permission.CAMERA", "android.permission.RECORD_AUDIO")
 
     def test_camera_direct_photo_contract_is_required(self):
-        self._replace_and_reject("apps/SwirCamera/src/org/swir/phoneos/camera/MainActivity.java", "MediaStore.Images.Media.IS_PENDING", "MediaStore.Images.Media.DATE_ADDED")
+        self._replace_and_reject("apps/SwirCamera/src/org/swir/phoneos/camera/MainActivity.java", "MediaStore.Images.Media.EXTERNAL_CONTENT_URI", "MediaStore.Video.Media.EXTERNAL_CONTENT_URI")
 
     def test_camera_video_remains_user_visible_handoff(self):
         self._replace_and_reject("apps/SwirCamera/src/org/swir/phoneos/camera/MainActivity.java", "MediaStore.ACTION_VIDEO_CAPTURE", "Intent.ACTION_VIEW")
