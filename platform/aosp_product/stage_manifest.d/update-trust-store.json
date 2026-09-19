@@ -2,6 +2,7 @@
   "schema_version": 1,
   "files": [
     {"source":"apps/SwirUpdate/src/org/swir/phoneos/update/OtaTrustStore.java","destination":"vendor/swir/apps/SwirUpdate/src/org/swir/phoneos/update/OtaTrustStore.java"},
-    {"source":"apps/SwirUpdate/src/org/swir/phoneos/update/DefaultOtaTrustStore.java","destination":"vendor/swir/apps/SwirUpdate/src/org/swir/phoneos/update/DefaultOtaTrustStore.java"}
+    {"source":"apps/SwirUpdate/src/org/swir/phoneos/update/DefaultOtaTrustStore.java","destination":"vendor/swir/apps/SwirUpdate/src/org/swir/phoneos/update/DefaultOtaTrustStore.java"},
+    {"source":"apps/SwirUpdate/src/org/swir/phoneos/update/OtaReviewSession.java","destination":"vendor/swir/apps/SwirUpdate/src/org/swir/phoneos/update/OtaReviewSession.java"}
   ]
 }

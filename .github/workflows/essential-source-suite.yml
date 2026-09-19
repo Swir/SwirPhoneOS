@@ -62,7 +62,10 @@ jobs:
             platform/aosp_product/apps/SwirUpdate/src/org/swir/phoneos/update/UpdatePolicy.java \
             platform/aosp_product/apps/SwirUpdate/src/org/swir/phoneos/update/OtaTrustStore.java \
             platform/aosp_product/apps/SwirUpdate/src/org/swir/phoneos/update/DefaultOtaTrustStore.java \
+            platform/aosp_product/apps/SwirUpdate/src/org/swir/phoneos/update/OtaReviewSession.java \
             platform/aosp_product/apps/SwirUpdate/hosttest/UpdatePolicyHostTest.java \
-            platform/aosp_product/apps/SwirUpdate/hosttest/OtaTrustStoreHostTest.java
+            platform/aosp_product/apps/SwirUpdate/hosttest/OtaTrustStoreHostTest.java \
+            platform/aosp_product/apps/SwirUpdate/hosttest/OtaReviewSessionHostTest.java
           java -cp "$out" org.swir.phoneos.update.UpdatePolicyHostTest
           java -cp "$out" org.swir.phoneos.update.OtaTrustStoreHostTest
+          java -cp "$out" org.swir.phoneos.update.OtaReviewSessionHostTest
