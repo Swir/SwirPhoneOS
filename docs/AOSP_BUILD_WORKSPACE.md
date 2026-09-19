@@ -45,7 +45,7 @@ Then, only inside an initialized AOSP checkout:
 python -m swirphoneos stage-product --workspace /path/to/aosp --execute
 ```
 
-Staging is driven by `platform/aosp_product/stage_manifest.json` plus reviewed `stage_manifest.d/*.json` fragments. Every source and destination is explicit; destination paths must stay under `vendor/swir/`; traversal, duplicate paths, symlink sources/destinations, missing files and oversized bundles are rejected. The current bundle covers the Swir Cuttlefish product and all source/resources required by the twelve applications marked `ANDROID_SOURCE` in the system-app registry. It never uses an arbitrary recursive repository copy and never communicates with a phone.
+Staging is driven by `platform/aosp_product/stage_manifest.json` plus reviewed `stage_manifest.d/*.json` fragments. Every source and destination is explicit; destination paths must stay under `vendor/swir/`; traversal, duplicate paths, symlink sources/destinations, missing files and oversized bundles are rejected. The current bundle covers the Swir Cuttlefish product and all source/resources required by the 20 applications marked `ANDROID_SOURCE` in the system-app registry. It never uses an arbitrary recursive repository copy and never communicates with a phone.
 
 Schema-v5 staging also protects persistent self-hosted AOSP workspaces against stale source. Before copying, the tool inventories regular files under `vendor/swir/` without following symlinks and rejects any file that is not an exact current manifest destination. It does not silently delete stale files. After copying, it requires the whole regular-file set under `vendor/swir/` to equal the current reviewed destination set exactly and records `destination_tree_closed=true` plus exact file counts.
 
@@ -59,7 +59,7 @@ Before starting a full AOSP build:
 python -m swirphoneos android-apps
 ```
 
-The validator currently covers all twelve source-ready applications. It checks package/module/product integration, exact per-app permission allowlists, localization parity for EN/PL/NB/DE/ES/FR/PT/AR, RTL requirements, complete bounded stage coverage and source-wide rejection of forbidden process/network/broad-storage primitives. SwirRoot receives additional fail-closed checks. Its result is source validation only; it is not APK/runtime or physical-device evidence.
+The validator currently covers all 20 source-ready applications. It checks package/module/product integration, exact per-app permission allowlists, localization parity for EN/PL/NB/DE/ES/FR/PT/AR, RTL requirements, complete bounded stage coverage and source-wide rejection of forbidden process/network/broad-storage primitives. SwirRoot receives additional fail-closed checks. Its result is source validation only; it is not APK/runtime or physical-device evidence.
 
 ## 6. Build
 
