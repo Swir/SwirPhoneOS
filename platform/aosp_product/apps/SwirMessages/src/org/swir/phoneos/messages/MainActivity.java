@@ -1,10 +1,13 @@
 package org.swir.phoneos.messages;
 
 import android.app.Activity;
+import android.content.ClipData;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
+import android.provider.OpenableColumns;
 import android.text.InputType;
 import android.view.Gravity;
 import android.view.View;
@@ -20,6 +23,7 @@ import java.util.Date;
 import java.util.List;
 
 public final class MainActivity extends Activity {
+    private static final int REQUEST_MEDIA_ATTACHMENT = 421;
     private static final String PREFS = "compose_draft";
     private static final String KEY_RECIPIENTS = "recipients";
     private static final String KEY_BODY = "body";
@@ -30,8 +34,14 @@ public final class MainActivity extends Activity {
     private EditText body;
     private TextView counter;
     private TextView history;
+    private TextView attachmentSummary;
     private Button handoff;
+    private Button removeAttachment;
     private CheckBox rememberHistory;
+    private Uri attachmentUri;
+    private String attachmentMime;
+    private String attachmentName;
+    private long attachmentSize = -1L;
 
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
@@ -53,6 +63,7 @@ public final class MainActivity extends Activity {
         int pagePadding = dim(R.dimen.swir_space_lg);
         root.setPadding(pagePadding, pagePadding, pagePadding, pagePadding);
         root.setBackgroundColor(getColor(R.color.swir_background));
+        root.setLayoutDirection(View.LAYOUT_DIRECTION_LOCALE);
 
         root.addView(text(getString(R.string.eyebrow), 13, getColor(R.color.swir_accent_cyan)), matchWrap());
         root.addView(text(getString(R.string.title), 30, getColor(R.color.swir_text_primary)), matchWrap());
@@ -85,6 +96,21 @@ public final class MainActivity extends Activity {
         counter = text(getString(R.string.characters_remaining, MessagePolicy.MAX_BODY_LENGTH), 13, getColor(R.color.swir_text_secondary));
         counter.setGravity(Gravity.END);
         root.addView(counter, matchWrap());
+
+        LinearLayout attachmentActions = new LinearLayout(this);
+        attachmentActions.setOrientation(LinearLayout.HORIZONTAL);
+        Button attach = actionButton(R.string.attach_media);
+        attach.setOnClickListener(v -> chooseMediaAttachment());
+        attachmentActions.addView(attach, weighted());
+        removeAttachment = actionButton(R.string.remove_media);
+        removeAttachment.setOnClickListener(v -> clearAttachment());
+        removeAttachment.setVisibility(View.GONE);
+        attachmentActions.addView(removeAttachment, weighted());
+        root.addView(attachmentActions, matchWrap());
+
+        attachmentSummary = text("", 13, getColor(R.color.swir_text_secondary));
+        attachmentSummary.setVisibility(View.GONE);
+        root.addView(attachmentSummary, matchWrap());
 
         LinearLayout actions = new LinearLayout(this);
         actions.setOrientation(LinearLayout.HORIZONTAL);
@@ -126,22 +152,93 @@ public final class MainActivity extends Activity {
         return root;
     }
 
+    private void chooseMediaAttachment() {
+        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        intent.setType("*/*");
+        intent.putExtra(Intent.EXTRA_MIME_TYPES, new String[]{"image/*", "video/*", "audio/*"});
+        if (intent.resolveActivity(getPackageManager()) == null) {
+            Toast.makeText(this, R.string.media_picker_unavailable, Toast.LENGTH_SHORT).show();
+            return;
+        }
+        startActivityForResult(intent, REQUEST_MEDIA_ATTACHMENT);
+    }
+
+    @Override protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode != REQUEST_MEDIA_ATTACHMENT || resultCode != RESULT_OK || data == null || data.getData() == null) return;
+        Uri uri = data.getData();
+        AttachmentInfo info = attachmentInfo(uri);
+        if (!"content".equals(uri.getScheme()) || !MessagePolicy.attachmentReviewReady(info.mime, info.displayName, info.sizeBytes)) {
+            clearAttachment();
+            Toast.makeText(this, R.string.invalid_media_attachment, Toast.LENGTH_SHORT).show();
+            return;
+        }
+        attachmentUri = uri;
+        attachmentMime = info.mime;
+        attachmentName = MessagePolicy.safeAttachmentName(info.displayName);
+        attachmentSize = info.sizeBytes;
+        renderAttachment();
+        refreshState();
+    }
+
+    private AttachmentInfo attachmentInfo(Uri uri) {
+        String displayName = null;
+        long sizeBytes = -1L;
+        String mime = getContentResolver().getType(uri);
+        try (Cursor cursor = getContentResolver().query(
+                uri,
+                new String[]{OpenableColumns.DISPLAY_NAME, OpenableColumns.SIZE},
+                null,
+                null,
+                null)) {
+            if (cursor != null && cursor.moveToFirst()) {
+                int nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME);
+                int sizeIndex = cursor.getColumnIndex(OpenableColumns.SIZE);
+                if (nameIndex >= 0 && !cursor.isNull(nameIndex)) displayName = cursor.getString(nameIndex);
+                if (sizeIndex >= 0 && !cursor.isNull(sizeIndex)) sizeBytes = cursor.getLong(sizeIndex);
+            }
+        } catch (Exception ignored) {
+            // The pure-Java attachment policy fails closed on missing/invalid provider metadata.
+        }
+        return new AttachmentInfo(displayName, mime, sizeBytes);
+    }
+
     private void openSystemMessagingApp() {
         String normalizedRecipients = MessagePolicy.normalizeRecipients(recipients.getText().toString());
         String normalizedBody = MessagePolicy.normalizeBody(body.getText().toString());
-        if (!MessagePolicy.canHandoff(normalizedRecipients, normalizedBody)) {
+        boolean mediaReady = attachmentUri != null && MessagePolicy.canMediaHandoff(
+                normalizedRecipients, normalizedBody, attachmentMime, attachmentName, attachmentSize);
+        if (!mediaReady && !MessagePolicy.canHandoff(normalizedRecipients, normalizedBody)) {
             Toast.makeText(this, R.string.invalid_message, Toast.LENGTH_SHORT).show();
             return;
         }
-        Intent intent = new Intent(Intent.ACTION_SENDTO, Uri.fromParts("smsto", normalizedRecipients, null));
-        intent.putExtra("sms_body", normalizedBody);
+
+        Intent intent;
+        if (mediaReady) {
+            intent = new Intent(Intent.ACTION_SEND);
+            intent.setType(attachmentMime);
+            intent.putExtra(Intent.EXTRA_STREAM, attachmentUri);
+            intent.putExtra(Intent.EXTRA_TEXT, normalizedBody);
+            intent.putExtra("sms_body", normalizedBody);
+            intent.putExtra("address", normalizedRecipients);
+            intent.setClipData(ClipData.newUri(getContentResolver(), getString(R.string.app_name), attachmentUri));
+            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+        } else {
+            intent = new Intent(Intent.ACTION_SENDTO, Uri.fromParts("smsto", normalizedRecipients, null));
+            intent.putExtra("sms_body", normalizedBody);
+        }
         if (intent.resolveActivity(getPackageManager()) == null) {
             Toast.makeText(this, R.string.no_messaging_app, Toast.LENGTH_SHORT).show();
             return;
         }
         saveDraft();
-        startActivity(intent);
-        if (rememberHistory != null && rememberHistory.isChecked()) {
+        if (mediaReady) {
+            startActivity(Intent.createChooser(intent, getString(R.string.continue_to_messages)));
+        } else {
+            startActivity(intent);
+        }
+        if (rememberHistory != null && rememberHistory.isChecked() && !normalizedBody.trim().isEmpty()) {
             recordHandoff(normalizedRecipients, normalizedBody);
         }
     }
@@ -201,11 +298,34 @@ public final class MainActivity extends Activity {
     private void clearDraft() {
         recipients.getText().clear();
         body.getText().clear();
+        clearAttachment();
         getSharedPreferences(PREFS, MODE_PRIVATE).edit()
                 .remove(KEY_RECIPIENTS)
                 .remove(KEY_BODY)
                 .apply();
         Toast.makeText(this, R.string.draft_cleared, Toast.LENGTH_SHORT).show();
+    }
+
+    private void clearAttachment() {
+        attachmentUri = null;
+        attachmentMime = null;
+        attachmentName = null;
+        attachmentSize = -1L;
+        renderAttachment();
+        refreshState();
+    }
+
+    private void renderAttachment() {
+        if (attachmentSummary == null || removeAttachment == null) return;
+        if (attachmentUri == null || attachmentName == null) {
+            attachmentSummary.setText("");
+            attachmentSummary.setVisibility(View.GONE);
+            removeAttachment.setVisibility(View.GONE);
+            return;
+        }
+        attachmentSummary.setText(getString(R.string.media_attachment_selected, attachmentName));
+        attachmentSummary.setVisibility(View.VISIBLE);
+        removeAttachment.setVisibility(View.VISIBLE);
     }
 
     private void clearHistory() {
@@ -219,7 +339,12 @@ public final class MainActivity extends Activity {
             counter.setText(getString(R.string.characters_remaining, MessagePolicy.remainingCharacters(body.getText().toString())));
         }
         if (handoff != null && recipients != null && body != null) {
-            handoff.setEnabled(MessagePolicy.canHandoff(recipients.getText().toString(), body.getText().toString()));
+            String recipientText = recipients.getText().toString();
+            String bodyText = body.getText().toString();
+            boolean textReady = MessagePolicy.canHandoff(recipientText, bodyText);
+            boolean mediaReady = attachmentUri != null && MessagePolicy.canMediaHandoff(
+                    recipientText, bodyText, attachmentMime, attachmentName, attachmentSize);
+            handoff.setEnabled(textReady || mediaReady);
         }
     }
 
@@ -244,6 +369,18 @@ public final class MainActivity extends Activity {
     private LinearLayout.LayoutParams weighted() { return new LinearLayout.LayoutParams(0, -2, 1f); }
     private int dim(int id) { return getResources().getDimensionPixelSize(id); }
     private int dp(int value) { return Math.round(value * getResources().getDisplayMetrics().density); }
+
+    private static final class AttachmentInfo {
+        final String displayName;
+        final String mime;
+        final long sizeBytes;
+
+        AttachmentInfo(String displayName, String mime, long sizeBytes) {
+            this.displayName = displayName;
+            this.mime = mime;
+            this.sizeBytes = sizeBytes;
+        }
+    }
 
     private static final class SimpleTextWatcher implements android.text.TextWatcher {
         private final Runnable callback;

@@ -2,11 +2,14 @@ package org.swir.phoneos.messages;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 public final class MessagePolicy {
     public static final int MAX_RECIPIENTS = 10;
     public static final int MAX_RECIPIENT_LENGTH = 32;
     public static final int MAX_BODY_LENGTH = 4000;
+    public static final long MAX_ATTACHMENT_BYTES = 25L * 1024L * 1024L;
+    public static final int MAX_ATTACHMENT_NAME_LENGTH = 180;
 
     private MessagePolicy() {}
 
@@ -56,6 +59,47 @@ public final class MessagePolicy {
 
     public static boolean canHandoff(String recipients, String body) {
         return !normalizeRecipients(recipients).isEmpty() && !normalizeBody(body).trim().isEmpty();
+    }
+
+    public static boolean isSupportedMediaMime(String rawMime) {
+        if (rawMime == null) return false;
+        String mime = rawMime.trim().toLowerCase(Locale.ROOT);
+        if (mime.isEmpty() || mime.length() > 128 || mime.indexOf(';') >= 0) return false;
+        int slash = mime.indexOf('/');
+        if (slash <= 0 || slash != mime.lastIndexOf('/') || slash >= mime.length() - 1) return false;
+        String family = mime.substring(0, slash);
+        String subtype = mime.substring(slash + 1);
+        if (!("image".equals(family) || "video".equals(family) || "audio".equals(family)) || "*".equals(subtype)) return false;
+        for (int i = 0; i < subtype.length(); i++) {
+            char c = subtype.charAt(i);
+            if (!(Character.isLetterOrDigit(c) || c == '.' || c == '+' || c == '-' || c == '_')) return false;
+        }
+        return true;
+    }
+
+    public static String safeAttachmentName(String rawName) {
+        if (rawName == null) return "";
+        String value = rawName.trim();
+        if (value.isEmpty() || value.length() > MAX_ATTACHMENT_NAME_LENGTH || ".".equals(value) || "..".equals(value)) return "";
+        if (value.indexOf('/') >= 0 || value.indexOf('\\') >= 0) return "";
+        for (int i = 0; i < value.length(); i++) {
+            if (Character.isISOControl(value.charAt(i))) return "";
+        }
+        return value;
+    }
+
+    public static boolean attachmentReviewReady(String mime, String displayName, long sizeBytes) {
+        return isSupportedMediaMime(mime)
+                && !safeAttachmentName(displayName).isEmpty()
+                && sizeBytes > 0L
+                && sizeBytes <= MAX_ATTACHMENT_BYTES;
+    }
+
+    /** Source-stage owner-visible media handoff only; this does not claim carrier MMS delivery. */
+    public static boolean canMediaHandoff(String recipients, String body, String mime, String displayName, long sizeBytes) {
+        if (normalizeRecipients(recipients).isEmpty()) return false;
+        normalizeBody(body); // Enforce the same bounded body normalization even when text is optional.
+        return attachmentReviewReady(mime, displayName, sizeBytes);
     }
 
     public static int remainingCharacters(String body) {
