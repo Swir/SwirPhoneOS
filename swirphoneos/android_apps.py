@@ -47,7 +47,7 @@ _MAX_TEXT = 1_000_000
 _SPECS = {
     "phone": _AppSpec("phone", "SwirPhone", "SwirPhone", "org.swir.phoneos.phone", "src/org/swir/phoneos/phone/DialerPolicy.java", "src/org/swir/phoneos/phone/MainActivity.java", "hosttest/DialerPolicyHostTest.java", "res/drawable/ic_phone.xml", ("dialer", "in_call", "recent_calls"), ("android.permission.READ_CALL_LOG",)),
     "messages": _AppSpec("messages", "SwirMessages", "SwirMessages", "org.swir.phoneos.messages", "src/org/swir/phoneos/messages/MessagePolicy.java", "src/org/swir/phoneos/messages/MainActivity.java", "hosttest/MessagePolicyHostTest.java", "res/drawable/ic_messages.xml", ("sms",)),
-    "camera": _AppSpec("camera", "SwirCamera", "SwirCamera", "org.swir.phoneos.camera", "src/org/swir/phoneos/camera/CameraPolicy.java", "src/org/swir/phoneos/camera/MainActivity.java", "hosttest/CameraPolicyHostTest.java", "res/drawable/ic_camera.xml", ("camera_capability_report", "photo_capture"), ("android.permission.CAMERA",)),
+    "camera": _AppSpec("camera", "SwirCamera", "SwirCamera", "org.swir.phoneos.camera", "src/org/swir/phoneos/camera/CameraPolicy.java", "src/org/swir/phoneos/camera/MainActivity.java", "hosttest/CameraPolicyHostTest.java", "res/drawable/ic_camera.xml", ("camera_capability_report", "photo_capture", "video_capture"), ("android.permission.CAMERA",)),
     "calculator": _AppSpec("calculator", "SwirCalculator", "SwirCalculator", "org.swir.phoneos.calculator", "src/org/swir/phoneos/calculator/CalculatorEngine.java", "src/org/swir/phoneos/calculator/MainActivity.java", "hosttest/CalculatorEngineHostTest.java", "res/drawable/ic_calculator.xml", ("basic_math", "scientific_math")),
     "settings": _AppSpec("settings", "SwirSettings", "SwirSettings", "org.swir.phoneos.settings", "src/org/swir/phoneos/settings/SettingsCatalog.java", "src/org/swir/phoneos/settings/MainActivity.java", "hosttest/SettingsCatalogHostTest.java", "res/drawable/ic_settings.xml", ("system_settings", "search", "device_status")),
     "files": _AppSpec("files", "SwirFiles", "SwirFiles", "org.swir.phoneos.files", "src/org/swir/phoneos/files/FilePolicy.java", "src/org/swir/phoneos/files/MainActivity.java", "hosttest/FilePolicyHostTest.java", "res/drawable/ic_files.xml", ("browse", "search", "copy_move_rename", "share", "safe_delete")),
@@ -197,23 +197,31 @@ def _validate_messages(logic, activity):
 
 
 def _validate_camera(logic, activity):
-    logic_required = ("validDimensions", "megapixels", "formatMegapixels", "normalizeLensFacing", "nextPreferredLens", "jpegOrientation", "LENS_FRONT", "LENS_BACK")
+    logic_required = (
+        "validDimensions", "megapixels", "formatMegapixels", "normalizeLensFacing", "nextPreferredLens",
+        "jpegOrientation", "LENS_FRONT", "LENS_BACK", "validVideoDimensions", "videoBitRate", "VIDEO_FRAME_RATE",
+    )
     if any(x not in logic for x in logic_required):
-        raise AndroidAppSourceError("SwirCamera host-tested capture policy drifted.")
+        raise AndroidAppSourceError("SwirCamera host-tested still/video capture policy drifted.")
     required = (
         "CameraManager", "getCameraIdList", "CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP",
-        "getOutputSizes(ImageFormat.JPEG)", "Manifest.permission.CAMERA", "requestPermissions",
+        "getOutputSizes(ImageFormat.JPEG)", "getOutputSizes(MediaCodec.class)", "Manifest.permission.CAMERA", "requestPermissions",
         "CameraDevice", "ImageReader.newInstance", "CameraDevice.TEMPLATE_PREVIEW",
         "CameraDevice.TEMPLATE_STILL_CAPTURE", "CaptureRequest.JPEG_ORIENTATION",
         "MediaStore.Images.Media.EXTERNAL_CONTENT_URI", "MediaStore.Images.Media.IS_PENDING",
         "Environment.DIRECTORY_PICTURES", "openOutputStream", "getContentResolver().update",
-        "getContentResolver().delete", "MediaStore.ACTION_VIDEO_CAPTURE", "CameraPolicy.formatMegapixels",
+        "getContentResolver().delete", "CameraPolicy.formatMegapixels",
+        "MediaCodec.createEncoderByType", "MediaFormat.MIMETYPE_VIDEO_AVC", "MediaCodec.CONFIGURE_FLAG_ENCODE",
+        "MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4", "CameraDevice.TEMPLATE_RECORD",
+        "CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_VIDEO", "MediaStore.Video.Media.EXTERNAL_CONTENT_URI",
+        "MediaStore.Video.Media.IS_PENDING", "Environment.DIRECTORY_MOVIES", "signalEndOfInputStream",
+        "setOrientationHint", "CameraPolicy.videoBitRate", "CameraPolicy.validVideoDimensions",
     )
     if any(x not in activity for x in required):
-        raise AndroidAppSourceError("SwirCamera must retain owner-initiated Camera2 still capture, scoped MediaStore persistence and visible video hand-off.")
+        raise AndroidAppSourceError("SwirCamera must retain owner-initiated Camera2 still capture plus direct silent H.264/MP4 capture with scoped MediaStore persistence.")
     forbidden = ("MediaRecorder", "Manifest.permission.RECORD_AUDIO", "MediaStore.ACTION_IMAGE_CAPTURE")
     if any(x in activity for x in forbidden):
-        raise AndroidAppSourceError("SwirCamera direct-photo source stage must not silently expand into direct video/audio capture or fall back to external photo hand-off.")
+        raise AndroidAppSourceError("SwirCamera direct capture must remain camera-only: no hidden audio capture, MediaRecorder path or external photo hand-off.")
 
 
 def _validate_calculator(logic, activity):
