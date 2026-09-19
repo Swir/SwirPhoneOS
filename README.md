@@ -53,6 +53,7 @@ Detailed evidence status: [`BUILD_STATUS.md`](BUILD_STATUS.md).
 - **20 first-party system apps:** every required everyday-app slot has meaningful Android source integrated into the developer product; none is counted as runtime before the image actually builds and exercises it.
 - **Fail-closed build provenance:** exact Android 17 baseline, resolved Repo manifest, clean exact Git worktree verification before and after the build, bounded `vendor/swir/` staging, stale-tree rejection, pinned build identity and Cuttlefish/GSI evidence contracts.
 - **SwirPhone least privilege:** outgoing calls remain an explicit Android `ACTION_DIAL` hand-off; in-call controls require the owner-approved default-phone role; recent-call history is read-only, bounded, role-gated and requests only `READ_CALL_LOG`, with no `CALL_PHONE` or `WRITE_CALL_LOG` path.
+- **Swir Camera source-stage capture:** exactly `CAMERA` permission; owner-triggered Camera2 live preview and JPEG still capture save through scoped MediaStore, while video stays an explicit Android hand-off and all runtime/photo-quality/device claims remain blocked until real validation.
 - **SwirPhoneStudio:** dark/electric-cyan Windows-first companion with trusted ADB/Fastboot selection, read-only diagnostics, a manual ADB → Fastboot/FastbootD evidence capture wizard and local validation of SwirRoot readiness evidence. It exposes no flash/root controls today.
 - **SwirRoot safety model:** deny-by-default, exact-build policy, rollback/journal requirements, explicit owner confirmation design and a reliable unroot requirement before any supported root claim.
 - **Worldwide localization architecture:** shared host catalogs plus EN/PL/NB/DE/ES/FR/PT/AR Android resources, English fallback, RTL-aware Android configuration and localization linting.
@@ -66,13 +67,13 @@ All twenty required app slots are currently **source-ready only** and included i
 | Phone | Explicit Android `ACTION_DIAL`, owner-controlled default-dialer role and in-call answer/reject/end source, plus bounded read-only recent calls behind the same role and explicit `READ_CALL_LOG`; runtime Telecom/modem/IMS behavior remains unverified |
 | Contacts | Scoped `READ_CONTACTS`, browse/search, Android-managed edit/create, vCard import/export |
 | Messages | Local draft/composer + explicit `ACTION_SENDTO`; no silent SMS; MMS/history still open |
-| Camera | Camera2 capability inspection + explicit system photo/video capture hand-off; direct capture unverified |
-| Gallery | Scoped MediaStore browse/search/open/share + owner-confirmed delete |
+| Camera | Exactly `CAMERA`; first-party Camera2 live preview, front/back selection and owner-triggered direct JPEG still capture with scoped pending-row MediaStore save/cleanup under `Pictures/SwirPhoneOS`; video remains an explicit Android hand-off; runtime, photo quality and exact-device behavior remain unverified |
+| Gallery | Scoped MediaStore browse/search/open/share, bounded bucket-based album grouping/filtering + owner-confirmed delete; runtime provider behavior remains unverified |
 | Files | Storage Access Framework browse/search/create/rename/copy/move/delete/open/share |
 | Settings | Searchable Swir hub + reviewed Android settings routes |
 | Browser | HTTPS-first WebView with conservative privacy defaults + app-scoped owner-visible `DownloadManager` downloads; runtime redirect/provider behavior unverified |
 | Clock | Localized clock, foreground stopwatch/timer + visible alarm hand-off |
-| Calculator | Host-tested `BigDecimal` basic arithmetic + locale-aware display |
+| Calculator | Host-tested `BigDecimal` basic arithmetic plus source-stage scientific operations (`sin`, `cos`, `tan`, square root, logarithms, reciprocal, constants and DEG/RAD); Android runtime/visual behavior unverified |
 | Notes | App-private SQLite CRUD/search/share + Markdown export |
 | Voice Recorder | Foreground-only private AAC/MPEG-4 record/playback/export |
 | Calendar | Local SQLite agenda/search + bounded owner-selected ICS import/export/share + owner-visible Android calendar hand-off; no direct calendar-write permission |
