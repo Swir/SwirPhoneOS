@@ -1,14 +1,29 @@
 <resources>
     <string name="app_name">Swir Camera</string>
     <string name="title">Swir Camera</string>
-    <string name="subtitle">Inspektor możliwości aparatu i bezpieczne przekazanie przechwytywania</string>
-    <string name="source_stage_notice">Bezpośrednie przechwytywanie Camera2 nie jest jeszcze deklarowane. Ten etap źródłowy pokazuje rzeczywiste możliwości aparatu i otwiera widoczny ekran przechwytywania Androida.</string>
+    <string name="subtitle">Bezpośrednie zdjęcia Camera2 i inspektor możliwości aparatu</string>
+    <string name="source_stage_notice">Bezpośrednie robienie zdjęć jest zaimplementowane w źródłach, ale nadal wymaga walidacji w Androidzie i na fizycznym urządzeniu. Wideo pozostaje widocznym przekazaniem do Androida.</string>
     <string name="refresh">Odśwież</string>
-    <string name="photo_handoff">Zdjęcie</string>
+    <string name="capture_photo">Zrób zdjęcie</string>
+    <string name="switch_camera">Przełącz</string>
     <string name="video_handoff">Wideo</string>
+    <string name="preview_content_description">Podgląd aparatu na żywo</string>
+    <string name="camera_starting">Uruchamianie aparatu…</string>
+    <string name="camera_ready">Aparat gotowy.</string>
+    <string name="permission_required">Uprawnienie do aparatu jest wymagane do bezpośredniego robienia zdjęć.</string>
+    <string name="capture_configuration_unavailable">Ten aparat nie udostępnia użytecznej konfiguracji JPEG i podglądu.</string>
+    <string name="camera_open_failed">Nie udało się otworzyć aparatu.</string>
+    <string name="camera_disconnected">Aparat został rozłączony.</string>
+    <string name="capturing_photo">Robienie zdjęcia…</string>
+    <string name="photo_saved">Zdjęcie zapisano w Pictures/SwirPhoneOS.</string>
+    <string name="save_failed">Nie udało się bezpiecznie zapisać zdjęcia.</string>
     <string name="capability_empty">Brak danych o możliwościach aparatu.</string>
     <string name="camera_row">Aparat %1$s · %2$s</string>
     <string name="size_row">Największy JPEG: %1$d × %2$d · %3$s MP</string>
+    <string name="lens_front">Przedni</string>
+    <string name="lens_back">Tylny</string>
+    <string name="lens_external">Zewnętrzny</string>
+    <string name="lens_unknown">Nieznany</string>
     <string name="handoff_unavailable">Brak zgodnej aplikacji do przechwytywania.</string>
     <string name="capability_error">Sprawdzanie możliwości aparatu nie powiodło się.</string>
 </resources>
