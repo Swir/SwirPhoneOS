@@ -27,6 +27,8 @@ jobs:
         run: python -m unittest discover -s tests -p 'test_android_apps.py' -v
       - name: Validate SwirMessages handoff-history safety boundary
         run: python -m unittest discover -s tests -p 'test_android_messages_handoff_history.py' -v
+      - name: Validate SwirMessages media handoff safety boundary
+        run: python -m unittest discover -s tests -p 'test_android_messages_media_handoff.py' -v
       - name: Host-test SwirMessages compose and local history policies
         run: |
           mkdir -p _messages-java-test
