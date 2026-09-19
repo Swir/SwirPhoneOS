@@ -45,7 +45,7 @@ class SwirCameraDirectVideoSourceTests(unittest.TestCase):
             "videoDrainThread != null",
             "System.nanoTime()",
             "videoTransition = true",
-            "if (recordingVideo || videoTransition)",
+            "if (recordingVideo || videoTransition ||",
             "if (videoTransition) return",
         ):
             self.assertIn(token, source)
