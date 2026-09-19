@@ -13,6 +13,7 @@ import java.util.TimeZone;
 /** Pure-Java time calculations shared by the Android activity and host tests. */
 public final class ClockCore {
     private static final long MAX_TIMER_MILLIS = 24L * 60L * 60L * 1000L;
+    private static final long MAX_SESSION_DRIFT_MILLIS = 2L * 60L * 1000L;
     private static final String[] WORLD_ZONE_IDS = {
             "UTC",
             "Europe/Oslo",
@@ -53,6 +54,44 @@ public final class ClockCore {
         if (durationMillis <= 0L || durationMillis > MAX_TIMER_MILLIS || startedAtMillis < 0L || nowMillis < 0L) return 0L;
         long elapsed = Math.max(0L, nowMillis - startedAtMillis);
         return Math.max(0L, durationMillis - elapsed);
+    }
+
+    /**
+     * Verifies that an elapsed-realtime snapshot still belongs to this boot/session.
+     *
+     * Android's monotonic elapsed clock resets at reboot while wall time does not. A restored
+     * activity therefore carries both clocks and resumes only when their deltas remain close.
+     * Large wall-clock corrections fail closed rather than resurrecting a stale timer.
+     */
+    public static boolean canRestoreElapsedSession(
+            long startedElapsedMillis,
+            long startedWallMillis,
+            long nowElapsedMillis,
+            long nowWallMillis) {
+        if (startedElapsedMillis < 0L || startedWallMillis <= 0L || nowElapsedMillis < 0L || nowWallMillis <= 0L) {
+            return false;
+        }
+        if (nowElapsedMillis < startedElapsedMillis || nowWallMillis < startedWallMillis) {
+            return false;
+        }
+        long elapsedDelta = nowElapsedMillis - startedElapsedMillis;
+        long wallDelta = nowWallMillis - startedWallMillis;
+        long difference = elapsedDelta >= wallDelta ? elapsedDelta - wallDelta : wallDelta - elapsedDelta;
+        return difference <= MAX_SESSION_DRIFT_MILLIS;
+    }
+
+    /** Returns remaining time for a verified restored timer, or -1 when the snapshot is stale. */
+    public static long restoredTimerRemaining(
+            long durationMillis,
+            long startedElapsedMillis,
+            long startedWallMillis,
+            long nowElapsedMillis,
+            long nowWallMillis) {
+        if (durationMillis <= 0L || durationMillis > MAX_TIMER_MILLIS) return -1L;
+        if (!canRestoreElapsedSession(startedElapsedMillis, startedWallMillis, nowElapsedMillis, nowWallMillis)) {
+            return -1L;
+        }
+        return timerRemaining(durationMillis, startedElapsedMillis, nowElapsedMillis);
     }
 
     public static String formatDuration(long millis) {
