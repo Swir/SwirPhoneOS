@@ -15,9 +15,12 @@ public final class CameraPolicyHostTest {
         check(CameraPolicy.validVideoDimensions(1920, 1080), "1080p video allowed");
         check(CameraPolicy.validVideoDimensions(3840, 2160), "4k video allowed");
         check(!CameraPolicy.validVideoDimensions(4096, 2160), "oversized video rejected");
+        check(!CameraPolicy.validVideoDimensions(1919, 1080), "odd-width video rejected");
+        check(!CameraPolicy.validVideoDimensions(1920, 1079), "odd-height video rejected");
         check(CameraPolicy.videoBitRate(1920, 1080) == 10_368_000, "1080p bounded bitrate");
         check(CameraPolicy.videoBitRate(320, 240) == 2_000_000, "small video minimum bitrate");
         check(CameraPolicy.videoBitRate(0, 1080) == 0, "invalid video has no bitrate");
+        check(CameraPolicy.videoBitRate(1919, 1080) == 0, "odd video has no bitrate");
         check(CameraPolicy.VIDEO_FRAME_RATE == 30, "stable video frame rate");
 
         check(CameraPolicy.normalizeLensFacing(0) == CameraPolicy.LENS_FRONT, "front lens");

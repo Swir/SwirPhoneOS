@@ -30,10 +30,25 @@ class SwirCameraDirectVideoSourceTests(unittest.TestCase):
             "Environment.DIRECTORY_MOVIES",
             "signalEndOfInputStream",
             "CameraPolicy.videoBitRate",
+            "setOrientationHint",
         ):
             self.assertIn(token, source)
         self.assertNotIn("MediaRecorder", source)
         self.assertNotIn("Manifest.permission.RECORD_AUDIO", source)
+
+    def test_video_state_machine_blocks_double_start_and_unbounded_finalize(self):
+        source = (CAMERA_ROOT / "src/org/swir/phoneos/camera/MainActivity.java").read_text(encoding="utf-8")
+        for token in (
+            "VIDEO_FINALIZE_TIMEOUT_NS",
+            "private volatile boolean videoTransition",
+            "pendingVideoUri != null",
+            "videoDrainThread != null",
+            "System.nanoTime()",
+            "videoTransition = true",
+            "if (recordingVideo || videoTransition)",
+            "if (videoTransition) return",
+        ):
+            self.assertIn(token, source)
 
     def test_unsupported_direct_video_keeps_visible_android_fallback(self):
         source = (CAMERA_ROOT / "src/org/swir/phoneos/camera/MainActivity.java").read_text(encoding="utf-8")
@@ -46,7 +61,14 @@ class SwirCameraDirectVideoSourceTests(unittest.TestCase):
         host = (CAMERA_ROOT / "hosttest/CameraPolicyHostTest.java").read_text(encoding="utf-8")
         for token in ("validVideoDimensions", "videoBitRate", "VIDEO_FRAME_RATE", "3840L * 2160L", "MAX_VIDEO_BIT_RATE"):
             self.assertIn(token, policy)
-        for token in ("1080p video allowed", "4k video allowed", "oversized video rejected", "1080p bounded bitrate"):
+        for token in (
+            "1080p video allowed",
+            "4k video allowed",
+            "oversized video rejected",
+            "odd-width video rejected",
+            "odd-height video rejected",
+            "1080p bounded bitrate",
+        ):
             self.assertIn(token, host)
 
     def test_all_camera_locales_share_direct_video_keys(self):

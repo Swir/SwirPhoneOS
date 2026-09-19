@@ -19,6 +19,7 @@ public final class CameraPolicy {
 
     public static boolean validVideoDimensions(int width, int height) {
         if (!validDimensions(width, height)) return false;
+        if ((width & 1) != 0 || (height & 1) != 0) return false;
         long area = (long) width * (long) height;
         return area <= 3840L * 2160L;
     }

@@ -48,6 +48,7 @@ import java.util.Locale;
 public final class MainActivity extends Activity {
     private static final int CAMERA_PERMISSION_REQUEST = 4101;
     private static final long VIDEO_DRAIN_TIMEOUT_US = 10_000L;
+    private static final long VIDEO_FINALIZE_TIMEOUT_NS = 5_000_000_000L;
 
     private TextureView preview;
     private TextView status;
@@ -71,6 +72,7 @@ public final class MainActivity extends Activity {
     private Thread videoDrainThread;
     private volatile boolean videoStopRequested;
     private volatile boolean recordingVideo;
+    private volatile boolean videoTransition;
     private boolean videoMuxerStarted;
     private Size activeVideoSize;
     private int preferredLens = CameraPolicy.LENS_BACK;
@@ -189,7 +191,7 @@ public final class MainActivity extends Activity {
     }
 
     private void openCameraIfReady() {
-        if (!preview.isAvailable() || backgroundHandler == null || opening || cameraDevice != null) return;
+        if (!preview.isAvailable() || backgroundHandler == null || opening || cameraDevice != null || videoTransition) return;
         if (checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
             requestPermissions(new String[] { Manifest.permission.CAMERA }, CAMERA_PERMISSION_REQUEST);
             return;
@@ -255,6 +257,7 @@ public final class MainActivity extends Activity {
             opening = false;
             camera.close();
             if (cameraDevice == camera) cameraDevice = null;
+            handleCameraLoss();
             runOnUiThread(() -> {
                 capture.setEnabled(false);
                 video.setEnabled(false);
@@ -266,6 +269,7 @@ public final class MainActivity extends Activity {
             opening = false;
             camera.close();
             if (cameraDevice == camera) cameraDevice = null;
+            handleCameraLoss();
             runOnUiThread(() -> {
                 capture.setEnabled(false);
                 video.setEnabled(false);
@@ -274,11 +278,19 @@ public final class MainActivity extends Activity {
         }
     };
 
+    private void handleCameraLoss() {
+        if (recordingVideo) {
+            requestStopVideo(false);
+        } else if (videoTransition && videoDrainThread == null) {
+            finishVideo(false, false);
+        }
+    }
+
     private void createPreviewSession() {
         CameraDevice camera = cameraDevice;
         ImageReader reader = imageReader;
         Surface surface = previewSurface;
-        if (camera == null || reader == null || surface == null || recordingVideo) return;
+        if (camera == null || reader == null || surface == null || recordingVideo || videoTransition) return;
         try {
             previewRequest = camera.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
             previewRequest.addTarget(surface);
@@ -288,7 +300,7 @@ public final class MainActivity extends Activity {
             outputs.add(reader.getSurface());
             camera.createCaptureSession(outputs, new CameraCaptureSession.StateCallback() {
                 @Override public void onConfigured(CameraCaptureSession session) {
-                    if (cameraDevice == null || recordingVideo) {
+                    if (cameraDevice == null || recordingVideo || videoTransition) {
                         session.close();
                         return;
                     }
@@ -323,7 +335,7 @@ public final class MainActivity extends Activity {
         CameraDevice camera = cameraDevice;
         CameraCaptureSession session = captureSession;
         ImageReader reader = imageReader;
-        if (recordingVideo || camera == null || session == null || reader == null || pendingPhotoUri != null) return;
+        if (recordingVideo || videoTransition || camera == null || session == null || reader == null || pendingPhotoUri != null) return;
         Uri uri = createPendingPhoto();
         if (uri == null) {
             status.setText(R.string.save_failed);
@@ -372,7 +384,7 @@ public final class MainActivity extends Activity {
             getContentResolver().update(uri, done, null, null);
             pendingPhotoUri = null;
             runOnUiThread(() -> {
-                capture.setEnabled(captureSession != null && !recordingVideo);
+                capture.setEnabled(captureSession != null && !recordingVideo && !videoTransition);
                 status.setText(R.string.photo_saved);
                 Toast.makeText(this, R.string.photo_saved, Toast.LENGTH_SHORT).show();
             });
@@ -402,12 +414,13 @@ public final class MainActivity extends Activity {
             try { getContentResolver().delete(uri, null, null); } catch (RuntimeException ignored) { }
         }
         runOnUiThread(() -> {
-            capture.setEnabled(captureSession != null && !recordingVideo);
+            capture.setEnabled(captureSession != null && !recordingVideo && !videoTransition);
             status.setText(R.string.save_failed);
         });
     }
 
     private void toggleVideo() {
+        if (videoTransition) return;
         if (recordingVideo) {
             requestStopVideo(true);
             return;
@@ -423,10 +436,17 @@ public final class MainActivity extends Activity {
         CameraDevice camera = cameraDevice;
         Surface surface = previewSurface;
         Size size = activeVideoSize;
-        if (recordingVideo || camera == null || surface == null || size == null || pendingPhotoUri != null) return;
+        if (recordingVideo || videoTransition || pendingVideoUri != null || videoDrainThread != null
+                || camera == null || surface == null || size == null || pendingPhotoUri != null) return;
+
+        videoTransition = true;
+        capture.setEnabled(false);
+        switchLens.setEnabled(false);
+        video.setEnabled(false);
         Uri uri = createPendingVideo();
         if (uri == null) {
-            status.setText(R.string.video_save_failed);
+            videoTransition = false;
+            restoreVideoControlsAfterFailure();
             return;
         }
         pendingVideoUri = uri;
@@ -443,6 +463,8 @@ public final class MainActivity extends Activity {
             videoEncoder.configure(format, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
             videoEncoderSurface = videoEncoder.createInputSurface();
             videoMuxer = new MediaMuxer(pendingVideoFile.getFileDescriptor(), MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4);
+            videoMuxer.setOrientationHint(
+                    CameraPolicy.jpegOrientation(activeSensorOrientation, displayRotationDegrees(), activeFrontFacing));
             videoEncoder.start();
             videoStopRequested = false;
             videoMuxerStarted = false;
@@ -459,15 +481,16 @@ public final class MainActivity extends Activity {
             outputs.add(videoEncoderSurface);
             camera.createCaptureSession(outputs, new CameraCaptureSession.StateCallback() {
                 @Override public void onConfigured(CameraCaptureSession session) {
-                    if (cameraDevice == null || videoEncoder == null) {
+                    if (cameraDevice == null || videoEncoder == null || !videoTransition || pendingVideoUri == null) {
                         session.close();
-                        abortVideoSetup();
+                        if (videoTransition) abortVideoSetup(false);
                         return;
                     }
                     captureSession = session;
                     try {
                         session.setRepeatingRequest(recordRequest.build(), null, backgroundHandler);
                         recordingVideo = true;
+                        videoTransition = false;
                         startVideoDrainThread();
                         runOnUiThread(() -> {
                             capture.setEnabled(false);
@@ -477,17 +500,29 @@ public final class MainActivity extends Activity {
                             status.setText(R.string.recording_video_silent);
                         });
                     } catch (CameraAccessException | RuntimeException error) {
-                        abortVideoSetup();
+                        abortVideoSetup(true);
                     }
                 }
 
                 @Override public void onConfigureFailed(CameraCaptureSession session) {
-                    abortVideoSetup();
+                    session.close();
+                    if (videoTransition) abortVideoSetup(true);
                 }
             }, backgroundHandler);
         } catch (Exception error) {
-            abortVideoSetup();
+            abortVideoSetup(true);
         }
+    }
+
+    private void restoreVideoControlsAfterFailure() {
+        runOnUiThread(() -> {
+            boolean previewReady = captureSession != null && cameraDevice != null;
+            capture.setEnabled(previewReady);
+            switchLens.setEnabled(cameraDevice != null);
+            video.setEnabled(previewReady);
+            video.setText(R.string.record_video);
+            status.setText(R.string.video_save_failed);
+        });
     }
 
     private Uri createPendingVideo() {
@@ -519,18 +554,20 @@ public final class MainActivity extends Activity {
         MediaCodec.BufferInfo info = new MediaCodec.BufferInfo();
         int trackIndex = -1;
         boolean eosSignaled = false;
+        long eosSignalTimeNs = 0L;
         boolean success = false;
         try {
             while (true) {
                 if (videoStopRequested && !eosSignaled) {
                     encoder.signalEndOfInputStream();
                     eosSignaled = true;
+                    eosSignalTimeNs = System.nanoTime();
+                }
+                if (eosSignaled && System.nanoTime() - eosSignalTimeNs > VIDEO_FINALIZE_TIMEOUT_NS) {
+                    throw new IllegalStateException("Video encoder did not finalize in time");
                 }
                 int index = encoder.dequeueOutputBuffer(info, VIDEO_DRAIN_TIMEOUT_US);
-                if (index == MediaCodec.INFO_TRY_AGAIN_LATER) {
-                    if (eosSignaled) continue;
-                    continue;
-                }
+                if (index == MediaCodec.INFO_TRY_AGAIN_LATER) continue;
                 if (index == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
                     if (videoMuxerStarted) throw new IllegalStateException("Video format changed twice");
                     trackIndex = muxer.addTrack(encoder.getOutputFormat());
@@ -563,8 +600,9 @@ public final class MainActivity extends Activity {
     }
 
     private void requestStopVideo(boolean ownerVisible) {
-        if (!recordingVideo) return;
+        if (!recordingVideo || videoTransition) return;
         recordingVideo = false;
+        videoTransition = true;
         CameraCaptureSession session = captureSession;
         if (session != null) {
             try { session.stopRepeating(); } catch (CameraAccessException | IllegalStateException ignored) { }
@@ -576,16 +614,18 @@ public final class MainActivity extends Activity {
         });
     }
 
-    private void abortVideoSetup() {
+    private void abortVideoSetup(boolean recreatePreview) {
         recordingVideo = false;
+        videoTransition = false;
         videoStopRequested = false;
-        finishVideo(false, true);
+        finishVideo(false, recreatePreview);
     }
 
     private synchronized void finishVideo(boolean success, boolean recreatePreview) {
         Uri uri = pendingVideoUri;
         pendingVideoUri = null;
         recordingVideo = false;
+        videoTransition = false;
         videoStopRequested = false;
         releaseVideoEncoder();
         boolean saved = success && uri != null;
@@ -603,11 +643,12 @@ public final class MainActivity extends Activity {
         }
         final boolean videoSaved = saved;
         runOnUiThread(() -> {
-            switchLens.setEnabled(true);
+            boolean cameraReady = cameraDevice != null;
+            switchLens.setEnabled(cameraReady);
             video.setText(R.string.record_video);
             status.setText(videoSaved ? R.string.video_saved_silent : R.string.video_save_failed);
             if (videoSaved) Toast.makeText(this, R.string.video_saved_silent, Toast.LENGTH_SHORT).show();
-            if (recreatePreview && cameraDevice != null) createPreviewSession();
+            if (recreatePreview && cameraReady) createPreviewSession();
         });
     }
 
@@ -616,7 +657,7 @@ public final class MainActivity extends Activity {
         videoEncoder = null;
         if (encoder != null) {
             try { encoder.stop(); } catch (RuntimeException ignored) { }
-            encoder.release();
+            try { encoder.release(); } catch (RuntimeException ignored) { }
         }
         MediaMuxer muxer = videoMuxer;
         videoMuxer = null;
@@ -624,7 +665,7 @@ public final class MainActivity extends Activity {
             if (videoMuxerStarted) {
                 try { muxer.stop(); } catch (RuntimeException ignored) { }
             }
-            muxer.release();
+            try { muxer.release(); } catch (RuntimeException ignored) { }
         }
         videoMuxerStarted = false;
         Surface surface = videoEncoderSurface;
@@ -639,13 +680,18 @@ public final class MainActivity extends Activity {
     }
 
     private void captureHandoff(String action) {
+        if (videoTransition) return;
         Intent intent = new Intent(action);
         if (intent.resolveActivity(getPackageManager()) != null) startActivity(intent);
         else status.setText(R.string.video_fallback_unavailable);
     }
 
     private void switchCamera() {
-        if (recordingVideo) requestStopVideo(false);
+        if (videoTransition) return;
+        if (recordingVideo) {
+            requestStopVideo(false);
+            return;
+        }
         preferredLens = CameraPolicy.nextPreferredLens(preferredLens);
         closeCamera();
         status.setText(R.string.camera_starting);
@@ -762,6 +808,7 @@ public final class MainActivity extends Activity {
     private void closeCamera() {
         opening = false;
         if (recordingVideo) requestStopVideo(false);
+        else if (videoTransition && videoDrainThread == null) finishVideo(false, false);
         CameraCaptureSession session = captureSession;
         captureSession = null;
         if (session != null) session.close();
@@ -775,7 +822,6 @@ public final class MainActivity extends Activity {
         activeVideoSize = null;
         capture.setEnabled(false);
         video.setEnabled(false);
-        if (!recordingVideo && pendingVideoUri != null && videoDrainThread == null) finishVideo(false, false);
     }
 
     private void closeImageReader() {
