@@ -7,11 +7,28 @@ public final class CameraPolicy {
     public static final int LENS_BACK = 1;
     public static final int LENS_EXTERNAL = 2;
     public static final int LENS_UNKNOWN = -1;
+    public static final int VIDEO_FRAME_RATE = 30;
+    private static final int MIN_VIDEO_BIT_RATE = 2_000_000;
+    private static final int MAX_VIDEO_BIT_RATE = 20_000_000;
 
     private CameraPolicy() {}
 
     public static boolean validDimensions(int width, int height) {
         return width > 0 && height > 0 && width <= 32768 && height <= 32768;
+    }
+
+    public static boolean validVideoDimensions(int width, int height) {
+        if (!validDimensions(width, height)) return false;
+        long area = (long) width * (long) height;
+        return area <= 3840L * 2160L;
+    }
+
+    public static int videoBitRate(int width, int height) {
+        if (!validVideoDimensions(width, height)) return 0;
+        long requested = (long) width * (long) height * 5L;
+        if (requested < MIN_VIDEO_BIT_RATE) return MIN_VIDEO_BIT_RATE;
+        if (requested > MAX_VIDEO_BIT_RATE) return MAX_VIDEO_BIT_RATE;
+        return (int) requested;
     }
 
     public static double megapixels(int width, int height) {
