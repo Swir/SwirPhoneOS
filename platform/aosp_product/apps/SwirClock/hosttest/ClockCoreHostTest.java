@@ -31,6 +31,27 @@ public final class ClockCoreHostTest {
         require(ClockCore.timerRemaining(60_000L, 10_000L, 90_000L) == 0L, "expired timer clamps");
         require("01:01:01".equals(ClockCore.formatDuration(3_661_999L)), "duration formatting");
 
+        require(ClockCore.canRestoreElapsedSession(10_000L, 1_000_000L, 40_000L, 1_030_000L),
+                "matching monotonic and wall deltas restore");
+        require(ClockCore.canRestoreElapsedSession(10_000L, 1_000_000L, 40_000L, 1_120_000L),
+                "bounded wall correction remains restorable");
+        require(!ClockCore.canRestoreElapsedSession(10_000L, 1_000_000L, 40_000L, 1_150_001L),
+                "excessive wall drift rejected");
+        require(!ClockCore.canRestoreElapsedSession(40_000L, 1_000_000L, 10_000L, 1_030_000L),
+                "elapsed clock reset rejects stale snapshot");
+        require(!ClockCore.canRestoreElapsedSession(10_000L, 1_030_000L, 40_000L, 1_000_000L),
+                "wall clock rollback rejects snapshot");
+        require(!ClockCore.canRestoreElapsedSession(-1L, 1_000_000L, 40_000L, 1_030_000L),
+                "negative elapsed snapshot rejected");
+        require(ClockCore.restoredTimerRemaining(60_000L, 10_000L, 1_000_000L, 40_000L, 1_030_000L) == 30_000L,
+                "verified timer restore keeps remaining duration");
+        require(ClockCore.restoredTimerRemaining(60_000L, 10_000L, 1_000_000L, 90_000L, 1_080_000L) == 0L,
+                "verified expired timer stays expired");
+        require(ClockCore.restoredTimerRemaining(60_000L, 40_000L, 1_000_000L, 10_000L, 1_030_000L) == -1L,
+                "stale timer snapshot fails closed");
+        require(ClockCore.restoredTimerRemaining(0L, 10_000L, 1_000_000L, 40_000L, 1_030_000L) == -1L,
+                "invalid timer duration fails closed");
+
         require(ClockCore.worldZoneCount() == 5, "reviewed world zone inventory");
         require(ClockCore.safeWorldZoneIndex(0) == 0, "valid saved zone preserved");
         require(ClockCore.safeWorldZoneIndex(4) == 4, "last valid saved zone preserved");
