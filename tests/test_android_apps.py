@@ -97,8 +97,19 @@ class AndroidAppSourceTests(unittest.TestCase):
     def test_camera_direct_photo_contract_is_required(self):
         self._replace_and_reject("apps/SwirCamera/src/org/swir/phoneos/camera/MainActivity.java", "MediaStore.Images.Media.EXTERNAL_CONTENT_URI", "MediaStore.Video.Media.EXTERNAL_CONTENT_URI")
 
-    def test_camera_video_remains_user_visible_handoff(self):
-        self._replace_and_reject("apps/SwirCamera/src/org/swir/phoneos/camera/MainActivity.java", "MediaStore.ACTION_VIDEO_CAPTURE", "Intent.ACTION_VIEW")
+    def test_camera_direct_video_contract_is_required(self):
+        self._replace_and_reject("apps/SwirCamera/src/org/swir/phoneos/camera/MainActivity.java", "MediaCodec.createEncoderByType", "MediaStore.ACTION_VIDEO_CAPTURE")
+
+    def test_camera_visible_fallback_is_not_the_direct_video_source_contract(self):
+        temp, product, registry = self._copy_fixture()
+        with temp:
+            activity = product / "apps/SwirCamera/src/org/swir/phoneos/camera/MainActivity.java"
+            source = activity.read_text(encoding="utf-8")
+            self.assertIn("MediaStore.ACTION_VIDEO_CAPTURE", source)
+            activity.write_text(source.replace("MediaStore.ACTION_VIDEO_CAPTURE", "Intent.ACTION_VIEW"), encoding="utf-8")
+            summary = public_android_app_source_summary(validate_android_app_sources(product, registry))
+            self.assertNotIn("video_capture", summary["implemented_capabilities"])
+            self.assertIn("camera:video_capture", summary["remaining_app_capabilities"])
 
     def test_calculator_scientific_engine_contract_is_required(self):
         self._replace_and_reject("apps/SwirCalculator/src/org/swir/phoneos/calculator/CalculatorEngine.java", "result = Math.sin(toRadians(value));", "result = Math.cos(toRadians(value));")

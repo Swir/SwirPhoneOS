@@ -197,23 +197,31 @@ def _validate_messages(logic, activity):
 
 
 def _validate_camera(logic, activity):
-    logic_required = ("validDimensions", "megapixels", "formatMegapixels", "normalizeLensFacing", "nextPreferredLens", "jpegOrientation", "LENS_FRONT", "LENS_BACK")
+    logic_required = (
+        "validDimensions", "megapixels", "formatMegapixels", "normalizeLensFacing", "nextPreferredLens",
+        "jpegOrientation", "LENS_FRONT", "LENS_BACK", "validVideoDimensions", "videoBitRate", "VIDEO_FRAME_RATE",
+    )
     if any(x not in logic for x in logic_required):
-        raise AndroidAppSourceError("SwirCamera host-tested capture policy drifted.")
+        raise AndroidAppSourceError("SwirCamera host-tested still/video capture policy drifted.")
     required = (
         "CameraManager", "getCameraIdList", "CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP",
-        "getOutputSizes(ImageFormat.JPEG)", "Manifest.permission.CAMERA", "requestPermissions",
+        "getOutputSizes(ImageFormat.JPEG)", "getOutputSizes(MediaCodec.class)", "Manifest.permission.CAMERA", "requestPermissions",
         "CameraDevice", "ImageReader.newInstance", "CameraDevice.TEMPLATE_PREVIEW",
         "CameraDevice.TEMPLATE_STILL_CAPTURE", "CaptureRequest.JPEG_ORIENTATION",
         "MediaStore.Images.Media.EXTERNAL_CONTENT_URI", "MediaStore.Images.Media.IS_PENDING",
         "Environment.DIRECTORY_PICTURES", "openOutputStream", "getContentResolver().update",
-        "getContentResolver().delete", "MediaStore.ACTION_VIDEO_CAPTURE", "CameraPolicy.formatMegapixels",
+        "getContentResolver().delete", "CameraPolicy.formatMegapixels",
+        "MediaCodec.createEncoderByType", "MediaFormat.MIMETYPE_VIDEO_AVC", "MediaCodec.CONFIGURE_FLAG_ENCODE",
+        "MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4", "CameraDevice.TEMPLATE_RECORD",
+        "CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_VIDEO", "MediaStore.Video.Media.EXTERNAL_CONTENT_URI",
+        "MediaStore.Video.Media.IS_PENDING", "Environment.DIRECTORY_MOVIES", "signalEndOfInputStream",
+        "setOrientationHint", "CameraPolicy.videoBitRate", "CameraPolicy.validVideoDimensions",
     )
     if any(x not in activity for x in required):
-        raise AndroidAppSourceError("SwirCamera must retain owner-initiated Camera2 still capture, scoped MediaStore persistence and visible video hand-off.")
+        raise AndroidAppSourceError("SwirCamera must retain owner-initiated Camera2 still capture plus direct silent H.264/MP4 capture with scoped MediaStore persistence.")
     forbidden = ("MediaRecorder", "Manifest.permission.RECORD_AUDIO", "MediaStore.ACTION_IMAGE_CAPTURE")
     if any(x in activity for x in forbidden):
-        raise AndroidAppSourceError("SwirCamera direct-photo source stage must not silently expand into direct video/audio capture or fall back to external photo hand-off.")
+        raise AndroidAppSourceError("SwirCamera direct capture must remain camera-only: no hidden audio capture, MediaRecorder path or external photo hand-off.")
 
 
 def _validate_calculator(logic, activity):
