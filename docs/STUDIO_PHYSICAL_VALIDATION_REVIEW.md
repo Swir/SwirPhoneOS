@@ -19,6 +19,14 @@ The selected file must be an absolute path to a non-empty regular `.json` file, 
 
 Malformed JSON, duplicate keys, oversized files, symlinks, forged authorization flags and digest drift fail closed.
 
+## Main Studio surface
+
+The main SwirPhoneStudio window exposes **Review device validation…** as a dedicated evidence action, with `Ctrl+P` as the keyboard shortcut. The action is disabled while a diagnostic session is running. Selecting a report never starts an ADB/Fastboot scan and never enables the diagnostic export path.
+
+A successfully reviewed report replaces other temporary readiness-review views, is rendered into the existing report pane, and keeps report export disabled because the bounded review projection is not a diagnostic capture. Changing the Studio language re-renders the same already-validated summary without reopening or re-reading the evidence file.
+
+Invalid or unsupported evidence shows only a localized generic failure message. Loader details, local paths and validation internals are not surfaced through the UI.
+
 ## Localized presentation
 
 `swirphoneos.studio_physical_validation` converts only the bounded summary into the shared host localization system. EN/PL/NB/DE/ES/FR/PT/AR review copy is supplied as a data-only catalog fragment under `swirphoneos/locales/catalogs.d/`.
@@ -27,4 +35,6 @@ Machine-readable missing-requirement identifiers remain verbatim in the presenta
 
 ## Current boundary
 
-This package prepares the review backend and localized renderer for the main SwirPhoneStudio surface. It does **not** claim that physical evidence exists for OnePlus Nord AC2003/avicii. The checked-in device profile remains `PLANNED_NOT_SUPPORTED`, weighted engineering progress remains governed by `project.json`, and physical/reference-hardware beta gates stay open until real exact-device evidence is captured and reviewed.
+This package integrates the physical-validation reviewer into the main SwirPhoneStudio surface, but it does **not** claim that physical evidence exists for OnePlus Nord AC2003/avicii. The checked-in device profile remains `PLANNED_NOT_SUPPORTED`, weighted engineering progress remains governed by `project.json`, and physical/reference-hardware beta gates stay open until real exact-device evidence is captured and reviewed.
+
+The review button is evidence presentation only. It cannot promote support, authorize installation, authorize a device write, unlock a bootloader, enable SwirRoot, or satisfy a beta gate by itself.

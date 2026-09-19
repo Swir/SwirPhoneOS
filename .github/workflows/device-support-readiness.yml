@@ -9,6 +9,7 @@ on:
       - 'swirphoneos/device_support_readiness_cli.py'
       - 'swirphoneos/device_physical_validation.py'
       - 'swirphoneos/device_physical_validation_cli.py'
+      - 'swirphoneos/studio.py'
       - 'swirphoneos/studio_evidence.py'
       - 'swirphoneos/studio_physical_validation.py'
       - 'swirphoneos/locales/catalogs.d/studio_physical_validation.json'
@@ -18,6 +19,7 @@ on:
       - 'tests/test_device_support_readiness.py'
       - 'tests/test_device_physical_validation.py'
       - 'tests/test_studio_physical_validation.py'
+      - 'tests/test_studio_physical_validation_gui.py'
       - '.github/workflows/device-support-readiness.yml'
   pull_request:
     paths:
@@ -27,6 +29,7 @@ on:
       - 'swirphoneos/device_support_readiness_cli.py'
       - 'swirphoneos/device_physical_validation.py'
       - 'swirphoneos/device_physical_validation_cli.py'
+      - 'swirphoneos/studio.py'
       - 'swirphoneos/studio_evidence.py'
       - 'swirphoneos/studio_physical_validation.py'
       - 'swirphoneos/locales/catalogs.d/studio_physical_validation.json'
@@ -36,6 +39,7 @@ on:
       - 'tests/test_device_support_readiness.py'
       - 'tests/test_device_physical_validation.py'
       - 'tests/test_studio_physical_validation.py'
+      - 'tests/test_studio_physical_validation_gui.py'
       - '.github/workflows/device-support-readiness.yml'
   workflow_dispatch:
 permissions:
@@ -61,6 +65,7 @@ jobs:
           tests/test_device_support_readiness.py
           tests/test_device_physical_validation.py
           tests/test_studio_physical_validation.py
+          tests/test_studio_physical_validation_gui.py
       - name: Test metadata profile fail-closed rules
         run: python -m unittest discover -s tests -p 'test_profiles.py' -v
       - name: Test device support readiness evidence
@@ -69,6 +74,8 @@ jobs:
         run: python -m unittest discover -s tests -p 'test_device_physical_validation.py' -v
       - name: Test Studio physical validation review
         run: python -m unittest discover -s tests -p 'test_studio_physical_validation.py' -v
+      - name: Test Studio physical validation GUI bridge
+        run: python -m unittest discover -s tests -p 'test_studio_physical_validation_gui.py' -v
       - name: Validate checked-in device registry
         run: python -m swirphoneos profiles --root device_packs
       - name: Enforce read-only readiness implementation

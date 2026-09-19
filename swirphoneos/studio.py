@@ -12,10 +12,12 @@ from tkinter import filedialog, messagebox, ttk
 from .i18n import CATALOGS, detect_language, translate
 from .studio_evidence import (
     StudioEvidenceError,
+    load_public_device_physical_validation_summary,
     load_public_device_support_readiness_summary,
     load_public_swirroot_readiness_summary,
 )
 from .studio_icon import ICON_PNG
+from .studio_physical_validation import render_physical_validation_summary
 from .studio_state import DiagnosticSession, UnifiedDiagnosticSession, save_report
 
 
@@ -37,6 +39,7 @@ class Studio:
         self.closed = False
         self.readiness_summary: dict[str, object] | None = None
         self.support_summary: dict[str, object] | None = None
+        self.physical_summary: dict[str, object] | None = None
         self._labels: list[tuple[tk.Widget, str]] = []
         self._wrapped: list[ttk.Label] = []
         root.title("SwirPhoneOS · Flash Studio")
@@ -94,15 +97,21 @@ class Studio:
 
         actions = ttk.Frame(outer)
         actions.grid(row=3, column=0, sticky="ew", pady=8)
+        actions.columnconfigure(0, weight=1)
+        actions.columnconfigure(1, weight=1)
         self.scan = self.button(actions, "scan", self.start_scan)
-        self.scan.pack(side="left", padx=(0, 8))
+        self.scan.grid(row=0, column=0, sticky="ew", padx=(0, 4), pady=(0, 4))
         self.save = self.button(actions, "save", self.export_report)
-        self.save.pack(side="left", padx=(0, 8))
+        self.save.grid(row=0, column=1, sticky="ew", padx=(4, 0), pady=(0, 4))
         self.save.state(["disabled"])
         self.readiness = self.button(actions, "review_readiness", self.open_root_readiness)
-        self.readiness.pack(side="left", padx=(0, 8))
+        self.readiness.grid(row=1, column=0, sticky="ew", padx=(0, 4), pady=4)
         self.support_readiness = self.button(actions, "review_device_support", self.open_device_support_readiness)
-        self.support_readiness.pack(side="left")
+        self.support_readiness.grid(row=1, column=1, sticky="ew", padx=(4, 0), pady=4)
+        self.physical_validation = self.button(
+            actions, "review_device_validation", self.open_physical_validation
+        )
+        self.physical_validation.grid(row=2, column=0, columnspan=2, sticky="ew", pady=(4, 0))
         self.status = ttk.Label(outer, text=self.tr("ready"), wraplength=700)
         self._wrapped.append(self.status)
         self.status.grid(row=4, column=0, sticky="ew")
@@ -131,6 +140,7 @@ class Studio:
         root.bind("<Control-s>", lambda _: self.export_report())
         root.bind("<Control-r>", lambda _: self.open_root_readiness())
         root.bind("<Control-d>", lambda _: self.open_device_support_readiness())
+        root.bind("<Control-p>", lambda _: self.open_physical_validation())
         self.after_id = root.after(80, self.poll)
 
     def tr(self, key: str, **values: object) -> str:
@@ -161,7 +171,9 @@ class Studio:
         for widget, key in self._labels:
             widget.configure(text=self.tr(key))
         self.update_status()
-        if self.support_summary is not None:
+        if self.physical_summary is not None:
+            self.show_report(self.render_physical_validation(self.physical_summary))
+        elif self.support_summary is not None:
             self.show_report(self.render_device_support(self.support_summary))
         elif self.readiness_summary is not None:
             self.show_report(self.render_readiness(self.readiness_summary))
@@ -177,6 +189,7 @@ class Studio:
         self.session.report = None
         self.readiness_summary = None
         self.support_summary = None
+        self.physical_summary = None
         self.show_report(self.tr("empty"))
         self.update_status()
 
@@ -253,6 +266,9 @@ class Studio:
             digest=summary["evidence_sha256"],
         )
 
+    def render_physical_validation(self, summary: dict[str, object]) -> str:
+        return render_physical_validation_summary(summary, self.language.get())
+
     def open_root_readiness(self) -> None:
         if self.session.busy:
             return
@@ -272,6 +288,7 @@ class Studio:
             return
         self.readiness_summary = summary
         self.support_summary = None
+        self.physical_summary = None
         self.status_key = "readiness_loaded"
         self.save.state(["disabled"])
         self.show_report(self.render_readiness(summary))
@@ -296,9 +313,35 @@ class Studio:
             return
         self.support_summary = summary
         self.readiness_summary = None
+        self.physical_summary = None
         self.status_key = "device_support_loaded"
         self.save.state(["disabled"])
         self.show_report(self.render_device_support(summary))
+        self.update_status()
+
+    def open_physical_validation(self) -> None:
+        if self.session.busy:
+            return
+        path = filedialog.askopenfilename(
+            parent=self.root,
+            title=self.tr("review_device_validation"),
+            filetypes=[("JSON", "*.json")],
+        )
+        if not path:
+            return
+        try:
+            # Keep the owner-selected path unresolved so the evidence loader can
+            # reject symlinks rather than following them outside the visible file.
+            summary = load_public_device_physical_validation_summary(Path(path))
+        except (OSError, StudioEvidenceError, ValueError):
+            messagebox.showerror("SwirPhoneOS", self.tr("device_validation_failed"), parent=self.root)
+            return
+        self.physical_summary = summary
+        self.readiness_summary = None
+        self.support_summary = None
+        self.status_key = "device_validation_loaded"
+        self.save.state(["disabled"])
+        self.show_report(self.render_physical_validation(summary))
         self.update_status()
 
     def start_scan(self) -> None:
@@ -313,9 +356,10 @@ class Studio:
         self.status_key = "running"
         self.readiness_summary = None
         self.support_summary = None
+        self.physical_summary = None
         for widget in (
             self.entry, self.browse, self.scan, self.save, self.readiness,
-            self.support_readiness, self.transport_selector,
+            self.support_readiness, self.physical_validation, self.transport_selector,
         ):
             widget.state(["disabled"])
         self.show_report(self.tr("empty"))
@@ -330,13 +374,14 @@ class Studio:
             self.progress.stop()
             for widget in (
                 self.entry, self.browse, self.scan, self.readiness,
-                self.support_readiness, self.transport_selector,
+                self.support_readiness, self.physical_validation, self.transport_selector,
             ):
                 widget.state(["!disabled"])
             if result.report_json is not None:
                 self.status_key = "done"
                 self.readiness_summary = None
                 self.support_summary = None
+                self.physical_summary = None
                 self.show_report(result.report_json)
                 self.save.state(["!disabled"])
             else:
@@ -351,6 +396,7 @@ class Studio:
             or self.session.report is None
             or self.readiness_summary is not None
             or self.support_summary is not None
+            or self.physical_summary is not None
         ):
             return
         path = filedialog.asksaveasfilename(parent=self.root, title=self.tr("save"),
