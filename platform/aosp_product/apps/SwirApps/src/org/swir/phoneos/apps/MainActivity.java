@@ -3,6 +3,7 @@ package org.swir.phoneos.apps;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
+import android.content.pm.InstallSourceInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
@@ -18,8 +19,10 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -81,7 +84,7 @@ public final class MainActivity extends Activity {
             if (!AppCatalogPolicy.validPackageName(packageName) || unique.containsKey(packageName)) continue;
             ApplicationInfo app = info.activityInfo.applicationInfo;
             String label = String.valueOf(packageManager.getApplicationLabel(app));
-            unique.put(packageName, inspect(packageManager, label, packageName));
+            unique.put(packageName, inspect(packageManager, app, label, packageName));
         }
         all.clear();
         all.addAll(unique.values());
@@ -89,21 +92,30 @@ public final class MainActivity extends Activity {
         filter();
     }
 
-    private AppRow inspect(PackageManager packageManager, String label, String packageName) {
+    private AppRow inspect(PackageManager packageManager, ApplicationInfo app, String label, String packageName) {
         String version = "";
         String signature = "";
+        String installerPackage = "";
+        long lastUpdateTime = 0L;
+        boolean systemImage = (app.flags & (ApplicationInfo.FLAG_SYSTEM | ApplicationInfo.FLAG_UPDATED_SYSTEM_APP)) != 0;
         try {
             PackageInfo info = packageManager.getPackageInfo(packageName, PackageManager.GET_SIGNING_CERTIFICATES);
             version = info.versionName == null ? Long.toString(info.getLongVersionCode()) : info.versionName;
+            lastUpdateTime = AppCatalogPolicy.normalizeUpdateTime(info.lastUpdateTime);
             if (info.signingInfo != null) {
                 Signature[] signers = info.signingInfo.getApkContentsSigners();
                 if (signers != null && signers.length > 0) {
                     signature = AppCatalogPolicy.shortDigest(AppCatalogPolicy.sha256(signers[0].toByteArray()));
                 }
             }
+            InstallSourceInfo source = packageManager.getInstallSourceInfo(packageName);
+            if (source != null && source.getInstallingPackageName() != null) {
+                installerPackage = source.getInstallingPackageName();
+            }
         } catch (PackageManager.NameNotFoundException ignored) {
         }
-        return new AppRow(label, packageName, version, signature);
+        AppCatalogPolicy.UpdateSource updateSource = AppCatalogPolicy.updateSource(systemImage, installerPackage);
+        return new AppRow(label, packageName, version, signature, updateSource, lastUpdateTime);
     }
 
     private void filter() {
@@ -114,13 +126,32 @@ public final class MainActivity extends Activity {
             if (AppCatalogPolicy.matches(row.label, row.packageName, query)) {
                 shown.add(row);
                 String signer = row.signature.isEmpty() ? getString(R.string.signature_unavailable) : row.signature;
-                labels.add(row.label + "\n" + row.packageName + "\n" + getString(R.string.version_format, row.version) + "\n" + getString(R.string.signature_format, signer));
+                String updated = row.lastUpdateTime == 0L
+                        ? getString(R.string.last_updated_unknown)
+                        : DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT).format(new Date(row.lastUpdateTime));
+                labels.add(row.label + "\n" + row.packageName
+                        + "\n" + getString(R.string.version_format, row.version)
+                        + "\n" + getString(R.string.signature_format, signer)
+                        + "\n" + getString(R.string.update_source_format, updateSourceLabel(row.updateSource))
+                        + "\n" + getString(R.string.last_updated_format, updated));
             }
         }
         if (labels.isEmpty()) labels.add(getString(R.string.no_apps));
         adapter.clear();
         adapter.addAll(labels);
         adapter.notifyDataSetChanged();
+    }
+
+    private String updateSourceLabel(AppCatalogPolicy.UpdateSource source) {
+        switch (source) {
+            case SYSTEM_IMAGE:
+                return getString(R.string.update_source_system);
+            case EXTERNAL_INSTALLER:
+                return getString(R.string.update_source_external);
+            case LOCAL_UNKNOWN:
+            default:
+                return getString(R.string.update_source_local);
+        }
     }
 
     private void launch(AppRow row) {
@@ -139,11 +170,17 @@ public final class MainActivity extends Activity {
         final String packageName;
         final String version;
         final String signature;
-        AppRow(String label, String packageName, String version, String signature) {
+        final AppCatalogPolicy.UpdateSource updateSource;
+        final long lastUpdateTime;
+
+        AppRow(String label, String packageName, String version, String signature,
+               AppCatalogPolicy.UpdateSource updateSource, long lastUpdateTime) {
             this.label = label == null ? "" : label;
             this.packageName = packageName;
             this.version = version == null ? "" : version;
             this.signature = signature == null ? "" : signature;
+            this.updateSource = updateSource == null ? AppCatalogPolicy.UpdateSource.LOCAL_UNKNOWN : updateSource;
+            this.lastUpdateTime = AppCatalogPolicy.normalizeUpdateTime(lastUpdateTime);
         }
     }
 
