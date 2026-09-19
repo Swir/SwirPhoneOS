@@ -25,6 +25,14 @@ import java.util.Locale;
 public final class MainActivity extends Activity {
     private static final String PREFS = "swir_clock_preferences";
     private static final String KEY_WORLD_ZONE = "world_zone_index";
+    private static final String STATE_STOPWATCH_ACCUMULATED = "stopwatch_accumulated";
+    private static final String STATE_STOPWATCH_STARTED_ELAPSED = "stopwatch_started_elapsed";
+    private static final String STATE_STOPWATCH_STARTED_WALL = "stopwatch_started_wall";
+    private static final String STATE_STOPWATCH_RUNNING = "stopwatch_running";
+    private static final String STATE_TIMER_DURATION = "timer_duration";
+    private static final String STATE_TIMER_STARTED_ELAPSED = "timer_started_elapsed";
+    private static final String STATE_TIMER_STARTED_WALL = "timer_started_wall";
+    private static final String STATE_TIMER_RUNNING = "timer_running";
 
     private final Handler handler = new Handler(Looper.getMainLooper());
     private TextView localTime;
@@ -40,9 +48,11 @@ public final class MainActivity extends Activity {
     private int worldZoneIndex;
     private long stopwatchAccumulated;
     private long stopwatchStartedAt;
+    private long stopwatchStartedWall;
     private boolean stopwatchRunning;
     private long timerDuration;
     private long timerStartedAt;
+    private long timerStartedWall;
     private boolean timerRunning;
 
     private final Runnable ticker = new Runnable() {
@@ -61,6 +71,7 @@ public final class MainActivity extends Activity {
         getWindow().setStatusBarColor(getColor(R.color.swir_background));
         getWindow().setNavigationBarColor(getColor(R.color.swir_surface));
         setContentView(buildUi());
+        restoreSessionState(state);
     }
 
     @Override protected void onStart() {
@@ -72,6 +83,18 @@ public final class MainActivity extends Activity {
     @Override protected void onStop() {
         handler.removeCallbacks(ticker);
         super.onStop();
+    }
+
+    @Override protected void onSaveInstanceState(Bundle outState) {
+        outState.putLong(STATE_STOPWATCH_ACCUMULATED, stopwatchAccumulated);
+        outState.putLong(STATE_STOPWATCH_STARTED_ELAPSED, stopwatchStartedAt);
+        outState.putLong(STATE_STOPWATCH_STARTED_WALL, stopwatchStartedWall);
+        outState.putBoolean(STATE_STOPWATCH_RUNNING, stopwatchRunning);
+        outState.putLong(STATE_TIMER_DURATION, timerDuration);
+        outState.putLong(STATE_TIMER_STARTED_ELAPSED, timerStartedAt);
+        outState.putLong(STATE_TIMER_STARTED_WALL, timerStartedWall);
+        outState.putBoolean(STATE_TIMER_RUNNING, timerRunning);
+        super.onSaveInstanceState(outState);
     }
 
     private View buildUi() {
@@ -172,6 +195,52 @@ public final class MainActivity extends Activity {
         return scroll;
     }
 
+    private void restoreSessionState(Bundle state) {
+        if (state == null) return;
+        long nowElapsed = SystemClock.elapsedRealtime();
+        long nowWall = System.currentTimeMillis();
+
+        stopwatchAccumulated = ClockCore.stopwatchElapsed(
+                Math.max(0L, state.getLong(STATE_STOPWATCH_ACCUMULATED, 0L)), 0L, 0L, false);
+        long savedStopwatchElapsed = state.getLong(STATE_STOPWATCH_STARTED_ELAPSED, -1L);
+        long savedStopwatchWall = state.getLong(STATE_STOPWATCH_STARTED_WALL, -1L);
+        boolean savedStopwatchRunning = state.getBoolean(STATE_STOPWATCH_RUNNING, false);
+        if (savedStopwatchRunning && ClockCore.canRestoreElapsedSession(
+                savedStopwatchElapsed, savedStopwatchWall, nowElapsed, nowWall)) {
+            stopwatchStartedAt = savedStopwatchElapsed;
+            stopwatchStartedWall = savedStopwatchWall;
+            stopwatchRunning = true;
+            stopwatchToggle.setText(R.string.pause);
+        } else {
+            stopwatchStartedAt = nowElapsed;
+            stopwatchStartedWall = nowWall;
+            stopwatchRunning = false;
+            stopwatchToggle.setText(R.string.start);
+        }
+
+        long savedTimerDuration = state.getLong(STATE_TIMER_DURATION, 0L);
+        long savedTimerElapsed = state.getLong(STATE_TIMER_STARTED_ELAPSED, -1L);
+        long savedTimerWall = state.getLong(STATE_TIMER_STARTED_WALL, -1L);
+        boolean savedTimerRunning = state.getBoolean(STATE_TIMER_RUNNING, false);
+        long restoredRemaining = savedTimerRunning
+                ? ClockCore.restoredTimerRemaining(
+                        savedTimerDuration, savedTimerElapsed, savedTimerWall, nowElapsed, nowWall)
+                : -1L;
+        if (restoredRemaining > 0L) {
+            timerDuration = savedTimerDuration;
+            timerStartedAt = savedTimerElapsed;
+            timerStartedWall = savedTimerWall;
+            timerRunning = true;
+        } else {
+            timerDuration = 0L;
+            timerStartedAt = 0L;
+            timerStartedWall = 0L;
+            timerRunning = false;
+        }
+        renderStopwatch();
+        renderTimer();
+    }
+
     private void renderTimes() {
         Locale locale = getResources().getConfiguration().getLocales().get(0);
         ZonedDateTime now = ZonedDateTime.now();
@@ -184,13 +253,17 @@ public final class MainActivity extends Activity {
     }
 
     private void toggleStopwatch() {
-        long now = SystemClock.elapsedRealtime();
+        long nowElapsed = SystemClock.elapsedRealtime();
+        long nowWall = System.currentTimeMillis();
         if (stopwatchRunning) {
-            stopwatchAccumulated = ClockCore.stopwatchElapsed(stopwatchAccumulated, stopwatchStartedAt, now, true);
+            stopwatchAccumulated = ClockCore.stopwatchElapsed(stopwatchAccumulated, stopwatchStartedAt, nowElapsed, true);
             stopwatchRunning = false;
+            stopwatchStartedAt = nowElapsed;
+            stopwatchStartedWall = nowWall;
             stopwatchToggle.setText(R.string.start);
         } else {
-            stopwatchStartedAt = now;
+            stopwatchStartedAt = nowElapsed;
+            stopwatchStartedWall = nowWall;
             stopwatchRunning = true;
             stopwatchToggle.setText(R.string.pause);
         }
@@ -200,6 +273,7 @@ public final class MainActivity extends Activity {
     private void resetStopwatch() {
         stopwatchAccumulated = 0L;
         stopwatchStartedAt = SystemClock.elapsedRealtime();
+        stopwatchStartedWall = System.currentTimeMillis();
         renderStopwatch();
     }
 
@@ -216,6 +290,7 @@ public final class MainActivity extends Activity {
         }
         timerDuration = duration;
         timerStartedAt = SystemClock.elapsedRealtime();
+        timerStartedWall = System.currentTimeMillis();
         timerRunning = true;
         renderTimer();
     }
@@ -224,6 +299,7 @@ public final class MainActivity extends Activity {
         timerRunning = false;
         timerDuration = 0L;
         timerStartedAt = 0L;
+        timerStartedWall = 0L;
         timerText.setText(R.string.duration_zero);
     }
 
@@ -233,6 +309,9 @@ public final class MainActivity extends Activity {
         timerText.setText(ClockCore.formatDuration(remaining));
         if (remaining == 0L) {
             timerRunning = false;
+            timerDuration = 0L;
+            timerStartedAt = 0L;
+            timerStartedWall = 0L;
             Toast.makeText(this, R.string.timer_finished, Toast.LENGTH_LONG).show();
         }
     }
