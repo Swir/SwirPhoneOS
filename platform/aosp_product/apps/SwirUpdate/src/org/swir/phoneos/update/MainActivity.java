@@ -19,15 +19,21 @@ import java.io.InputStream;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-/** Read-only update status and local-package preflight UI. Install/recovery handoff remains disabled. */
+/** Read-only update status and owner-selected package/metadata review UI. Install/recovery handoff remains disabled. */
 public final class MainActivity extends Activity {
     private static final int REQUEST_LOCAL_PACKAGE = 410;
+    private static final int REQUEST_SIGNED_MANIFEST = 411;
+    private static final int REQUEST_DETACHED_SIGNATURE = 412;
 
     private final ExecutorService inspectionExecutor = Executors.newSingleThreadExecutor();
     private final OtaTrustStore otaTrustStore = DefaultOtaTrustStore.create();
+    private final OtaReviewSession reviewSession = new OtaReviewSession();
     private LinearLayout cards;
+    private Button manifestButton;
+    private Button signatureButton;
     private volatile boolean destroyed;
     private boolean packageInspecting;
+    private boolean signedArtifactInspecting;
     private String packageDisplayName;
     private UpdatePolicy.PackageInspection packageInspection;
 
@@ -63,6 +69,18 @@ public final class MainActivity extends Activity {
         reviewParams.setMargins(0, dp(8), 0, 0);
         root.addView(reviewPackage, reviewParams);
 
+        manifestButton = button(R.string.review_signed_manifest);
+        manifestButton.setOnClickListener(v -> chooseSignedManifest());
+        LinearLayout.LayoutParams manifestParams = matchWrap();
+        manifestParams.setMargins(0, dp(8), 0, 0);
+        root.addView(manifestButton, manifestParams);
+
+        signatureButton = button(R.string.review_detached_signature);
+        signatureButton.setOnClickListener(v -> chooseDetachedSignature());
+        LinearLayout.LayoutParams signatureParams = matchWrap();
+        signatureParams.setMargins(0, dp(8), 0, 0);
+        root.addView(signatureButton, signatureParams);
+
         Button systemUpdate = button(R.string.open_system_update);
         systemUpdate.setOnClickListener(v -> openSystemUpdate());
         LinearLayout.LayoutParams updateParams = matchWrap();
@@ -96,6 +114,26 @@ public final class MainActivity extends Activity {
         if (packageInspection != null && !packageInspection.sha256().isEmpty()) {
             addCard(R.string.package_sha256, packageInspection.sha256());
         }
+        addCard(R.string.signed_metadata, metadataStatusLabel(channel));
+        UpdatePolicy.OtaManifest manifest = reviewSession.parsedManifest();
+        if (manifest != null) {
+            addCard(R.string.manifest_target, manifest.targetFingerprint());
+            addCard(R.string.manifest_key_id, manifest.keyId());
+            addCard(R.string.manifest_channel, channelLabel(manifest.channel()));
+        }
+        if (!reviewSession.manifestSha256().isEmpty()) {
+            addCard(R.string.manifest_sha256, reviewSession.manifestSha256());
+        }
+        if (!reviewSession.signatureSha256().isEmpty()) {
+            addCard(R.string.signature_sha256, reviewSession.signatureSha256());
+        }
+        if (manifestButton != null) {
+            manifestButton.setEnabled(!packageInspecting && !signedArtifactInspecting
+                    && packageInspection != null && packageInspection.reviewReady());
+        }
+        if (signatureButton != null) {
+            signatureButton.setEnabled(!packageInspecting && !signedArtifactInspecting && reviewSession.manifestReady());
+        }
     }
 
     private String trustStoreLabel() {
@@ -116,6 +154,23 @@ public final class MainActivity extends Activity {
         }
     }
 
+    private String metadataStatusLabel(UpdatePolicy.Channel channel) {
+        if (signedArtifactInspecting) return getString(R.string.metadata_inspecting);
+        OtaReviewSession.Review review = reviewSession.review(otaTrustStore, Build.FINGERPRINT, channel);
+        switch (review.state()) {
+            case NEED_PACKAGE: return getString(R.string.package_none_selected);
+            case PACKAGE_REJECTED: return packageStatusLabel();
+            case NEED_MANIFEST: return getString(R.string.metadata_need_manifest);
+            case NEED_SIGNATURE: return getString(R.string.metadata_need_signature);
+            case MANIFEST_REJECTED:
+            case SIGNATURE_REJECTED: return getString(R.string.metadata_input_rejected);
+            case TRUST_REJECTED: return getString(R.string.metadata_trust_rejected);
+            case MANIFEST_POLICY_REJECTED: return getString(R.string.metadata_policy_rejected);
+            case AUTHENTIC_REVIEW_READY_NOT_STAGED: return getString(R.string.metadata_authentic_not_staged);
+            default: return getString(R.string.metadata_input_rejected);
+        }
+    }
+
     private String channelLabel(UpdatePolicy.Channel channel) {
         switch (channel) {
             case STABLE: return getString(R.string.channel_stable);
@@ -132,11 +187,31 @@ public final class MainActivity extends Activity {
         if (intent.resolveActivity(getPackageManager()) != null) startActivityForResult(intent, REQUEST_LOCAL_PACKAGE);
     }
 
+    private void chooseSignedManifest() {
+        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        intent.setType("text/plain");
+        if (intent.resolveActivity(getPackageManager()) != null) startActivityForResult(intent, REQUEST_SIGNED_MANIFEST);
+    }
+
+    private void chooseDetachedSignature() {
+        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        intent.setType("*/*");
+        if (intent.resolveActivity(getPackageManager()) != null) startActivityForResult(intent, REQUEST_DETACHED_SIGNATURE);
+    }
+
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode != REQUEST_LOCAL_PACKAGE || resultCode != RESULT_OK || data == null || data.getData() == null) return;
-        inspectLocalPackage(data.getData());
+        if (resultCode != RESULT_OK || data == null || data.getData() == null) return;
+        if (requestCode == REQUEST_LOCAL_PACKAGE) {
+            inspectLocalPackage(data.getData());
+        } else if (requestCode == REQUEST_SIGNED_MANIFEST) {
+            inspectSignedArtifact(data.getData(), true);
+        } else if (requestCode == REQUEST_DETACHED_SIGNATURE) {
+            inspectSignedArtifact(data.getData(), false);
+        }
     }
 
     private void inspectLocalPackage(Uri uri) {
@@ -144,6 +219,7 @@ public final class MainActivity extends Activity {
         packageDisplayName = info.displayName;
         packageInspection = null;
         packageInspecting = true;
+        reviewSession.clearPackage();
         refresh();
         inspectionExecutor.execute(() -> {
             UpdatePolicy.PackageInspection result;
@@ -157,6 +233,26 @@ public final class MainActivity extends Activity {
                 if (destroyed) return;
                 packageInspecting = false;
                 packageInspection = completed;
+                reviewSession.setPackage(packageDisplayName, completed);
+                refresh();
+            });
+        });
+    }
+
+    private void inspectSignedArtifact(Uri uri, boolean manifest) {
+        signedArtifactInspecting = true;
+        refresh();
+        inspectionExecutor.execute(() -> {
+            try (InputStream input = getContentResolver().openInputStream(uri)) {
+                if (manifest) reviewSession.selectManifest(input);
+                else reviewSession.selectSignature(input);
+            } catch (Exception ignored) {
+                if (manifest) reviewSession.selectManifest(null);
+                else reviewSession.selectSignature(null);
+            }
+            runOnUiThread(() -> {
+                if (destroyed) return;
+                signedArtifactInspecting = false;
                 refresh();
             });
         });

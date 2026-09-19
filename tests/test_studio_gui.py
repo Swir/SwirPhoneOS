@@ -60,8 +60,8 @@ class GuiTests(unittest.TestCase):
         self.assertNotIn("private-path-and-serial", self.app.status.cget("text"))
 
     def test_language_switch(self):
-        from swirphoneos.i18n import translate
-        for lang in ("pl", "nb", "de", "es", "fr", "pt", "ar", "en"):
+        from swirphoneos.i18n import CATALOGS, translate
+        for lang in CATALOGS:
             self.app.language.set(lang)
             self.app.refresh_language()
             self.assertEqual(self.app.scan.cget("text"), translate(lang, "scan"))
@@ -104,9 +104,10 @@ class GuiTests(unittest.TestCase):
         self.assertNotIn("private-token", str(error.call_args))
         self.assertIsNone(self.app.readiness_summary)
 
-    def test_minimum_window_keeps_report_and_footer(self):
+    def test_minimum_window_keeps_report_and_footer_in_every_locale(self):
+        from swirphoneos.i18n import CATALOGS
         self.root.geometry("640x500")
-        for language in ("en", "pl", "nb"):
+        for language in CATALOGS:
             with self.subTest(language=language):
                 self.app.language.set(language)
                 self.app.refresh_language()
