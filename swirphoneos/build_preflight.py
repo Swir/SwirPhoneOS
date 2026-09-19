@@ -4,8 +4,9 @@ The preflight inspects local host/workspace metadata and the installed Repo
 launcher bytes only. It never executes external commands, installs packages,
 downloads Android source, changes system configuration, deletes stale state,
 or starts a build. Persistent self-hosted runners are rejected when required
-host tooling is missing, the Repo launcher is too old/unverifiable, or
-unreviewed workspace state could contaminate an evidence-producing build.
+host tooling is missing, the Repo launcher is too old/unverifiable, unreviewed
+workspace state could contaminate an evidence-producing build, or an explicitly
+requested parallel build exceeds a conservative host-capacity safety budget.
 """
 from __future__ import annotations
 
@@ -19,6 +20,9 @@ import shutil
 
 MIN_FREE_BYTES = 400 * 1024**3
 MIN_RAM_BYTES = 64 * 1024**3
+MIN_RAM_PER_PARALLEL_JOB_BYTES = 4 * 1024**3
+MAX_PARALLEL_JOBS = 256
+REQUESTED_JOBS_ENV = "SWIR_REQUESTED_JOBS"
 MIN_GLIBC = (2, 17)
 MIN_REPO_LAUNCHER = (2, 4)
 MAX_REPO_LAUNCHER_BYTES = 1024 * 1024
@@ -79,6 +83,7 @@ class HostSnapshot:
     vendor_swir_is_symlink: bool = False
     free_inodes: int | None = None
     repo_launcher_version: str | None = None
+    logical_cpu_count: int | None = None
 
 
 def _version_tuple(value: str | None) -> tuple[int, int] | None:
@@ -161,6 +166,53 @@ def _repo_launcher_version(executable: str | None) -> str | None:
     return f"{major}.{minor}"
 
 
+def _logical_cpu_count() -> int | None:
+    count = os.cpu_count()
+    if not isinstance(count, int) or isinstance(count, bool) or count <= 0:
+        return None
+    return count
+
+
+def _requested_parallel_jobs() -> tuple[int | None, bool, bool]:
+    """Return sanitized requested jobs, syntax validity and whether a request exists.
+
+    The existing self-hosted build workflow exports SWIR_REQUESTED_JOBS before
+    invoking this preflight. Local callers that do not set it retain the prior
+    host-readiness behavior, while evidence-producing workflow runs fail closed
+    if the exported request is malformed or exceeds the host budget.
+    """
+    raw = os.environ.get(REQUESTED_JOBS_ENV)
+    if raw is None:
+        return None, True, False
+    if not re.fullmatch(r"[1-9][0-9]*", raw):
+        return None, False, True
+    try:
+        value = int(raw)
+    except ValueError:
+        return None, False, True
+    if value < 1 or value > MAX_PARALLEL_JOBS:
+        return value, False, True
+    return value, True, True
+
+
+def safe_parallel_job_ceiling(snapshot: HostSnapshot) -> int | None:
+    """Return a conservative SWIR build-job ceiling from CPU and RAM facts.
+
+    This is an operational safety guard, not an Android/AOSP requirement. It
+    intentionally budgets at least 4 GiB of total host RAM per requested build
+    job and never schedules more jobs than visible logical CPUs or the existing
+    hard workflow ceiling.
+    """
+    if snapshot.logical_cpu_count is None or snapshot.logical_cpu_count <= 0:
+        return None
+    if snapshot.ram_bytes is None or snapshot.ram_bytes < 0:
+        return None
+    memory_jobs = snapshot.ram_bytes // MIN_RAM_PER_PARALLEL_JOB_BYTES
+    if memory_jobs <= 0:
+        return 0
+    return min(MAX_PARALLEL_JOBS, snapshot.logical_cpu_count, int(memory_jobs))
+
+
 def capture_host(workspace: Path) -> HostSnapshot:
     """Capture bounded host/workspace facts without subprocesses or network access."""
     if not workspace.is_absolute():
@@ -208,6 +260,7 @@ def capture_host(workspace: Path) -> HostSnapshot:
         vendor_swir_is_symlink=vendor_swir.is_symlink(),
         free_inodes=_free_inodes(canonical),
         repo_launcher_version=_repo_launcher_version(command_paths.get("repo")),
+        logical_cpu_count=_logical_cpu_count(),
     )
 
 
@@ -223,6 +276,17 @@ def evaluate_preflight(snapshot: HostSnapshot) -> dict[str, object]:
     ram_known = snapshot.ram_bytes is not None
     ram_ok = ram_known and snapshot.ram_bytes >= MIN_RAM_BYTES
     required_tools_ok = all(snapshot.commands.get(name, False) for name in REQUIRED_COMMANDS)
+    requested_jobs, requested_jobs_valid, request_present = _requested_parallel_jobs()
+    job_ceiling = safe_parallel_job_ceiling(snapshot)
+    jobs_within_budget = (
+        not request_present
+        or (
+            requested_jobs_valid
+            and requested_jobs is not None
+            and job_ceiling is not None
+            and requested_jobs <= job_ceiling
+        )
+    )
     workspace_safe = (
         snapshot.workspace_writable
         and not snapshot.dangerous_workspace_root
@@ -240,7 +304,7 @@ def evaluate_preflight(snapshot: HostSnapshot) -> dict[str, object]:
         and repo_version_ok
         and workspace_safe
     )
-    build_ready = sync_ready and ram_ok
+    build_ready = sync_ready and ram_ok and jobs_within_budget
 
     checks = [
         {"id": "linux", "passed": is_linux, "required_for": "sync+build"},
@@ -248,6 +312,7 @@ def evaluate_preflight(snapshot: HostSnapshot) -> dict[str, object]:
         {"id": "glibc_2_17_plus", "passed": glibc_ok, "required_for": "sync+build"},
         {"id": "free_disk_400_gib", "passed": disk_ok, "required_for": "sync+build"},
         {"id": "ram_64_gib", "passed": ram_ok, "required_for": "full_build"},
+        {"id": "parallel_jobs_within_host_budget", "passed": jobs_within_budget, "required_for": "full_build"},
     ]
     checks.extend(
         {"id": f"command_{name}", "passed": bool(snapshot.commands.get(name)), "required_for": "sync+build"}
@@ -282,6 +347,16 @@ def evaluate_preflight(snapshot: HostSnapshot) -> dict[str, object]:
             "free_bytes": snapshot.free_bytes,
             "free_inodes": snapshot.free_inodes,
             "repo_launcher_version": snapshot.repo_launcher_version,
+            "logical_cpu_count": snapshot.logical_cpu_count,
+        },
+        "build_capacity": {
+            "request_from_environment": request_present,
+            "requested_parallel_jobs": requested_jobs,
+            "request_valid": requested_jobs_valid,
+            "safe_parallel_job_ceiling": job_ceiling,
+            "request_within_budget": jobs_within_budget,
+            "policy": "min(logical_cpu_count, floor(ram_bytes / 4 GiB), 256)",
+            "official_aosp_requirement": False,
         },
         "workspace": {
             "identity_sha256": snapshot.workspace_identity_sha256,
@@ -297,6 +372,8 @@ def evaluate_preflight(snapshot: HostSnapshot) -> dict[str, object]:
         "requirements": {
             "minimum_free_bytes": MIN_FREE_BYTES,
             "minimum_ram_bytes": MIN_RAM_BYTES,
+            "minimum_ram_per_parallel_job_bytes": MIN_RAM_PER_PARALLEL_JOB_BYTES,
+            "maximum_parallel_jobs": MAX_PARALLEL_JOBS,
             "minimum_glibc": "2.17",
             "minimum_repo_launcher": "2.4",
             "required_command_checks": list(REQUIRED_COMMANDS),
@@ -310,6 +387,8 @@ def evaluate_preflight(snapshot: HostSnapshot) -> dict[str, object]:
             "The evidence workflow requires a clean out/ tree; this preflight never deletes stale output automatically.",
             "Repo local manifests are rejected so persistent runners cannot silently add unreviewed source projects.",
             "Existing regular vendor/swir content is validated later by exact staging-tree closure; symlinked vendor/swir is rejected here.",
+            "The parallel-job ceiling is a conservative SWIR operational safety guard, not an official AOSP host requirement.",
+            "The existing evidence workflow exports SWIR_REQUESTED_JOBS; malformed or over-budget requests block full-build readiness without changing the host.",
             "This check does not install Ubuntu packages, configure KVM/Cuttlefish, or verify proprietary vendor inputs.",
             "A source sync must use the pinned release tag and preserve repo manifest -r output before reproducibility is claimed.",
         ],
