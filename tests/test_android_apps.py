@@ -24,7 +24,7 @@ class AndroidAppSourceTests(unittest.TestCase):
         self.assertEqual(summary["source_ready_count"], 20)
         self.assertEqual(summary["localized_catalogs"], 160)
         for capability in (
-            "dialer", "in_call", "recent_calls", "sms", "camera_capability_report", "basic_math", "scientific_math", "system_settings", "search", "device_status",
+            "dialer", "in_call", "recent_calls", "sms", "camera_capability_report", "photo_capture", "basic_math", "scientific_math", "system_settings", "search", "device_status",
             "browse", "copy_move_rename", "share", "safe_delete", "web_browsing", "downloads", "privacy_controls", "storage_status",
             "battery_status", "thermal_status", "hardware_diagnostics", "channel_status", "signed_metadata", "permission_review",
             "alarms", "timers", "stopwatch", "world_clock", "offline_notes", "export", "local_calendar", "forecast",
@@ -35,16 +35,16 @@ class AndroidAppSourceTests(unittest.TestCase):
             self.assertIn(capability, summary["implemented_capabilities"])
         self.assertEqual(summary["remaining_target_capabilities"], [
             "access_history", "conversation_history", "guided_enable", "guided_unroot", "mms",
-            "photo_capture", "privacy_indicators", "recovery_handoff", "restore_orchestration",
+            "privacy_indicators", "recovery_handoff", "restore_orchestration",
             "staged_update_state", "update_status", "video_capture",
         ])
         for item in (
-            "messages:mms", "messages:conversation_history", "camera:photo_capture", "camera:video_capture",
+            "messages:mms", "messages:conversation_history", "camera:video_capture",
             "backup:restore_orchestration", "apps:update_status",
         ):
             self.assertIn(item, summary["remaining_app_capabilities"])
         for item in (
-            "phone:dialer", "phone:in_call", "phone:recent_calls", "messages:sms", "camera:camera_capability_report",
+            "phone:dialer", "phone:in_call", "phone:recent_calls", "messages:sms", "camera:camera_capability_report", "camera:photo_capture",
             "browser:web_browsing", "browser:downloads", "browser:privacy_controls", "weather:forecast",
             "weather:provider_attribution", "weather:unit_preferences", "backup:supported_data_backup",
             "backup:recovery_metadata", "contacts:provider_bridge", "calendar:provider_bridge",
@@ -91,12 +91,14 @@ class AndroidAppSourceTests(unittest.TestCase):
     def test_messages_must_keep_user_visible_sendto_handoff(self):
         self._replace_and_reject("apps/SwirMessages/src/org/swir/phoneos/messages/MainActivity.java", "Intent.ACTION_SENDTO", "Intent.ACTION_SEND")
 
-    def test_camera_cannot_claim_direct_capture_before_hardware_validation(self):
-        temp, product, registry = self._copy_fixture()
-        with temp:
-            activity = product / "apps/SwirCamera/src/org/swir/phoneos/camera/MainActivity.java"
-            activity.write_text(activity.read_text(encoding="utf-8") + "\n// openCamera(\n", encoding="utf-8")
-            with self.assertRaises(AndroidAppSourceError): validate_android_app_sources(product, registry)
+    def test_camera_permission_allowlist_is_exact(self):
+        self._replace_and_reject("apps/SwirCamera/AndroidManifest.xml", "android.permission.CAMERA", "android.permission.RECORD_AUDIO")
+
+    def test_camera_direct_photo_contract_is_required(self):
+        self._replace_and_reject("apps/SwirCamera/src/org/swir/phoneos/camera/MainActivity.java", "MediaStore.Images.Media.EXTERNAL_CONTENT_URI", "MediaStore.Video.Media.EXTERNAL_CONTENT_URI")
+
+    def test_camera_video_remains_user_visible_handoff(self):
+        self._replace_and_reject("apps/SwirCamera/src/org/swir/phoneos/camera/MainActivity.java", "MediaStore.ACTION_VIDEO_CAPTURE", "Intent.ACTION_VIEW")
 
     def test_calculator_scientific_engine_contract_is_required(self):
         self._replace_and_reject("apps/SwirCalculator/src/org/swir/phoneos/calculator/CalculatorEngine.java", "result = Math.sin(toRadians(value));", "result = Math.cos(toRadians(value));")

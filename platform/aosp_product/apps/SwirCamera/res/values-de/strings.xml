@@ -1,14 +1,29 @@
 <resources>
     <string name="app_name">Swir Camera</string>
     <string name="title">Swir Camera</string>
-    <string name="subtitle">Kamerafähigkeiten prüfen und sichere Aufnahmeübergabe</string>
-    <string name="source_stage_notice">Direkte Camera2-Aufnahme wird noch nicht beansprucht. Diese Quellstufe zeigt reale Kamerafähigkeiten und öffnet die sichtbare Android-Aufnahmeoberfläche.</string>
+    <string name="subtitle">Direkte Camera2-Fotoaufnahme und Kamera-Funktionsprüfung</string>
+    <string name="source_stage_notice">Direkte Fotoaufnahme ist im Quellcode implementiert, muss aber noch unter Android und auf realer Hardware validiert werden. Video bleibt eine sichtbare Android-Übergabe.</string>
     <string name="refresh">Aktualisieren</string>
-    <string name="photo_handoff">Foto</string>
+    <string name="capture_photo">Aufnehmen</string>
+    <string name="switch_camera">Wechseln</string>
     <string name="video_handoff">Video</string>
-    <string name="capability_empty">Keine Kamerafähigkeitsdaten verfügbar.</string>
+    <string name="preview_content_description">Live-Kameravorschau</string>
+    <string name="camera_starting">Kamera wird gestartet…</string>
+    <string name="camera_ready">Kamera bereit.</string>
+    <string name="permission_required">Die Kameraberechtigung ist für direkte Fotoaufnahmen erforderlich.</string>
+    <string name="capture_configuration_unavailable">Diese Kamera stellt keine nutzbare JPEG- und Vorschaukonfiguration bereit.</string>
+    <string name="camera_open_failed">Die Kamera konnte nicht geöffnet werden.</string>
+    <string name="camera_disconnected">Die Kamera wurde getrennt.</string>
+    <string name="capturing_photo">Foto wird aufgenommen…</string>
+    <string name="photo_saved">Foto unter Pictures/SwirPhoneOS gespeichert.</string>
+    <string name="save_failed">Das Foto konnte nicht sicher gespeichert werden.</string>
+    <string name="capability_empty">Keine Kamerafunktionsdaten verfügbar.</string>
     <string name="camera_row">Kamera %1$s · %2$s</string>
     <string name="size_row">Größtes JPEG: %1$d × %2$d · %3$s MP</string>
+    <string name="lens_front">Vorne</string>
+    <string name="lens_back">Hinten</string>
+    <string name="lens_external">Extern</string>
+    <string name="lens_unknown">Unbekannt</string>
     <string name="handoff_unavailable">Keine kompatible Aufnahme-App verfügbar.</string>
-    <string name="capability_error">Prüfung der Kamerafähigkeiten fehlgeschlagen.</string>
+    <string name="capability_error">Kamerafunktionsprüfung fehlgeschlagen.</string>
 </resources>
