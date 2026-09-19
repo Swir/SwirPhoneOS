@@ -24,6 +24,9 @@ public final class MessagePolicyHostTest {
         check(MessagePolicy.isSupportedMediaMime("audio/ogg"), "audio media accepted");
         check(!MessagePolicy.isSupportedMediaMime("application/pdf"), "non-media rejected");
         check(!MessagePolicy.isSupportedMediaMime("image/jpeg; charset=utf-8"), "parameterized media type rejected");
+        check(!MessagePolicy.isSupportedMediaMime("image/*"), "wildcard subtype rejected");
+        check(!MessagePolicy.isSupportedMediaMime("image/"), "empty subtype rejected");
+        check(!MessagePolicy.isSupportedMediaMime("image/jpeg/extra"), "multiple slashes rejected");
         check("photo.jpg".equals(MessagePolicy.safeAttachmentName(" photo.jpg ")), "attachment name normalized");
         check(MessagePolicy.safeAttachmentName("../photo.jpg").isEmpty(), "attachment traversal rejected");
         check(MessagePolicy.safeAttachmentName("bad\\name.jpg").isEmpty(), "attachment backslash rejected");
