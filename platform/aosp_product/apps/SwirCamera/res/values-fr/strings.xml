@@ -1,14 +1,29 @@
 <resources>
     <string name="app_name">Swir Camera</string>
     <string name="title">Swir Camera</string>
-    <string name="subtitle">Inspection des capacités photo et transfert de capture sécurisé</string>
-    <string name="source_stage_notice">La capture Camera2 directe n’est pas encore revendiquée. Cette étape source indique les capacités réelles et ouvre l’interface de capture Android visible.</string>
+    <string name="subtitle">Capture photo Camera2 directe et inspecteur de capacités</string>
+    <string name="source_stage_notice">La capture photo directe est implémentée dans le code source, mais doit encore être validée sous Android et sur un appareil physique. La vidéo reste un transfert Android visible.</string>
     <string name="refresh">Actualiser</string>
-    <string name="photo_handoff">Photo</string>
+    <string name="capture_photo">Capturer</string>
+    <string name="switch_camera">Changer</string>
     <string name="video_handoff">Vidéo</string>
+    <string name="preview_content_description">Aperçu caméra en direct</string>
+    <string name="camera_starting">Démarrage de la caméra…</string>
+    <string name="camera_ready">Caméra prête.</string>
+    <string name="permission_required">L’autorisation caméra est requise pour la capture photo directe.</string>
+    <string name="capture_configuration_unavailable">Cette caméra ne fournit pas de configuration JPEG et d’aperçu utilisable.</string>
+    <string name="camera_open_failed">Impossible d’ouvrir la caméra.</string>
+    <string name="camera_disconnected">La caméra a été déconnectée.</string>
+    <string name="capturing_photo">Capture de la photo…</string>
+    <string name="photo_saved">Photo enregistrée dans Pictures/SwirPhoneOS.</string>
+    <string name="save_failed">La photo n’a pas pu être enregistrée de manière sûre.</string>
     <string name="capability_empty">Aucune donnée de capacité caméra disponible.</string>
     <string name="camera_row">Caméra %1$s · %2$s</string>
     <string name="size_row">JPEG maximal : %1$d × %2$d · %3$s MP</string>
-    <string name="handoff_unavailable">Aucune application de capture compatible disponible.</string>
-    <string name="capability_error">L’inspection des capacités caméra a échoué.</string>
+    <string name="lens_front">Avant</string>
+    <string name="lens_back">Arrière</string>
+    <string name="lens_external">Externe</string>
+    <string name="lens_unknown">Inconnue</string>
+    <string name="handoff_unavailable">Aucune application de capture compatible n’est disponible.</string>
+    <string name="capability_error">L’inspection des capacités de la caméra a échoué.</string>
 </resources>
