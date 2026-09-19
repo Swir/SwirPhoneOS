@@ -22,6 +22,12 @@ class SwirCameraDirectVideoSourceTests(unittest.TestCase):
         for token in (
             "MediaCodec.createEncoderByType",
             "MediaFormat.MIMETYPE_VIDEO_AVC",
+            "MediaCodec.CONFIGURE_FLAG_ENCODE",
+            "MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface",
+            "MediaFormat.KEY_COLOR_FORMAT",
+            "MediaFormat.KEY_BIT_RATE",
+            "MediaFormat.KEY_FRAME_RATE",
+            "MediaFormat.KEY_I_FRAME_INTERVAL",
             "MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4",
             "CameraDevice.TEMPLATE_RECORD",
             "CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_VIDEO",
@@ -30,11 +36,32 @@ class SwirCameraDirectVideoSourceTests(unittest.TestCase):
             "Environment.DIRECTORY_MOVIES",
             "signalEndOfInputStream",
             "CameraPolicy.videoBitRate",
+            "CameraPolicy.VIDEO_FRAME_RATE",
             "setOrientationHint",
         ):
             self.assertIn(token, source)
-        self.assertNotIn("MediaRecorder", source)
-        self.assertNotIn("Manifest.permission.RECORD_AUDIO", source)
+        for forbidden in (
+            "MediaRecorder",
+            "AudioRecord",
+            "MediaFormat.MIMETYPE_AUDIO_AAC",
+            "Manifest.permission.RECORD_AUDIO",
+        ):
+            self.assertNotIn(forbidden, source)
+
+    def test_video_media_store_publish_is_transactional_and_scoped(self):
+        source = (CAMERA_ROOT / "src/org/swir/phoneos/camera/MainActivity.java").read_text(encoding="utf-8")
+        for token in (
+            "MediaStore.Video.Media.DISPLAY_NAME",
+            'MediaStore.Video.Media.MIME_TYPE, "video/mp4"',
+            "MediaStore.Video.Media.RELATIVE_PATH",
+            'Environment.DIRECTORY_MOVIES + "/SwirPhoneOS"',
+            "MediaStore.Video.Media.IS_PENDING, 1",
+            'openFileDescriptor(uri, "rw")',
+            "done.put(MediaStore.Video.Media.IS_PENDING, 0)",
+            "getContentResolver().update(uri, done, null, null) > 0",
+            "getContentResolver().delete(uri, null, null)",
+        ):
+            self.assertIn(token, source)
 
     def test_video_state_machine_blocks_double_start_and_unbounded_finalize(self):
         source = (CAMERA_ROOT / "src/org/swir/phoneos/camera/MainActivity.java").read_text(encoding="utf-8")
@@ -43,10 +70,26 @@ class SwirCameraDirectVideoSourceTests(unittest.TestCase):
             "private volatile boolean videoTransition",
             "pendingVideoUri != null",
             "videoDrainThread != null",
+            "pendingPhotoUri != null",
             "System.nanoTime()",
             "videoTransition = true",
             "if (recordingVideo || videoTransition ||",
             "if (videoTransition) return",
+            "videoStopRequested = true",
+            "releaseVideoEncoder()",
+        ):
+            self.assertIn(token, source)
+
+    def test_encoder_output_is_not_published_before_muxer_start(self):
+        source = (CAMERA_ROOT / "src/org/swir/phoneos/camera/MainActivity.java").read_text(encoding="utf-8")
+        for token in (
+            "MediaCodec.INFO_OUTPUT_FORMAT_CHANGED",
+            "muxer.addTrack(encoder.getOutputFormat())",
+            "muxer.start()",
+            "videoMuxerStarted = true",
+            "Video encoder produced data before muxer start",
+            "muxer.writeSampleData(trackIndex, data, info)",
+            "MediaCodec.BUFFER_FLAG_END_OF_STREAM",
         ):
             self.assertIn(token, source)
 
@@ -68,6 +111,9 @@ class SwirCameraDirectVideoSourceTests(unittest.TestCase):
             "odd-width video rejected",
             "odd-height video rejected",
             "1080p bounded bitrate",
+            "4k maximum bitrate cap",
+            "small video minimum bitrate",
+            "invalid video has no bitrate",
         ):
             self.assertIn(token, host)
 
