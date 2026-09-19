@@ -24,18 +24,18 @@ class AndroidAppSourceTests(unittest.TestCase):
         self.assertEqual(summary["source_ready_count"], 20)
         self.assertEqual(summary["localized_catalogs"], 160)
         for capability in (
-            "dialer", "in_call", "recent_calls", "sms", "camera_capability_report", "basic_math", "system_settings", "search", "device_status",
+            "dialer", "in_call", "recent_calls", "sms", "camera_capability_report", "basic_math", "scientific_math", "system_settings", "search", "device_status",
             "browse", "copy_move_rename", "share", "safe_delete", "web_browsing", "downloads", "privacy_controls", "storage_status",
             "battery_status", "thermal_status", "hardware_diagnostics", "channel_status", "signed_metadata", "permission_review",
             "alarms", "timers", "stopwatch", "world_clock", "offline_notes", "export", "local_calendar", "forecast",
-            "provider_attribution", "unit_preferences", "local_media", "audio_recording", "microphone_state", "file_export",
+            "provider_attribution", "unit_preferences", "local_media", "albums", "audio_recording", "microphone_state", "file_export",
             "local_contacts", "import_export", "provider_bridge", "supported_data_backup", "recovery_metadata",
             "package_catalog", "signature_provenance", "root_state", "authorization_audit",
         ):
             self.assertIn(capability, summary["implemented_capabilities"])
         self.assertEqual(summary["remaining_target_capabilities"], [
-            "access_history", "albums", "conversation_history", "guided_enable", "guided_unroot", "mms",
-            "photo_capture", "privacy_indicators", "recovery_handoff", "restore_orchestration", "scientific_math",
+            "access_history", "conversation_history", "guided_enable", "guided_unroot", "mms",
+            "photo_capture", "privacy_indicators", "recovery_handoff", "restore_orchestration",
             "staged_update_state", "update_status", "video_capture",
         ])
         for item in (
@@ -48,6 +48,7 @@ class AndroidAppSourceTests(unittest.TestCase):
             "browser:web_browsing", "browser:downloads", "browser:privacy_controls", "weather:forecast",
             "weather:provider_attribution", "weather:unit_preferences", "backup:supported_data_backup",
             "backup:recovery_metadata", "contacts:provider_bridge", "calendar:provider_bridge",
+            "calculator:scientific_math", "gallery:albums",
         ):
             self.assertNotIn(item, summary["remaining_app_capabilities"])
         self.assertFalse(summary["android_build_verified"])
@@ -97,6 +98,12 @@ class AndroidAppSourceTests(unittest.TestCase):
             activity.write_text(activity.read_text(encoding="utf-8") + "\n// openCamera(\n", encoding="utf-8")
             with self.assertRaises(AndroidAppSourceError): validate_android_app_sources(product, registry)
 
+    def test_calculator_scientific_engine_contract_is_required(self):
+        self._replace_and_reject("apps/SwirCalculator/src/org/swir/phoneos/calculator/CalculatorEngine.java", "result = Math.sin(toRadians(value));", "result = Math.cos(toRadians(value));")
+
+    def test_calculator_scientific_ui_contract_is_required(self):
+        self._replace_and_reject("apps/SwirCalculator/src/org/swir/phoneos/calculator/MainActivity.java", "CalculatorEngine.ScientificOperation.SIN", "CalculatorEngine.ScientificOperation.ABS")
+
     def test_browser_network_permission_allowlist_is_exact(self):
         self._replace_and_reject("apps/SwirBrowser/AndroidManifest.xml", "android.permission.INTERNET", "android.permission.ACCESS_FINE_LOCATION")
 
@@ -127,6 +134,12 @@ class AndroidAppSourceTests(unittest.TestCase):
 
     def test_gallery_permission_allowlist_is_exact(self):
         self._replace_and_reject("apps/SwirGallery/AndroidManifest.xml", "android.permission.READ_MEDIA_VIDEO", "android.permission.READ_MEDIA_AUDIO")
+
+    def test_gallery_album_contract_is_required(self):
+        self._replace_and_reject("apps/SwirGallery/src/org/swir/phoneos/gallery/MainActivity.java", "MediaPolicy.safeAlbumName", "String.valueOf")
+
+    def test_gallery_album_name_policy_is_required(self):
+        self._replace_and_reject("apps/SwirGallery/src/org/swir/phoneos/gallery/MediaPolicy.java", "album.contains(needle)", "name.contains(needle)")
 
     def test_recorder_cannot_gain_network_permission(self):
         self._replace_and_reject("apps/SwirRecorder/AndroidManifest.xml", "<application", '<uses-permission android:name="android.permission.INTERNET" />\n    <application')
