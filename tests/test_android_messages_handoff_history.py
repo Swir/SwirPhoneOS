@@ -20,15 +20,17 @@ class SwirMessagesHandoffHistoryTests(unittest.TestCase):
         self.assertIn("MessageHandoffHistory.prepend", source)
         self.assertIn("remove(KEY_HISTORY)", source)
 
-    def test_history_is_handoff_evidence_not_sms_delivery(self):
+    def test_history_is_text_handoff_evidence_not_delivery_or_media_storage(self):
         activity = ACTIVITY.read_text(encoding="utf-8")
         history = HISTORY.read_text(encoding="utf-8")
         self.assertIn("Intent.ACTION_SENDTO", activity)
         self.assertIn('Uri.fromParts("smsto"', activity)
         self.assertIn("resolveActivity(getPackageManager())", activity)
         self.assertIn("startActivity(intent)", activity)
-        self.assertIn("compose handoffs", history)
-        self.assertIn("does not claim that an SMS was sent, delivered, or received", history)
+        self.assertIn("text compose handoffs", history)
+        self.assertIn("does not claim that an SMS or MMS was sent, delivered, or received", history)
+        self.assertIn("never\n * stores attached media bytes", history)
+        self.assertIn("!normalizedBody.trim().isEmpty()", activity)
         for forbidden in (
             "SmsManager",
             "sendTextMessage",
@@ -46,7 +48,7 @@ class SwirMessagesHandoffHistoryTests(unittest.TestCase):
         self.assertIn("MAX_SERIALIZED_LENGTH = 64 * 1024", source)
         self.assertIn("MAX_PREVIEW_LENGTH = 96", source)
         self.assertIn("if (entries.size() >= MAX_ENTRIES) break", source)
-        self.assertIn("if (encoded.length() > MAX_SERIALIZED_LENGTH)", source)
+        self.assertIn("if (out.length() > MAX_SERIALIZED_LENGTH)", source)
 
     def test_history_source_is_staged_exactly_once(self):
         data = json.loads(STAGE_FRAGMENT.read_text(encoding="utf-8"))
