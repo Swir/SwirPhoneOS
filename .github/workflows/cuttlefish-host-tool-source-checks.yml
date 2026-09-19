@@ -1,0 +1,44 @@
+name: Cuttlefish host-tool source checks
+
+on:
+  pull_request:
+    paths:
+      - 'swirphoneos/cuttlefish_host_tool_evidence.py'
+      - 'swirphoneos/cuttlefish_host_tool_trust_bundle.py'
+      - 'tests/test_cuttlefish_host_tool_evidence.py'
+      - 'tests/test_cuttlefish_host_tool_trust_bundle.py'
+      - '.github/workflows/cuttlefish-host-tool-source-checks.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'swirphoneos/cuttlefish_host_tool_evidence.py'
+      - 'swirphoneos/cuttlefish_host_tool_trust_bundle.py'
+      - 'tests/test_cuttlefish_host_tool_evidence.py'
+      - 'tests/test_cuttlefish_host_tool_trust_bundle.py'
+      - '.github/workflows/cuttlefish-host-tool-source-checks.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  source-checks:
+    name: Exact Cuttlefish host-tool trust
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.14'
+      - name: Compile exact host-tool trust modules
+        run: |
+          python -m py_compile \
+            swirphoneos/cuttlefish_host_tool_evidence.py \
+            swirphoneos/cuttlefish_host_tool_trust_bundle.py
+      - name: Run focused fail-closed host-tool tests
+        run: |
+          python -m unittest -v \
+            tests.test_cuttlefish_host_tool_evidence \
+            tests.test_cuttlefish_host_tool_trust_bundle
