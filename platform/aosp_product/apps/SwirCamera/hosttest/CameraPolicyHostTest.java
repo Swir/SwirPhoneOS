@@ -12,6 +12,14 @@ public final class CameraPolicyHostTest {
         check(Math.abs(CameraPolicy.megapixels(4000, 3000) - 12.0) < 0.001, "megapixels");
         check("12.0".equals(CameraPolicy.formatMegapixels(4000, 3000)), "stable formatting");
 
+        check(CameraPolicy.validVideoDimensions(1920, 1080), "1080p video allowed");
+        check(CameraPolicy.validVideoDimensions(3840, 2160), "4k video allowed");
+        check(!CameraPolicy.validVideoDimensions(4096, 2160), "oversized video rejected");
+        check(CameraPolicy.videoBitRate(1920, 1080) == 10_368_000, "1080p bounded bitrate");
+        check(CameraPolicy.videoBitRate(320, 240) == 2_000_000, "small video minimum bitrate");
+        check(CameraPolicy.videoBitRate(0, 1080) == 0, "invalid video has no bitrate");
+        check(CameraPolicy.VIDEO_FRAME_RATE == 30, "stable video frame rate");
+
         check(CameraPolicy.normalizeLensFacing(0) == CameraPolicy.LENS_FRONT, "front lens");
         check(CameraPolicy.normalizeLensFacing(1) == CameraPolicy.LENS_BACK, "back lens");
         check(CameraPolicy.normalizeLensFacing(2) == CameraPolicy.LENS_EXTERNAL, "external lens");
