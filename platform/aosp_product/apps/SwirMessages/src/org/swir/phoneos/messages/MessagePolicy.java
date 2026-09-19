@@ -65,11 +65,16 @@ public final class MessagePolicy {
         if (rawMime == null) return false;
         String mime = rawMime.trim().toLowerCase(Locale.ROOT);
         if (mime.isEmpty() || mime.length() > 128 || mime.indexOf(';') >= 0) return false;
-        for (int i = 0; i < mime.length(); i++) {
-            char c = mime.charAt(i);
-            if (Character.isISOControl(c) || Character.isWhitespace(c)) return false;
+        int slash = mime.indexOf('/');
+        if (slash <= 0 || slash != mime.lastIndexOf('/') || slash >= mime.length() - 1) return false;
+        String family = mime.substring(0, slash);
+        String subtype = mime.substring(slash + 1);
+        if (!("image".equals(family) || "video".equals(family) || "audio".equals(family)) || "*".equals(subtype)) return false;
+        for (int i = 0; i < subtype.length(); i++) {
+            char c = subtype.charAt(i);
+            if (!(Character.isLetterOrDigit(c) || c == '.' || c == '+' || c == '-' || c == '_')) return false;
         }
-        return mime.startsWith("image/") || mime.startsWith("video/") || mime.startsWith("audio/");
+        return true;
     }
 
     public static String safeAttachmentName(String rawName) {
