@@ -7,6 +7,8 @@ on:
       - 'swirphoneos/cuttlefish_host_tool_trust_bundle.py'
       - 'tests/test_cuttlefish_host_tool_evidence.py'
       - 'tests/test_cuttlefish_host_tool_trust_bundle.py'
+      - 'tests/test_aosp_workflow_runtime_tool_guard.py'
+      - '.github/workflows/aosp-build-evidence.yml'
       - '.github/workflows/cuttlefish-host-tool-source-checks.yml'
   push:
     branches: [main]
@@ -15,6 +17,8 @@ on:
       - 'swirphoneos/cuttlefish_host_tool_trust_bundle.py'
       - 'tests/test_cuttlefish_host_tool_evidence.py'
       - 'tests/test_cuttlefish_host_tool_trust_bundle.py'
+      - 'tests/test_aosp_workflow_runtime_tool_guard.py'
+      - '.github/workflows/aosp-build-evidence.yml'
       - '.github/workflows/cuttlefish-host-tool-source-checks.yml'
 
 permissions:
@@ -37,8 +41,9 @@ jobs:
           python -m py_compile \
             swirphoneos/cuttlefish_host_tool_evidence.py \
             swirphoneos/cuttlefish_host_tool_trust_bundle.py
-      - name: Run focused fail-closed host-tool tests
+      - name: Run focused fail-closed host-tool and workflow tests
         run: |
           python -m unittest -v \
             tests.test_cuttlefish_host_tool_evidence \
-            tests.test_cuttlefish_host_tool_trust_bundle
+            tests.test_cuttlefish_host_tool_trust_bundle \
+            tests.test_aosp_workflow_runtime_tool_guard
