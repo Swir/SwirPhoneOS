@@ -16,6 +16,7 @@ from .studio_device_inventory import (
     assess_inventory_profiles,
     collect_device_inventory,
 )
+from .studio_inventory_export import write_inventory_bundle
 from .studio_toolchain import ToolDiscovery, discover_android_tool
 
 
@@ -85,25 +86,15 @@ def render_device_inventory(
     return "\n".join(lines)
 
 
-def inspect_current_devices(app: Studio) -> DeviceInventoryEvidence | None:
-    """Explicitly run the current transport's read-only inventory command."""
-    if app.session.busy:
-        return None
-    raw_path = app.tool_path.get().strip()
-    if not raw_path:
-        app.status_key = "tool_not_found"
-        app.update_status()
-        return None
-
-    transport = app.transport_code()
-    kwargs = {f"{transport}_path": Path(raw_path)}
-    try:
-        evidence = collect_device_inventory(**kwargs)
-    except (OSError, RuntimeError, TimeoutError, ValueError):
-        app.status_key = "inventory_failed"
-        app.update_status()
-        app.show_report(app.tr("inventory_failed"))
-        return None
+def collect_inventory_snapshot(
+    transport: str,
+    tool_path: Path,
+) -> tuple[DeviceInventoryEvidence, tuple[DeviceProfileHint, ...]]:
+    """Collect one explicit read-only transport snapshot plus advisory profile hints."""
+    if transport not in {"adb", "fastboot"}:
+        raise ValueError("Unsupported inventory transport.")
+    kwargs = {f"{transport}_path": tool_path}
+    evidence = collect_device_inventory(**kwargs)
 
     # Profile matching is deliberately advisory and must never make basic
     # inventory unavailable. Registry/profile errors therefore remove only the
@@ -115,6 +106,29 @@ def inspect_current_devices(app: Studio) -> DeviceInventoryEvidence | None:
         )
     except (OSError, RuntimeError, ValueError):
         profile_hints = ()
+    return evidence, profile_hints
+
+
+def inspect_current_devices(app: Studio) -> DeviceInventoryEvidence | None:
+    """Explicitly run the current transport's read-only inventory command."""
+    if app.session.busy:
+        return None
+    raw_path = app.tool_path.get().strip()
+    if not raw_path:
+        app.status_key = "tool_not_found"
+        app.update_status()
+        return None
+
+    try:
+        evidence, profile_hints = collect_inventory_snapshot(
+            app.transport_code(),
+            Path(raw_path),
+        )
+    except (OSError, RuntimeError, TimeoutError, ValueError):
+        app.status_key = "inventory_failed"
+        app.update_status()
+        app.show_report(app.tr("inventory_failed"))
+        return None
 
     app.status_key = "inventory_complete"
     app.update_status()
@@ -157,6 +171,27 @@ def install_capture_menu(root: tk.Tk, app: Studio) -> tuple[tk.Menu, str]:
     return menu, trace_id
 
 
+def _run_inventory_export(
+    *,
+    transport: str,
+    tool: Path,
+    destination: Path,
+) -> int:
+    """Headless, explicit read-only capture path for Windows/host diagnostics."""
+    try:
+        evidence, profile_hints = collect_inventory_snapshot(transport, tool)
+        digest = write_inventory_bundle(destination, evidence, profile_hints)
+    except (FileExistsError, OSError, RuntimeError, TimeoutError, ValueError) as exc:
+        print(f"Read-only inventory export failed: {exc}", file=sys.stderr)
+        return 2
+
+    print(
+        f"Read-only inventory evidence written: {destination} · sha256 {digest}",
+        file=sys.stdout,
+    )
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Read-only SwirPhoneOS Flash Studio developer UI.")
     parser.add_argument(
@@ -164,7 +199,40 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="Open and close the UI without using Android SDK tools.",
     )
+    parser.add_argument(
+        "--inventory-json",
+        type=Path,
+        help="Create a privacy-minimized read-only inventory evidence JSON and exit.",
+    )
+    parser.add_argument(
+        "--transport",
+        choices=("adb", "fastboot"),
+        help="Transport used with --inventory-json.",
+    )
+    parser.add_argument(
+        "--tool",
+        type=Path,
+        help="Explicit reviewed adb/fastboot executable path used with --inventory-json.",
+    )
     args = parser.parse_args(argv)
+
+    inventory_args = (args.inventory_json, args.transport, args.tool)
+    if any(value is not None for value in inventory_args):
+        if not all(value is not None for value in inventory_args):
+            print(
+                "--inventory-json, --transport and --tool must be supplied together.",
+                file=sys.stderr,
+            )
+            return 2
+        assert isinstance(args.inventory_json, Path)
+        assert isinstance(args.transport, str)
+        assert isinstance(args.tool, Path)
+        return _run_inventory_export(
+            transport=args.transport,
+            tool=args.tool,
+            destination=args.inventory_json,
+        )
+
     try:
         root = tk.Tk()
     except tk.TclError:
