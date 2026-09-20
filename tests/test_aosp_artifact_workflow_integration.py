@@ -32,10 +32,34 @@ class AospArtifactWorkflowIntegrationTests(unittest.TestCase):
         self.assertIn('--source-commit "${{ github.event.workflow_run.head_sha }}"', self.text)
         self.assertIn('> "$GITHUB_WORKSPACE/aosp-artifact-continuity.json"', self.text)
 
-    def test_uploads_only_bounded_continuity_report(self) -> None:
+    def test_admission_recheck_binds_exact_run_gate_files_repository_and_commit(self) -> None:
+        self.assertIn("python -m swirphoneos.aosp_admission_continuity", self.text)
+        self.assertIn('--run-evidence "$GITHUB_WORKSPACE/evidence/aosp-run-evidence.json"', self.text)
+        self.assertIn('--gate "$GITHUB_WORKSPACE/evidence/builder-admission-build-gate.json"', self.text)
+        self.assertIn('--preflight "$GITHUB_WORKSPACE/evidence/admission/builder-admission.json"', self.text)
+        self.assertIn('--attestation "$GITHUB_WORKSPACE/evidence/admission/builder-admission-envelope.json"', self.text)
+        self.assertIn('--repository "${{ github.repository }}"', self.text)
+        self.assertIn('--source-commit "${{ github.event.workflow_run.head_sha }}"', self.text)
+        self.assertIn('> "$GITHUB_WORKSPACE/aosp-admission-continuity.json"', self.text)
+
+    def test_uploads_only_two_bounded_continuity_reports(self) -> None:
         self.assertIn("swirphoneos-aosp-postrun-continuity-${{ github.event.workflow_run.head_sha }}", self.text)
-        self.assertIn("path: aosp-artifact-continuity.json", self.text)
-        forbidden = ("fastboot flash", "fastboot erase", "fastboot format", "adb reboot", "repo sync", "launch_cvd", "stop_cvd")
+        expected_upload = """          path: |
+            aosp-artifact-continuity.json
+            aosp-admission-continuity.json
+"""
+        self.assertIn(expected_upload, self.text)
+        self.assertEqual(self.text.count("aosp-artifact-continuity.json"), 2)
+        self.assertEqual(self.text.count("aosp-admission-continuity.json"), 2)
+        forbidden = (
+            "fastboot flash",
+            "fastboot erase",
+            "fastboot format",
+            "adb reboot",
+            "repo sync",
+            "launch_cvd",
+            "stop_cvd",
+        )
         for token in forbidden:
             with self.subTest(token=token):
                 self.assertNotIn(token, self.text)
