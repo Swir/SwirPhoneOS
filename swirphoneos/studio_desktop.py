@@ -2,12 +2,14 @@
 from __future__ import annotations
 
 import argparse
+from pathlib import Path
 import sys
 import tkinter as tk
 
 from .i18n import translate
 from .studio import Studio
 from .studio_capture_wizard import PhysicalCaptureWizard
+from .studio_device_inventory import DeviceInventoryEvidence, collect_device_inventory
 from .studio_toolchain import ToolDiscovery, discover_android_tool
 
 
@@ -35,6 +37,51 @@ def prefill_capture_tools(wizard: PhysicalCaptureWizard) -> tuple[ToolDiscovery,
     return adb, fastboot
 
 
+def render_device_inventory(app: Studio, evidence: DeviceInventoryEvidence) -> str:
+    """Render privacy-minimized inventory data through the shared locale catalog."""
+    lines = [app.tr("inventory_title")]
+    if not evidence.observations:
+        lines.append(app.tr("inventory_none"))
+        return "\n\n".join(lines)
+    for item in evidence.observations:
+        lines.append(
+            app.tr(
+                "inventory_item",
+                transport=item.transport.upper(),
+                state=item.state,
+                identifier=item.identifier_sha256[:12],
+                model=item.model or "—",
+            )
+        )
+    return "\n".join(lines)
+
+
+def inspect_current_devices(app: Studio) -> DeviceInventoryEvidence | None:
+    """Explicitly run the current transport's read-only inventory command."""
+    if app.session.busy:
+        return None
+    raw_path = app.tool_path.get().strip()
+    if not raw_path:
+        app.status_key = "tool_not_found"
+        app.update_status()
+        return None
+
+    transport = app.transport_code()
+    kwargs = {f"{transport}_path": Path(raw_path)}
+    try:
+        evidence = collect_device_inventory(**kwargs)
+    except (OSError, RuntimeError, TimeoutError, ValueError):
+        app.status_key = "inventory_failed"
+        app.update_status()
+        app.show_report(app.tr("inventory_failed"))
+        return None
+
+    app.status_key = "inventory_complete"
+    app.update_status()
+    app.show_report(render_device_inventory(app, evidence))
+    return evidence
+
+
 def install_capture_menu(root: tk.Tk, app: Studio) -> tuple[tk.Menu, str]:
     """Install localized evidence/tool launchers while keeping device actions explicit."""
     menu = tk.Menu(root, tearoff=False)
@@ -49,16 +96,21 @@ def install_capture_menu(root: tk.Tk, app: Studio) -> tuple[tk.Menu, str]:
             return
         detect_studio_tool(app)
 
+    def inspect_devices() -> None:
+        inspect_current_devices(app)
+
     # Keep the existing capture action at index 0 for compatibility with
-    # embeddings/tests, then append the read-only local SDK discovery action.
+    # embeddings/tests, then append explicit read-only discovery/inventory actions.
     tools.add_command(label=translate(app.language.get(), "capture_menu"), command=open_capture)
     tools.add_command(label=translate(app.language.get(), "studio_detect_tool"), command=detect_tool)
+    tools.add_command(label=translate(app.language.get(), "studio_inspect_devices"), command=inspect_devices)
     menu.add_cascade(label=translate(app.language.get(), "capture_tools_menu"), menu=tools)
     root.configure(menu=menu)
 
     def refresh(*_: object) -> None:
         tools.entryconfigure(0, label=translate(app.language.get(), "capture_menu"))
         tools.entryconfigure(1, label=translate(app.language.get(), "studio_detect_tool"))
+        tools.entryconfigure(2, label=translate(app.language.get(), "studio_inspect_devices"))
         menu.entryconfigure(0, label=translate(app.language.get(), "capture_tools_menu"))
 
     trace_id = app.language.trace_add("write", refresh)
