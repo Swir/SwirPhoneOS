@@ -17,7 +17,8 @@ import java.util.List;
 public final class MessageHandoffHistory {
     public static final int MAX_ENTRIES = 8;
     public static final int MAX_SERIALIZED_LENGTH = 64 * 1024;
-    public static final int MAX_PREVIEW_CODEPOINTS = 96;
+    public static final int MAX_PREVIEW_LENGTH = 96;
+    public static final int MAX_PREVIEW_CODEPOINTS = MAX_PREVIEW_LENGTH;
 
     private MessageHandoffHistory() {}
 
