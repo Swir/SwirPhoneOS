@@ -63,7 +63,7 @@ _SPECS = {
     "recorder": _AppSpec("recorder", "SwirRecorder", "SwirRecorder", "org.swir.phoneos.recorder", "src/org/swir/phoneos/recorder/RecorderPolicy.java", "src/org/swir/phoneos/recorder/MainActivity.java", "hosttest/RecorderPolicyHostTest.java", "res/drawable/ic_recorder.xml", ("audio_recording", "microphone_state", "file_export"), ("android.permission.RECORD_AUDIO",)),
     "contacts": _AppSpec("contacts", "SwirContacts", "SwirContacts", "org.swir.phoneos.contacts", "src/org/swir/phoneos/contacts/ContactPolicy.java", "src/org/swir/phoneos/contacts/MainActivity.java", "hosttest/ContactPolicyHostTest.java", "res/drawable/ic_contacts.xml", ("local_contacts", "import_export", "provider_bridge"), ("android.permission.READ_CONTACTS",)),
     "backup": _AppSpec("backup", "SwirBackup", "SwirBackup", "org.swir.phoneos.backup", "src/org/swir/phoneos/backup/BackupPolicy.java", "src/org/swir/phoneos/backup/MainActivity.java", "hosttest/BackupPolicyHostTest.java", "res/drawable/ic_backup.xml", ("supported_data_backup", "recovery_metadata")),
-    "apps": _AppSpec("apps", "SwirApps", "SwirApps", "org.swir.phoneos.apps", "src/org/swir/phoneos/apps/AppCatalogPolicy.java", "src/org/swir/phoneos/apps/MainActivity.java", "hosttest/AppCatalogPolicyHostTest.java", "res/drawable/ic_apps.xml", ("package_catalog", "signature_provenance")),
+    "apps": _AppSpec("apps", "SwirApps", "SwirApps", "org.swir.phoneos.apps", "src/org/swir/phoneos/apps/AppCatalogPolicy.java", "src/org/swir/phoneos/apps/MainActivity.java", "hosttest/AppCatalogPolicyHostTest.java", "res/drawable/ic_apps.xml", ("package_catalog", "signature_provenance", "update_status")),
     "swirroot": _AppSpec("swirroot", "SwirRoot", "SwirRoot", "org.swir.phoneos.swirroot", "src/org/swir/phoneos/swirroot/RootPolicy.java", "src/org/swir/phoneos/swirroot/MainActivity.java", "hosttest/RootPolicyHostTest.java", "res/drawable/ic_swirroot.xml", ("root_state", "authorization_audit")),
 }
 _SETTINGS_ACTIONS = frozenset({"android.settings.WIFI_SETTINGS", "android.settings.BLUETOOTH_SETTINGS", "android.settings.DISPLAY_SETTINGS", "android.settings.SOUND_SETTINGS", "android.settings.SECURITY_SETTINGS", "android.settings.PRIVACY_SETTINGS", "android.settings.ACCESSIBILITY_SETTINGS", "android.settings.LOCALE_SETTINGS", "android.settings.INTERNAL_STORAGE_SETTINGS", "android.settings.APPLICATION_SETTINGS"})
@@ -347,11 +347,15 @@ def _validate_backup(logic, activity):
 
 
 def _validate_apps(logic, activity):
-    if any(x not in logic for x in ("validPackageName", "matches", "sha256", "shortDigest")):
-        raise AndroidAppSourceError("SwirApps host-tested catalog policy drifted.")
-    required = ("queryIntentActivities", "PackageManager.GET_SIGNING_CERTIFICATES", "getApkContentsSigners", "getLaunchIntentForPackage", "Settings.ACTION_APPLICATION_DETAILS_SETTINGS", "AppCatalogPolicy.sha256")
+    policy_required = ("validPackageName", "matches", "sha256", "shortDigest", "UpdateState", "updateState", "SYSTEM_BASELINE", "SYSTEM_UPDATED", "EXTERNAL_MANAGED")
+    if any(x not in logic for x in policy_required):
+        raise AndroidAppSourceError("SwirApps host-tested catalog/update-status policy drifted.")
+    required = ("queryIntentActivities", "PackageManager.GET_SIGNING_CERTIFICATES", "getApkContentsSigners", "getLaunchIntentForPackage", "Settings.ACTION_APPLICATION_DETAILS_SETTINGS", "ApplicationInfo.FLAG_UPDATED_SYSTEM_APP", "AppCatalogPolicy.sha256", "AppCatalogPolicy.updateState", "R.string.update_status_format")
     if any(x not in activity for x in required):
-        raise AndroidAppSourceError("SwirApps must retain local launcher catalog and signing-certificate provenance.")
+        raise AndroidAppSourceError("SwirApps must retain local launcher catalog, signing provenance and read-only installed update status.")
+    forbidden = ("PackageInstaller", "Intent.ACTION_INSTALL_PACKAGE", "android.permission.REQUEST_INSTALL_PACKAGES", "DownloadManager")
+    if any(x in activity or x in logic for x in forbidden):
+        raise AndroidAppSourceError("SwirApps update status must remain local/read-only with no download or install path.")
 
 
 def _validate_swirroot(logic: str, activity: str, java_bundle: str) -> None:

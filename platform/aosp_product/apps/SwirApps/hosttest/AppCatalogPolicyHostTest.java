@@ -17,6 +17,12 @@ public final class AppCatalogPolicyHostTest {
         check(AppCatalogPolicy.updateSource(false, "com.example.installer") == AppCatalogPolicy.UpdateSource.EXTERNAL_INSTALLER, "external installer");
         check(AppCatalogPolicy.updateSource(false, "../bad") == AppCatalogPolicy.UpdateSource.LOCAL_UNKNOWN, "bad installer rejected");
         check(AppCatalogPolicy.updateSource(false, null) == AppCatalogPolicy.UpdateSource.LOCAL_UNKNOWN, "missing installer");
+        check(AppCatalogPolicy.updateState(true, false, null) == AppCatalogPolicy.UpdateState.SYSTEM_BASELINE, "system baseline state");
+        check(AppCatalogPolicy.updateState(true, true, null) == AppCatalogPolicy.UpdateState.SYSTEM_UPDATED, "updated system app state");
+        check(AppCatalogPolicy.updateState(false, true, null) == AppCatalogPolicy.UpdateState.SYSTEM_UPDATED, "updated-system flag wins");
+        check(AppCatalogPolicy.updateState(false, false, "com.example.installer") == AppCatalogPolicy.UpdateState.EXTERNAL_MANAGED, "external managed state");
+        check(AppCatalogPolicy.updateState(false, false, "../bad") == AppCatalogPolicy.UpdateState.LOCAL_UNKNOWN, "bad installer update state rejected");
+        check(AppCatalogPolicy.updateState(false, false, null) == AppCatalogPolicy.UpdateState.LOCAL_UNKNOWN, "unknown update state");
         check(AppCatalogPolicy.normalizeUpdateTime(1234L) == 1234L, "valid update time");
         check(AppCatalogPolicy.normalizeUpdateTime(0L) == 0L, "zero update time");
         check(AppCatalogPolicy.normalizeUpdateTime(-1L) == 0L, "negative update time");

@@ -13,6 +13,13 @@ public final class AppCatalogPolicy {
         LOCAL_UNKNOWN
     }
 
+    public enum UpdateState {
+        SYSTEM_BASELINE,
+        SYSTEM_UPDATED,
+        EXTERNAL_MANAGED,
+        LOCAL_UNKNOWN
+    }
+
     private AppCatalogPolicy() {}
 
     public static String normalizeQuery(String value) {
@@ -56,6 +63,13 @@ public final class AppCatalogPolicy {
         if (systemImage) return UpdateSource.SYSTEM_IMAGE;
         if (validPackageName(installerPackage)) return UpdateSource.EXTERNAL_INSTALLER;
         return UpdateSource.LOCAL_UNKNOWN;
+    }
+
+    public static UpdateState updateState(boolean systemImage, boolean updatedSystemApp, String installerPackage) {
+        if (updatedSystemApp) return UpdateState.SYSTEM_UPDATED;
+        if (systemImage) return UpdateState.SYSTEM_BASELINE;
+        if (validPackageName(installerPackage)) return UpdateState.EXTERNAL_MANAGED;
+        return UpdateState.LOCAL_UNKNOWN;
     }
 
     public static long normalizeUpdateTime(long epochMillis) {
