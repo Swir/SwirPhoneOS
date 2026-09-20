@@ -107,13 +107,14 @@ class ToolDiscoveryTests(unittest.TestCase):
             adb.parent.mkdir(parents=True)
             adb.write_text("test-only\n", encoding="utf-8")
             adb.chmod(0o644)
-            result = discover_android_tool(
-                "adb",
-                environ={"ANDROID_SDK_ROOT": "relative/sdk"},
-                home=root / "home",
-                platform_name="linux",
-                which=lambda _: str(adb),
-            )
+            with patch("swirphoneos.studio_toolchain.os.access", return_value=False):
+                result = discover_android_tool(
+                    "adb",
+                    environ={"ANDROID_SDK_ROOT": "relative/sdk"},
+                    home=root / "home",
+                    platform_name="linux",
+                    which=lambda _: str(adb),
+                )
         self.assertEqual(result, ToolDiscovery("adb", None, "not_found"))
 
     def test_unsupported_tool_is_rejected(self):
@@ -164,7 +165,7 @@ class DesktopIntegrationTests(unittest.TestCase):
         with patch("swirphoneos.studio_desktop.discover_android_tool", return_value=found) as discover:
             result = detect_studio_tool(app)  # type: ignore[arg-type]
         self.assertEqual(result, found)
-        self.assertEqual(app.tool_path.get(), "/sdk/platform-tools/adb")
+        self.assertEqual(app.tool_path.get(), str(found.path))
         self.assertEqual(app.status_key, "tool_found")
         self.assertEqual(app.updated, 1)
         discover.assert_called_once_with("adb", include_path=True)
@@ -192,7 +193,7 @@ class DesktopIntegrationTests(unittest.TestCase):
         ) as discover:
             results = prefill_capture_tools(wizard)  # type: ignore[arg-type]
         self.assertEqual(results, (adb, fastboot))
-        self.assertEqual(wizard.adb_path.get(), "/sdk/platform-tools/adb")
+        self.assertEqual(wizard.adb_path.get(), str(adb.path))
         self.assertEqual(wizard.fastboot_path.get(), "/owner/fastboot")
         self.assertEqual(
             discover.call_args_list,
