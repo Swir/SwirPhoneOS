@@ -3,6 +3,10 @@ name: AOSP build evidence
 on:
   workflow_dispatch:
     inputs:
+      admission_run_id:
+        description: Successful AOSP builder admission workflow run ID for this exact commit and job budget
+        required: true
+        type: string
       jobs:
         description: Parallel AOSP build jobs
         required: true
@@ -20,6 +24,7 @@ on:
         type: string
 
 permissions:
+  actions: read
   contents: read
 
 concurrency:
@@ -32,6 +37,7 @@ jobs:
     runs-on: [self-hosted, linux, x64, swir-aosp-builder]
     timeout-minutes: 720
     env:
+      SWIR_ADMISSION_RUN_ID: ${{ inputs.admission_run_id }}
       SWIR_REQUESTED_JOBS: ${{ inputs.jobs }}
       SWIR_COLLECT_RUNTIME: ${{ inputs.collect_runtime }}
       SWIR_ADB_PATH: ${{ inputs.adb_path }}
@@ -43,6 +49,7 @@ jobs:
           printf '%s\n' "BOOTSTRAP" > "$GITHUB_WORKSPACE/aosp-phase.txt"
           {
             printf 'source_commit=%s\n' "$GITHUB_SHA"
+            printf 'admission_run_id=%s\n' "$SWIR_ADMISSION_RUN_ID"
             printf 'requested_jobs=%s\n' "$SWIR_REQUESTED_JOBS"
             printf 'collect_runtime=%s\n' "$SWIR_COLLECT_RUNTIME"
           } > "$GITHUB_WORKSPACE/aosp-run-context.txt"
@@ -56,6 +63,38 @@ jobs:
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: '3.14'
+      - name: Validate admission run selector
+        shell: bash
+        run: |
+          set -euo pipefail
+          case "$SWIR_ADMISSION_RUN_ID" in
+            ''|*[!0-9]*) printf 'Admission workflow run id must be a positive integer.\n' >&2; exit 1 ;;
+          esac
+          test "$SWIR_ADMISSION_RUN_ID" -ge 1
+      - name: Download exact builder admission artifact
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: SwirPhoneOS-aosp-builder-admission
+          path: admission
+          github-token: ${{ github.token }}
+          run-id: ${{ inputs.admission_run_id }}
+      - name: Verify exact builder admission before workspace mutation
+        shell: bash
+        run: |
+          set -euo pipefail
+          args=(
+            --preflight "$GITHUB_WORKSPACE/admission/builder-admission.json"
+            --attestation "$GITHUB_WORKSPACE/admission/builder-admission-envelope.json"
+            --source-commit "$GITHUB_SHA"
+            --repository "$GITHUB_REPOSITORY"
+            --admission-run-id "$SWIR_ADMISSION_RUN_ID"
+            --jobs "$SWIR_REQUESTED_JOBS"
+          )
+          if [[ "$SWIR_COLLECT_RUNTIME" == "true" ]]; then
+            args+=(--require-kvm)
+          fi
+          PYTHONPATH="$GITHUB_WORKSPACE/tools" python -m swirphoneos.aosp_admission_gate "${args[@]}" \
+            > "$GITHUB_WORKSPACE/builder-admission-build-gate.json"
       - name: Validate builder configuration
         shell: bash
         run: |
@@ -464,6 +503,9 @@ jobs:
           path: |
             aosp-run-context.txt
             aosp-phase.txt
+            admission/builder-admission.json
+            admission/builder-admission-envelope.json
+            builder-admission-build-gate.json
             builder-preflight.json
             aosp-host-pre.json
             aosp-host-post.json
