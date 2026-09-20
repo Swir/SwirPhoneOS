@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.ClipData;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.UriPermission;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
@@ -29,6 +30,10 @@ public final class MainActivity extends Activity {
     private static final String KEY_BODY = "body";
     private static final String KEY_REMEMBER_HISTORY = "remember_handoff_history";
     private static final String KEY_HISTORY = "handoff_history";
+    private static final String KEY_ATTACHMENT_URI = "attachment_uri";
+    private static final String KEY_ATTACHMENT_MIME = "attachment_mime";
+    private static final String KEY_ATTACHMENT_NAME = "attachment_name";
+    private static final String KEY_ATTACHMENT_SIZE = "attachment_size";
 
     private EditText recipients;
     private EditText body;
@@ -157,6 +162,7 @@ public final class MainActivity extends Activity {
         intent.addCategory(Intent.CATEGORY_OPENABLE);
         intent.setType("*/*");
         intent.putExtra(Intent.EXTRA_MIME_TYPES, new String[]{"image/*", "video/*", "audio/*"});
+        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION);
         if (intent.resolveActivity(getPackageManager()) == null) {
             Toast.makeText(this, R.string.media_picker_unavailable, Toast.LENGTH_SHORT).show();
             return;
@@ -169,15 +175,25 @@ public final class MainActivity extends Activity {
         if (requestCode != REQUEST_MEDIA_ATTACHMENT || resultCode != RESULT_OK || data == null || data.getData() == null) return;
         Uri uri = data.getData();
         AttachmentInfo info = attachmentInfo(uri);
-        if (!"content".equals(uri.getScheme()) || !MessagePolicy.attachmentReviewReady(info.mime, info.displayName, info.sizeBytes)) {
-            clearAttachment();
+        String safeName = MessagePolicy.safeAttachmentName(info.displayName);
+        if (!"content".equals(uri.getScheme()) || !MessagePolicy.attachmentReviewReady(info.mime, safeName, info.sizeBytes)) {
             Toast.makeText(this, R.string.invalid_media_attachment, Toast.LENGTH_SHORT).show();
             return;
         }
+
+        int takeFlags = data.getFlags() & Intent.FLAG_GRANT_READ_URI_PERMISSION;
+        if (takeFlags == 0 || !takePersistedReadPermission(uri, takeFlags)) {
+            Toast.makeText(this, R.string.invalid_media_attachment, Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        Uri previousUri = attachmentUri;
         attachmentUri = uri;
         attachmentMime = info.mime;
-        attachmentName = MessagePolicy.safeAttachmentName(info.displayName);
+        attachmentName = safeName;
         attachmentSize = info.sizeBytes;
+        if (previousUri != null && !previousUri.equals(uri)) releasePersistedReadPermission(previousUri);
+        saveDraft();
         renderAttachment();
         refreshState();
     }
@@ -185,7 +201,12 @@ public final class MainActivity extends Activity {
     private AttachmentInfo attachmentInfo(Uri uri) {
         String displayName = null;
         long sizeBytes = -1L;
-        String mime = getContentResolver().getType(uri);
+        String mime = null;
+        try {
+            mime = getContentResolver().getType(uri);
+        } catch (RuntimeException ignored) {
+            // Revoked or malformed provider access fails closed below.
+        }
         try (Cursor cursor = getContentResolver().query(
                 uri,
                 new String[]{OpenableColumns.DISPLAY_NAME, OpenableColumns.SIZE},
@@ -204,10 +225,59 @@ public final class MainActivity extends Activity {
         return new AttachmentInfo(displayName, mime, sizeBytes);
     }
 
+    private boolean takePersistedReadPermission(Uri uri, int flags) {
+        try {
+            getContentResolver().takePersistableUriPermission(uri, flags);
+            return hasPersistedReadPermission(uri);
+        } catch (SecurityException | IllegalArgumentException ignored) {
+            return false;
+        }
+    }
+
+    private boolean hasPersistedReadPermission(Uri uri) {
+        try {
+            for (UriPermission permission : getContentResolver().getPersistedUriPermissions()) {
+                if (permission.isReadPermission() && uri.equals(permission.getUri())) return true;
+            }
+        } catch (RuntimeException ignored) {
+            return false;
+        }
+        return false;
+    }
+
+    private void releasePersistedReadPermission(Uri uri) {
+        try {
+            getContentResolver().releasePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION);
+        } catch (SecurityException | IllegalArgumentException ignored) {
+            // Permission may already have been revoked by the provider or system.
+        }
+    }
+
+    private boolean revalidateCurrentAttachment() {
+        if (attachmentUri == null
+                || !"content".equals(attachmentUri.getScheme())
+                || !hasPersistedReadPermission(attachmentUri)
+                || !MessagePolicy.attachmentReviewReady(attachmentMime, attachmentName, attachmentSize)) {
+            return false;
+        }
+        AttachmentInfo fresh = attachmentInfo(attachmentUri);
+        String freshName = MessagePolicy.safeAttachmentName(fresh.displayName);
+        return MessagePolicy.attachmentReviewReady(fresh.mime, freshName, fresh.sizeBytes)
+                && attachmentMime.equals(fresh.mime)
+                && attachmentName.equals(freshName)
+                && attachmentSize == fresh.sizeBytes;
+    }
+
     private void openSystemMessagingApp() {
         String normalizedRecipients = MessagePolicy.normalizeRecipients(recipients.getText().toString());
         String normalizedBody = MessagePolicy.normalizeBody(body.getText().toString());
-        boolean mediaReady = attachmentUri != null && MessagePolicy.canMediaHandoff(
+        boolean hasAttachment = attachmentUri != null;
+        if (hasAttachment && !revalidateCurrentAttachment()) {
+            clearAttachment();
+            Toast.makeText(this, R.string.invalid_media_attachment, Toast.LENGTH_SHORT).show();
+            return;
+        }
+        boolean mediaReady = hasAttachment && MessagePolicy.canMediaHandoff(
                 normalizedRecipients, normalizedBody, attachmentMime, attachmentName, attachmentSize);
         if (!mediaReady && !MessagePolicy.canHandoff(normalizedRecipients, normalizedBody)) {
             Toast.makeText(this, R.string.invalid_message, Toast.LENGTH_SHORT).show();
@@ -238,7 +308,7 @@ public final class MainActivity extends Activity {
         } else {
             startActivity(intent);
         }
-        if (rememberHistory != null && rememberHistory.isChecked() && !normalizedBody.trim().isEmpty()) {
+        if (!mediaReady && rememberHistory != null && rememberHistory.isChecked() && !normalizedBody.trim().isEmpty()) {
             recordHandoff(normalizedRecipients, normalizedBody);
         }
     }
@@ -285,7 +355,21 @@ public final class MainActivity extends Activity {
                 .putString(KEY_RECIPIENTS, recipients.getText().toString())
                 .putString(KEY_BODY, MessagePolicy.normalizeBody(body.getText().toString()));
         if (rememberHistory != null) edit.putBoolean(KEY_REMEMBER_HISTORY, rememberHistory.isChecked());
+        persistAttachmentDraft(edit);
         edit.apply();
+    }
+
+    private void persistAttachmentDraft(SharedPreferences.Editor edit) {
+        if (attachmentUri != null
+                && hasPersistedReadPermission(attachmentUri)
+                && MessagePolicy.attachmentReviewReady(attachmentMime, attachmentName, attachmentSize)) {
+            edit.putString(KEY_ATTACHMENT_URI, attachmentUri.toString())
+                    .putString(KEY_ATTACHMENT_MIME, attachmentMime)
+                    .putString(KEY_ATTACHMENT_NAME, attachmentName)
+                    .putLong(KEY_ATTACHMENT_SIZE, attachmentSize);
+        } else {
+            removeAttachmentDraftKeys(edit);
+        }
     }
 
     private void restoreDraft() {
@@ -293,6 +377,45 @@ public final class MainActivity extends Activity {
         recipients.setText(prefs.getString(KEY_RECIPIENTS, ""));
         body.setText(prefs.getString(KEY_BODY, ""));
         rememberHistory.setChecked(prefs.getBoolean(KEY_REMEMBER_HISTORY, false));
+        restoreAttachmentDraft(prefs);
+    }
+
+    private void restoreAttachmentDraft(SharedPreferences prefs) {
+        String rawUri = prefs.getString(KEY_ATTACHMENT_URI, "");
+        if (rawUri == null || rawUri.trim().isEmpty()) return;
+
+        Uri uri;
+        try {
+            uri = Uri.parse(rawUri);
+        } catch (RuntimeException ignored) {
+            clearStoredAttachmentDraft(prefs, null);
+            return;
+        }
+        String storedMime = prefs.getString(KEY_ATTACHMENT_MIME, null);
+        String storedName = prefs.getString(KEY_ATTACHMENT_NAME, null);
+        long storedSize = prefs.getLong(KEY_ATTACHMENT_SIZE, -1L);
+        if (!"content".equals(uri.getScheme())
+                || !hasPersistedReadPermission(uri)
+                || !MessagePolicy.attachmentReviewReady(storedMime, storedName, storedSize)) {
+            clearStoredAttachmentDraft(prefs, uri);
+            return;
+        }
+
+        AttachmentInfo fresh = attachmentInfo(uri);
+        String freshName = MessagePolicy.safeAttachmentName(fresh.displayName);
+        if (!MessagePolicy.attachmentReviewReady(fresh.mime, freshName, fresh.sizeBytes)
+                || !storedMime.equals(fresh.mime)
+                || !storedName.equals(freshName)
+                || storedSize != fresh.sizeBytes) {
+            clearStoredAttachmentDraft(prefs, uri);
+            return;
+        }
+
+        attachmentUri = uri;
+        attachmentMime = fresh.mime;
+        attachmentName = freshName;
+        attachmentSize = fresh.sizeBytes;
+        renderAttachment();
     }
 
     private void clearDraft() {
@@ -307,12 +430,33 @@ public final class MainActivity extends Activity {
     }
 
     private void clearAttachment() {
+        Uri previousUri = attachmentUri;
+        attachmentUri = null;
+        attachmentMime = null;
+        attachmentName = null;
+        attachmentSize = -1L;
+        removeAttachmentDraftKeys(getSharedPreferences(PREFS, MODE_PRIVATE).edit()).apply();
+        if (previousUri != null) releasePersistedReadPermission(previousUri);
+        renderAttachment();
+        refreshState();
+    }
+
+    private void clearStoredAttachmentDraft(SharedPreferences prefs, Uri uri) {
+        removeAttachmentDraftKeys(prefs.edit()).apply();
+        if (uri != null) releasePersistedReadPermission(uri);
         attachmentUri = null;
         attachmentMime = null;
         attachmentName = null;
         attachmentSize = -1L;
         renderAttachment();
         refreshState();
+    }
+
+    private SharedPreferences.Editor removeAttachmentDraftKeys(SharedPreferences.Editor edit) {
+        return edit.remove(KEY_ATTACHMENT_URI)
+                .remove(KEY_ATTACHMENT_MIME)
+                .remove(KEY_ATTACHMENT_NAME)
+                .remove(KEY_ATTACHMENT_SIZE);
     }
 
     private void renderAttachment() {
