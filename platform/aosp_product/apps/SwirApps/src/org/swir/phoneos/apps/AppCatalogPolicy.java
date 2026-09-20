@@ -6,10 +6,20 @@ import java.util.Locale;
 
 public final class AppCatalogPolicy {
     public static final int MAX_QUERY = 120;
+    public static final int MAX_CATALOG_APPS = 512;
+    public static final int MAX_LABEL = 120;
+    public static final int MAX_VERSION = 96;
 
     public enum UpdateSource {
         SYSTEM_IMAGE,
         EXTERNAL_INSTALLER,
+        LOCAL_UNKNOWN
+    }
+
+    public enum UpdateState {
+        SYSTEM_BASELINE,
+        SYSTEM_UPDATED,
+        EXTERNAL_MANAGED,
         LOCAL_UNKNOWN
     }
 
@@ -25,7 +35,7 @@ public final class AppCatalogPolicy {
     public static boolean matches(String label, String packageName, String query) {
         String needle = normalizeQuery(query);
         if (needle.isEmpty()) return true;
-        return (label == null ? "" : label.toLowerCase(Locale.ROOT)).contains(needle)
+        return normalizeLabel(label).toLowerCase(Locale.ROOT).contains(needle)
                 || (packageName == null ? "" : packageName.toLowerCase(Locale.ROOT)).contains(needle);
     }
 
@@ -33,6 +43,41 @@ public final class AppCatalogPolicy {
         return value != null
                 && value.matches("[A-Za-z0-9_]+(\\.[A-Za-z0-9_]+)+")
                 && value.length() <= 255;
+    }
+
+    public static boolean catalogCapacityAvailable(int uniqueCount) {
+        return uniqueCount >= 0 && uniqueCount < MAX_CATALOG_APPS;
+    }
+
+    public static String normalizeLabel(String value) {
+        return boundedDisplayText(value, MAX_LABEL);
+    }
+
+    public static String normalizeVersion(String versionName, long versionCode) {
+        String normalized = boundedDisplayText(versionName, MAX_VERSION);
+        if (!normalized.isEmpty()) return normalized;
+        return Long.toString(Math.max(0L, versionCode));
+    }
+
+    private static String boundedDisplayText(String value, int maxLength) {
+        if (value == null || maxLength <= 0) return "";
+        StringBuilder out = new StringBuilder(Math.min(value.length(), maxLength));
+        boolean pendingSpace = false;
+        for (int offset = 0; offset < value.length();) {
+            int codePoint = value.codePointAt(offset);
+            offset += Character.charCount(codePoint);
+            if (Character.isISOControl(codePoint) || Character.isWhitespace(codePoint)) {
+                if (out.length() > 0) pendingSpace = true;
+                continue;
+            }
+            int width = Character.charCount(codePoint);
+            int extra = pendingSpace && out.length() > 0 ? 1 : 0;
+            if (out.length() + extra + width > maxLength) break;
+            if (extra == 1) out.append(' ');
+            out.appendCodePoint(codePoint);
+            pendingSpace = false;
+        }
+        return out.toString();
     }
 
     public static String sha256(byte[] value) {
@@ -56,6 +101,13 @@ public final class AppCatalogPolicy {
         if (systemImage) return UpdateSource.SYSTEM_IMAGE;
         if (validPackageName(installerPackage)) return UpdateSource.EXTERNAL_INSTALLER;
         return UpdateSource.LOCAL_UNKNOWN;
+    }
+
+    public static UpdateState updateState(boolean systemImage, boolean updatedSystemApp, String installerPackage) {
+        if (updatedSystemApp) return UpdateState.SYSTEM_UPDATED;
+        if (systemImage) return UpdateState.SYSTEM_BASELINE;
+        if (validPackageName(installerPackage)) return UpdateState.EXTERNAL_MANAGED;
+        return UpdateState.LOCAL_UNKNOWN;
     }
 
     public static long normalizeUpdateTime(long epochMillis) {

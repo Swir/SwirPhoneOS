@@ -30,17 +30,17 @@ class AndroidAppSourceTests(unittest.TestCase):
             "alarms", "timers", "stopwatch", "world_clock", "offline_notes", "export", "local_calendar", "forecast",
             "provider_attribution", "unit_preferences", "local_media", "albums", "audio_recording", "microphone_state", "file_export",
             "local_contacts", "import_export", "provider_bridge", "supported_data_backup", "recovery_metadata",
-            "package_catalog", "signature_provenance", "root_state", "authorization_audit",
+            "package_catalog", "signature_provenance", "update_status", "root_state", "authorization_audit",
         ):
             self.assertIn(capability, summary["implemented_capabilities"])
         self.assertEqual(summary["remaining_target_capabilities"], [
             "access_history", "conversation_history", "guided_enable", "guided_unroot", "mms",
             "privacy_indicators", "recovery_handoff", "restore_orchestration",
-            "staged_update_state", "update_status", "video_capture",
+            "staged_update_state", "video_capture",
         ])
         for item in (
             "messages:mms", "messages:conversation_history", "camera:video_capture",
-            "backup:restore_orchestration", "apps:update_status",
+            "backup:restore_orchestration",
         ):
             self.assertIn(item, summary["remaining_app_capabilities"])
         for item in (
@@ -48,7 +48,7 @@ class AndroidAppSourceTests(unittest.TestCase):
             "browser:web_browsing", "browser:downloads", "browser:privacy_controls", "weather:forecast",
             "weather:provider_attribution", "weather:unit_preferences", "backup:supported_data_backup",
             "backup:recovery_metadata", "contacts:provider_bridge", "calendar:provider_bridge",
-            "calculator:scientific_math", "gallery:albums",
+            "calculator:scientific_math", "gallery:albums", "apps:update_status",
         ):
             self.assertNotIn(item, summary["remaining_app_capabilities"])
         self.assertFalse(summary["android_build_verified"])
@@ -165,6 +165,16 @@ class AndroidAppSourceTests(unittest.TestCase):
 
     def test_apps_must_keep_signature_provenance(self):
         self._replace_and_reject("apps/SwirApps/src/org/swir/phoneos/apps/MainActivity.java", "PackageManager.GET_SIGNING_CERTIFICATES", "0")
+
+    def test_apps_must_keep_local_update_state(self):
+        self._replace_and_reject("apps/SwirApps/src/org/swir/phoneos/apps/MainActivity.java", "ApplicationInfo.FLAG_UPDATED_SYSTEM_APP", "ApplicationInfo.FLAG_SYSTEM")
+
+    def test_apps_update_status_must_not_gain_install_path(self):
+        temp, product, registry = self._copy_fixture()
+        with temp:
+            activity = product / "apps/SwirApps/src/org/swir/phoneos/apps/MainActivity.java"
+            activity.write_text(activity.read_text(encoding="utf-8") + "\n// PackageInstaller\n", encoding="utf-8")
+            with self.assertRaises(AndroidAppSourceError): validate_android_app_sources(product, registry)
 
     def test_broad_storage_permission_primitive_is_rejected(self):
         temp, product, registry = self._copy_fixture()

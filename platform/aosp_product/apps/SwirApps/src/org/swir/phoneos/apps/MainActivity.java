@@ -61,6 +61,10 @@ public final class MainActivity extends Activity {
             if (position < shown.size()) details(shown.get(position));
             return true;
         });
+    }
+
+    @Override protected void onResume() {
+        super.onResume();
         loadApps();
     }
 
@@ -79,11 +83,13 @@ public final class MainActivity extends Activity {
         List<ResolveInfo> results = packageManager.queryIntentActivities(launcher, 0);
         Map<String, AppRow> unique = new LinkedHashMap<>();
         for (ResolveInfo info : results) {
+            if (!AppCatalogPolicy.catalogCapacityAvailable(unique.size())) break;
             if (info.activityInfo == null || info.activityInfo.applicationInfo == null) continue;
             String packageName = info.activityInfo.packageName;
             if (!AppCatalogPolicy.validPackageName(packageName) || unique.containsKey(packageName)) continue;
             ApplicationInfo app = info.activityInfo.applicationInfo;
-            String label = String.valueOf(packageManager.getApplicationLabel(app));
+            String label = AppCatalogPolicy.normalizeLabel(String.valueOf(packageManager.getApplicationLabel(app)));
+            if (label.isEmpty()) label = packageName;
             unique.put(packageName, inspect(packageManager, app, label, packageName));
         }
         all.clear();
@@ -97,10 +103,11 @@ public final class MainActivity extends Activity {
         String signature = "";
         String installerPackage = "";
         long lastUpdateTime = 0L;
-        boolean systemImage = (app.flags & (ApplicationInfo.FLAG_SYSTEM | ApplicationInfo.FLAG_UPDATED_SYSTEM_APP)) != 0;
+        boolean updatedSystemApp = (app.flags & ApplicationInfo.FLAG_UPDATED_SYSTEM_APP) != 0;
+        boolean systemImage = (app.flags & ApplicationInfo.FLAG_SYSTEM) != 0 || updatedSystemApp;
         try {
             PackageInfo info = packageManager.getPackageInfo(packageName, PackageManager.GET_SIGNING_CERTIFICATES);
-            version = info.versionName == null ? Long.toString(info.getLongVersionCode()) : info.versionName;
+            version = AppCatalogPolicy.normalizeVersion(info.versionName, info.getLongVersionCode());
             lastUpdateTime = AppCatalogPolicy.normalizeUpdateTime(info.lastUpdateTime);
             if (info.signingInfo != null) {
                 Signature[] signers = info.signingInfo.getApkContentsSigners();
@@ -108,14 +115,18 @@ public final class MainActivity extends Activity {
                     signature = AppCatalogPolicy.shortDigest(AppCatalogPolicy.sha256(signers[0].toByteArray()));
                 }
             }
-            InstallSourceInfo source = packageManager.getInstallSourceInfo(packageName);
-            if (source != null && source.getInstallingPackageName() != null) {
-                installerPackage = source.getInstallingPackageName();
-            }
         } catch (PackageManager.NameNotFoundException ignored) {
         }
+        try {
+            InstallSourceInfo source = packageManager.getInstallSourceInfo(packageName);
+            String sourcePackage = source == null ? null : source.getInstallingPackageName();
+            if (AppCatalogPolicy.validPackageName(sourcePackage)) installerPackage = sourcePackage;
+        } catch (PackageManager.NameNotFoundException | SecurityException ignored) {
+            // Keep the source/status local and unknown when Android withholds provenance.
+        }
         AppCatalogPolicy.UpdateSource updateSource = AppCatalogPolicy.updateSource(systemImage, installerPackage);
-        return new AppRow(label, packageName, version, signature, updateSource, lastUpdateTime);
+        AppCatalogPolicy.UpdateState updateState = AppCatalogPolicy.updateState(systemImage, updatedSystemApp, installerPackage);
+        return new AppRow(label, packageName, version, signature, updateSource, updateState, lastUpdateTime);
     }
 
     private void filter() {
@@ -133,6 +144,7 @@ public final class MainActivity extends Activity {
                         + "\n" + getString(R.string.version_format, row.version)
                         + "\n" + getString(R.string.signature_format, signer)
                         + "\n" + getString(R.string.update_source_format, updateSourceLabel(row.updateSource))
+                        + "\n" + getString(R.string.update_status_format, updateStateLabel(row.updateState))
                         + "\n" + getString(R.string.last_updated_format, updated));
             }
         }
@@ -154,6 +166,20 @@ public final class MainActivity extends Activity {
         }
     }
 
+    private String updateStateLabel(AppCatalogPolicy.UpdateState state) {
+        switch (state) {
+            case SYSTEM_BASELINE:
+                return getString(R.string.update_status_system_baseline);
+            case SYSTEM_UPDATED:
+                return getString(R.string.update_status_system_updated);
+            case EXTERNAL_MANAGED:
+                return getString(R.string.update_status_external);
+            case LOCAL_UNKNOWN:
+            default:
+                return getString(R.string.update_status_local);
+        }
+    }
+
     private void launch(AppRow row) {
         Intent intent = getPackageManager().getLaunchIntentForPackage(row.packageName);
         if (intent != null) startActivity(intent);
@@ -171,15 +197,18 @@ public final class MainActivity extends Activity {
         final String version;
         final String signature;
         final AppCatalogPolicy.UpdateSource updateSource;
+        final AppCatalogPolicy.UpdateState updateState;
         final long lastUpdateTime;
 
         AppRow(String label, String packageName, String version, String signature,
-               AppCatalogPolicy.UpdateSource updateSource, long lastUpdateTime) {
-            this.label = label == null ? "" : label;
+               AppCatalogPolicy.UpdateSource updateSource, AppCatalogPolicy.UpdateState updateState,
+               long lastUpdateTime) {
+            this.label = AppCatalogPolicy.normalizeLabel(label);
             this.packageName = packageName;
             this.version = version == null ? "" : version;
             this.signature = signature == null ? "" : signature;
             this.updateSource = updateSource == null ? AppCatalogPolicy.UpdateSource.LOCAL_UNKNOWN : updateSource;
+            this.updateState = updateState == null ? AppCatalogPolicy.UpdateState.LOCAL_UNKNOWN : updateState;
             this.lastUpdateTime = AppCatalogPolicy.normalizeUpdateTime(lastUpdateTime);
         }
     }
