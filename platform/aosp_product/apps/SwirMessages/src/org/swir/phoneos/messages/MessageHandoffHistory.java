@@ -11,12 +11,14 @@ import java.util.List;
  *
  * This records that Swir Messages handed text compose metadata to a compatible Android app.
  * It deliberately does not claim that an SMS or MMS was sent, delivered, or received, and it never
- * stores attached media bytes.
+ * stores attached media bytes. Message bodies are reduced to the same short, sanitized preview shown
+ * in the UI before they are persisted so the history does not retain the full compose text.
  */
 public final class MessageHandoffHistory {
     public static final int MAX_ENTRIES = 8;
     public static final int MAX_SERIALIZED_LENGTH = 64 * 1024;
     public static final int MAX_PREVIEW_LENGTH = 96;
+    public static final int MAX_PREVIEW_CODEPOINTS = MAX_PREVIEW_LENGTH;
 
     private MessageHandoffHistory() {}
 
@@ -34,13 +36,13 @@ public final class MessageHandoffHistory {
 
     public static String prepend(String encoded, long timestampMillis, String recipients, String body) {
         String normalizedRecipients = MessagePolicy.normalizeRecipients(recipients);
-        String normalizedBody = MessagePolicy.normalizeBody(body);
-        if (timestampMillis <= 0 || normalizedRecipients.isEmpty() || normalizedBody.trim().isEmpty()) {
+        String storedBody = preview(body);
+        if (timestampMillis <= 0 || normalizedRecipients.isEmpty() || storedBody.isEmpty()) {
             throw new IllegalArgumentException("invalid handoff history entry");
         }
 
         List<Entry> entries = new ArrayList<>();
-        entries.add(new Entry(timestampMillis, normalizedRecipients, normalizedBody));
+        entries.add(new Entry(timestampMillis, normalizedRecipients, storedBody));
         for (Entry entry : decode(encoded)) {
             if (entries.size() >= MAX_ENTRIES) break;
             entries.add(entry);
@@ -64,10 +66,46 @@ public final class MessageHandoffHistory {
     }
 
     public static String preview(String body) {
-        String normalized = MessagePolicy.normalizeBody(body).trim().replace('\n', ' ');
-        while (normalized.contains("  ")) normalized = normalized.replace("  ", " ");
-        if (normalized.length() <= MAX_PREVIEW_LENGTH) return normalized;
-        return normalized.substring(0, MAX_PREVIEW_LENGTH - 1) + "…";
+        String normalized = MessagePolicy.normalizeBody(body).trim();
+        if (normalized.isEmpty()) return "";
+
+        StringBuilder out = new StringBuilder();
+        boolean pendingSpace = false;
+        boolean truncated = false;
+        int codePoints = 0;
+        for (int offset = 0; offset < normalized.length();) {
+            int codePoint = normalized.codePointAt(offset);
+            offset += Character.charCount(codePoint);
+
+            if (Character.isWhitespace(codePoint) || Character.isISOControl(codePoint)) {
+                pendingSpace = out.length() > 0;
+                continue;
+            }
+
+            if (pendingSpace) {
+                if (codePoints >= MAX_PREVIEW_CODEPOINTS) {
+                    truncated = true;
+                    break;
+                }
+                out.append(' ');
+                codePoints++;
+                pendingSpace = false;
+            }
+            if (codePoints >= MAX_PREVIEW_CODEPOINTS) {
+                truncated = true;
+                break;
+            }
+            out.appendCodePoint(codePoint);
+            codePoints++;
+            if (offset < normalized.length() && codePoints >= MAX_PREVIEW_CODEPOINTS) truncated = true;
+        }
+
+        if (truncated && out.length() > 0) {
+            int last = out.codePointBefore(out.length());
+            out.delete(out.length() - Character.charCount(last), out.length());
+            out.append('…');
+        }
+        return out.toString();
     }
 
     private static String encode(List<Entry> entries) {
@@ -76,8 +114,8 @@ public final class MessageHandoffHistory {
         for (Entry entry : entries) {
             if (entry == null || count >= MAX_ENTRIES) break;
             String recipients = MessagePolicy.normalizeRecipients(entry.recipients);
-            String body = MessagePolicy.normalizeBody(entry.body);
-            if (entry.timestampMillis <= 0 || recipients.isEmpty() || body.trim().isEmpty()) continue;
+            String body = preview(entry.body);
+            if (entry.timestampMillis <= 0 || recipients.isEmpty() || body.isEmpty()) continue;
             if (out.length() > 0) out.append('\n');
             out.append(entry.timestampMillis)
                     .append('\t').append(encodeText(recipients))
@@ -97,8 +135,8 @@ public final class MessageHandoffHistory {
             long timestamp = Long.parseLong(fields[0]);
             if (timestamp <= 0) return null;
             String recipients = MessagePolicy.normalizeRecipients(decodeText(fields[1]));
-            String body = MessagePolicy.normalizeBody(decodeText(fields[2]));
-            if (recipients.isEmpty() || body.trim().isEmpty()) return null;
+            String body = preview(decodeText(fields[2]));
+            if (recipients.isEmpty() || body.isEmpty()) return null;
             return new Entry(timestamp, recipients, body);
         } catch (IllegalArgumentException ex) {
             return null;
