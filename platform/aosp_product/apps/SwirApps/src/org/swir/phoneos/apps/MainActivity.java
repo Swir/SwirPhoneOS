@@ -61,6 +61,10 @@ public final class MainActivity extends Activity {
             if (position < shown.size()) details(shown.get(position));
             return true;
         });
+    }
+
+    @Override protected void onResume() {
+        super.onResume();
         loadApps();
     }
 
@@ -79,11 +83,13 @@ public final class MainActivity extends Activity {
         List<ResolveInfo> results = packageManager.queryIntentActivities(launcher, 0);
         Map<String, AppRow> unique = new LinkedHashMap<>();
         for (ResolveInfo info : results) {
+            if (!AppCatalogPolicy.catalogCapacityAvailable(unique.size())) break;
             if (info.activityInfo == null || info.activityInfo.applicationInfo == null) continue;
             String packageName = info.activityInfo.packageName;
             if (!AppCatalogPolicy.validPackageName(packageName) || unique.containsKey(packageName)) continue;
             ApplicationInfo app = info.activityInfo.applicationInfo;
-            String label = String.valueOf(packageManager.getApplicationLabel(app));
+            String label = AppCatalogPolicy.normalizeLabel(String.valueOf(packageManager.getApplicationLabel(app)));
+            if (label.isEmpty()) label = packageName;
             unique.put(packageName, inspect(packageManager, app, label, packageName));
         }
         all.clear();
@@ -101,7 +107,7 @@ public final class MainActivity extends Activity {
         boolean systemImage = (app.flags & ApplicationInfo.FLAG_SYSTEM) != 0 || updatedSystemApp;
         try {
             PackageInfo info = packageManager.getPackageInfo(packageName, PackageManager.GET_SIGNING_CERTIFICATES);
-            version = info.versionName == null ? Long.toString(info.getLongVersionCode()) : info.versionName;
+            version = AppCatalogPolicy.normalizeVersion(info.versionName, info.getLongVersionCode());
             lastUpdateTime = AppCatalogPolicy.normalizeUpdateTime(info.lastUpdateTime);
             if (info.signingInfo != null) {
                 Signature[] signers = info.signingInfo.getApkContentsSigners();
@@ -197,7 +203,7 @@ public final class MainActivity extends Activity {
         AppRow(String label, String packageName, String version, String signature,
                AppCatalogPolicy.UpdateSource updateSource, AppCatalogPolicy.UpdateState updateState,
                long lastUpdateTime) {
-            this.label = label == null ? "" : label;
+            this.label = AppCatalogPolicy.normalizeLabel(label);
             this.packageName = packageName;
             this.version = version == null ? "" : version;
             this.signature = signature == null ? "" : signature;

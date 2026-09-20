@@ -10,6 +10,17 @@ public final class AppCatalogPolicyHostTest {
         check(AppCatalogPolicy.matches("Swir Files", "org.swir.phoneos.files", "phoneos"), "package search");
         check(AppCatalogPolicy.validPackageName("org.swir.phoneos.files"), "package validation");
         check(!AppCatalogPolicy.validPackageName("../bad"), "bad package rejected");
+        check("Swir Files".equals(AppCatalogPolicy.normalizeLabel("  Swir\n\u0000Files  ")), "label controls collapsed");
+        StringBuilder longLabel = new StringBuilder();
+        for (int i = 0; i < AppCatalogPolicy.MAX_LABEL + 20; i++) longLabel.append('x');
+        check(AppCatalogPolicy.normalizeLabel(longLabel.toString()).length() == AppCatalogPolicy.MAX_LABEL, "label bound");
+        check("1.2.3 beta".equals(AppCatalogPolicy.normalizeVersion("  1.2.3\tbeta ", 7L)), "version normalized");
+        check("42".equals(AppCatalogPolicy.normalizeVersion("\n\u0000", 42L)), "version fallback");
+        check("0".equals(AppCatalogPolicy.normalizeVersion(null, -1L)), "negative version fallback bounded");
+        check(AppCatalogPolicy.catalogCapacityAvailable(0), "catalog starts available");
+        check(AppCatalogPolicy.catalogCapacityAvailable(AppCatalogPolicy.MAX_CATALOG_APPS - 1), "catalog last slot available");
+        check(!AppCatalogPolicy.catalogCapacityAvailable(AppCatalogPolicy.MAX_CATALOG_APPS), "catalog hard limit");
+        check(!AppCatalogPolicy.catalogCapacityAvailable(-1), "negative catalog count rejected");
         String digest = AppCatalogPolicy.sha256(new byte[]{1, 2, 3});
         check(digest.length() == 64 && AppCatalogPolicy.shortDigest(digest).length() == 16, "signature digest");
         check("".equals(AppCatalogPolicy.shortDigest("bad")), "bad digest rejected");

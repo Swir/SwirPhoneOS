@@ -58,6 +58,30 @@ class SwirAppsUpdateStatusSourceTests(unittest.TestCase):
             with self.subTest(token=token):
                 self.assertIn(token, self.activity)
 
+    def test_catalog_refresh_and_untrusted_display_metadata_are_bounded(self) -> None:
+        activity_required = (
+            "@Override protected void onResume()",
+            "super.onResume();",
+            "loadApps();",
+            "AppCatalogPolicy.catalogCapacityAvailable(unique.size())",
+            "AppCatalogPolicy.normalizeLabel",
+            "AppCatalogPolicy.normalizeVersion",
+        )
+        for token in activity_required:
+            with self.subTest(token=token):
+                self.assertIn(token, self.activity)
+        policy_required = (
+            "MAX_CATALOG_APPS = 512",
+            "MAX_LABEL = 120",
+            "MAX_VERSION = 96",
+            "Character.isISOControl(codePoint)",
+            "Character.isWhitespace(codePoint)",
+            "appendCodePoint(codePoint)",
+        )
+        for token in policy_required:
+            with self.subTest(token=token):
+                self.assertIn(token, self.policy)
+
     def test_install_source_lookup_fails_closed_without_crashing_catalog(self) -> None:
         self.assertIn(
             "catch (PackageManager.NameNotFoundException | SecurityException ignored)",
