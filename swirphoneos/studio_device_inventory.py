@@ -14,6 +14,7 @@ import os
 import subprocess
 import sys
 from typing import Callable
+import unicodedata
 
 _MAX_OUTPUT_CHARS = 256 * 1024
 _MAX_FIELD_CHARS = 128
@@ -69,7 +70,11 @@ class DeviceInventoryEvidence:
 
 
 def _clean_field(value: str, *, limit: int = _MAX_FIELD_CHARS) -> str:
-    collapsed = " ".join(value.replace("\x00", "").split())
+    # Transport metadata is untrusted display text. Remove Unicode control,
+    # bidi-format and other invisible control categories before whitespace
+    # normalization so logs/GUI text cannot be visually spoofed by a device.
+    visible = "".join(" " if unicodedata.category(char).startswith("C") else char for char in value)
+    collapsed = " ".join(visible.split())
     return collapsed[:limit]
 
 
