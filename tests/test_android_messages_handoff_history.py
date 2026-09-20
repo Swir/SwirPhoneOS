@@ -42,13 +42,20 @@ class SwirMessagesHandoffHistoryTests(unittest.TestCase):
             self.assertNotIn(forbidden, activity)
             self.assertNotIn(forbidden, history)
 
-    def test_history_storage_is_bounded(self):
+    def test_history_storage_is_bounded_and_body_minimized(self):
         source = HISTORY.read_text(encoding="utf-8")
         self.assertIn("MAX_ENTRIES = 8", source)
         self.assertIn("MAX_SERIALIZED_LENGTH = 64 * 1024", source)
-        self.assertIn("MAX_PREVIEW_LENGTH = 96", source)
+        self.assertIn("MAX_PREVIEW_CODEPOINTS = 96", source)
         self.assertIn("if (entries.size() >= MAX_ENTRIES) break", source)
         self.assertIn("if (out.length() > MAX_SERIALIZED_LENGTH)", source)
+        self.assertIn("String storedBody = preview(body)", source)
+        self.assertIn("String body = preview(entry.body)", source)
+        self.assertIn("String body = preview(decodeText(fields[2]))", source)
+        self.assertIn("Character.isWhitespace(codePoint) || Character.isISOControl(codePoint)", source)
+        self.assertIn("appendCodePoint(codePoint)", source)
+        self.assertIn("append('…')", source)
+        self.assertNotIn("String normalizedBody = MessagePolicy.normalizeBody(body);", source)
 
     def test_history_source_is_staged_exactly_once(self):
         data = json.loads(STAGE_FRAGMENT.read_text(encoding="utf-8"))
