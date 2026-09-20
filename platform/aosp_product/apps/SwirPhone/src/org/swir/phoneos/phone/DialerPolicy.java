@@ -15,8 +15,9 @@ public final class DialerPolicy {
         for (int offset = 0; offset < value.length();) {
             int codePoint = value.codePointAt(offset);
             offset += Character.charCount(codePoint);
-            int digit = Character.digit(codePoint, 10);
-            if (digit >= 0) {
+            if (Character.isDigit(codePoint)) {
+                int digit = Character.digit(codePoint, 10);
+                if (digit < 0) return "";
                 out.append((char) ('0' + digit));
                 digits++;
             } else if (codePoint == '+' && out.length() == 0 && !plusSeen) {
@@ -43,10 +44,10 @@ public final class DialerPolicy {
 
     public static String appendKey(String current, char key) {
         int digit = Character.digit(key, 10);
-        if (!(digit >= 0 || key == '*' || key == '#')) return current == null ? "" : current;
+        if (!(Character.isDigit(key) || key == '*' || key == '#')) return current == null ? "" : current;
         String base = current == null ? "" : current;
         if (base.codePointCount(0, base.length()) >= MAX_DIAL_LENGTH) return base;
-        return digit >= 0 ? base + (char) ('0' + digit) : base + key;
+        return Character.isDigit(key) && digit >= 0 ? base + (char) ('0' + digit) : base + key;
     }
 
     public static String eraseLast(String current) {
