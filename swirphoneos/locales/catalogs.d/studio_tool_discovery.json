@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "source_locale": "en",
+  "strings": {
+    "en": {
+      "studio_detect_tool": "Detect SDK tool",
+      "tool_found": "SDK tool found locally. Review the path before inspecting the phone.",
+      "tool_not_found": "No SDK tool was found automatically. Use Browse to select a trusted executable."
+    },
+    "pl": {
+      "studio_detect_tool": "Wykryj narzędzie SDK",
+      "tool_found": "Znaleziono lokalne narzędzie SDK. Sprawdź ścieżkę przed odczytem telefonu.",
+      "tool_not_found": "Nie znaleziono automatycznie narzędzia SDK. Użyj opcji Wybierz, aby wskazać zaufany plik."
+    },
+    "nb": {
+      "studio_detect_tool": "Finn SDK-verktøy",
+      "tool_found": "SDK-verktøy funnet lokalt. Kontroller banen før telefonen undersøkes.",
+      "tool_not_found": "Fant ikke noe SDK-verktøy automatisk. Bruk Velg for å angi en betrodd kjørbar fil."
+    },
+    "de": {
+      "studio_detect_tool": "SDK-Werkzeug erkennen",
+      "tool_found": "SDK-Werkzeug lokal gefunden. Pfad vor der Geräteprüfung kontrollieren.",
+      "tool_not_found": "Kein SDK-Werkzeug automatisch gefunden. Über Durchsuchen eine vertrauenswürdige Datei auswählen."
+    },
+    "es": {
+      "studio_detect_tool": "Detectar herramienta SDK",
+      "tool_found": "Herramienta SDK encontrada localmente. Revisa la ruta antes de inspeccionar el teléfono.",
+      "tool_not_found": "No se encontró automáticamente una herramienta SDK. Usa Examinar para elegir un ejecutable de confianza."
+    },
+    "fr": {
+      "studio_detect_tool": "Détecter l’outil SDK",
+      "tool_found": "Outil SDK trouvé localement. Vérifiez le chemin avant d’inspecter le téléphone.",
+      "tool_not_found": "Aucun outil SDK n’a été trouvé automatiquement. Utilisez Parcourir pour choisir un exécutable approuvé."
+    },
+    "pt": {
+      "studio_detect_tool": "Detectar ferramenta SDK",
+      "tool_found": "Ferramenta SDK encontrada localmente. Revise o caminho antes de inspecionar o telefone.",
+      "tool_not_found": "Nenhuma ferramenta SDK foi encontrada automaticamente. Use Procurar para escolher um executável confiável."
+    },
+    "ar": {
+      "studio_detect_tool": "اكتشاف أداة SDK",
+      "tool_found": "تم العثور على أداة SDK محليًا. راجع المسار قبل فحص الهاتف.",
+      "tool_not_found": "لم يتم العثور على أداة SDK تلقائيًا. استخدم الاستعراض لاختيار ملف تنفيذي موثوق."
+    }
+  }
+}
