@@ -36,8 +36,9 @@ public final class MessagePolicy {
         for (int offset = 0; offset < value.length();) {
             int codePoint = value.codePointAt(offset);
             offset += Character.charCount(codePoint);
-            int digit = Character.digit(codePoint, 10);
-            if (digit >= 0) {
+            if (Character.isDigit(codePoint)) {
+                int digit = Character.digit(codePoint, 10);
+                if (digit < 0) return "";
                 out.append((char) ('0' + digit));
                 digits++;
             } else if (codePoint == '+' && out.length() == 0) {
