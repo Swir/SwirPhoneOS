@@ -50,7 +50,7 @@ def render_device_inventory(app: Studio, evidence: DeviceInventoryEvidence) -> s
                 transport=item.transport.upper(),
                 state=item.state,
                 identifier=item.identifier_sha256[:12],
-                model=item.model or "—",
+                model=item.model or app.tr("none"),
             )
         )
     return "\n".join(lines)
