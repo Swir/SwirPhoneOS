@@ -5,10 +5,13 @@ from hashlib import sha256
 from pathlib import Path
 import inspect
 import subprocess
+from unittest.mock import patch
 
 import pytest
 
 from swirphoneos.studio_device_inventory import (
+    DeviceInventoryEvidence,
+    DeviceObservation,
     collect_device_inventory,
     parse_adb_devices,
     parse_fastboot_devices,
@@ -170,3 +173,83 @@ def test_source_does_not_contain_mutating_transport_commands() -> None:
     )
     for command in forbidden:
         assert command not in source.lower()
+
+
+class _Value:
+    def __init__(self, value: str) -> None:
+        self.value = value
+
+    def get(self) -> str:
+        return self.value
+
+
+class _Session:
+    busy = False
+
+
+class _App:
+    def __init__(self, transport: str = "adb", path: str = "/reviewed/adb") -> None:
+        self._transport = transport
+        self.tool_path = _Value(path)
+        self.session = _Session()
+        self.status_key = "ready"
+        self.updated = 0
+        self.report = ""
+
+    def transport_code(self) -> str:
+        return self._transport
+
+    def update_status(self) -> None:
+        self.updated += 1
+
+    def show_report(self, text: str) -> None:
+        self.report = text
+
+    def tr(self, key: str, **values: object) -> str:
+        if key == "inventory_item":
+            return "{transport}|{state}|{identifier}|{model}".format(**values)
+        return key
+
+
+def test_desktop_inventory_is_explicit_and_uses_only_current_transport_path() -> None:
+    from swirphoneos.studio_desktop import inspect_current_devices
+
+    app = _App()
+    evidence = DeviceInventoryEvidence(
+        observations=(DeviceObservation("adb", "a" * 64, "device", model="AC2003"),),
+        adb_attempted=True,
+        fastboot_attempted=False,
+    )
+    with patch("swirphoneos.studio_desktop.collect_device_inventory", return_value=evidence) as collect:
+        result = inspect_current_devices(app)  # type: ignore[arg-type]
+
+    assert result == evidence
+    collect.assert_called_once_with(adb_path=Path("/reviewed/adb"))
+    assert app.status_key == "inventory_complete"
+    assert app.updated == 1
+    assert "aaaaaaaaaaaa" in app.report
+    assert "AC2003" in app.report
+
+
+def test_desktop_inventory_failure_is_fail_closed_and_localized() -> None:
+    from swirphoneos.studio_desktop import inspect_current_devices
+
+    app = _App()
+    with patch("swirphoneos.studio_desktop.collect_device_inventory", side_effect=TimeoutError("slow")):
+        result = inspect_current_devices(app)  # type: ignore[arg-type]
+
+    assert result is None
+    assert app.status_key == "inventory_failed"
+    assert app.report == "inventory_failed"
+
+
+def test_desktop_inventory_requires_reviewed_tool_path_before_execution() -> None:
+    from swirphoneos.studio_desktop import inspect_current_devices
+
+    app = _App(path="")
+    with patch("swirphoneos.studio_desktop.collect_device_inventory") as collect:
+        result = inspect_current_devices(app)  # type: ignore[arg-type]
+
+    assert result is None
+    collect.assert_not_called()
+    assert app.status_key == "tool_not_found"
