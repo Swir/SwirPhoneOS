@@ -109,11 +109,14 @@ public final class MainActivity extends Activity {
                     signature = AppCatalogPolicy.shortDigest(AppCatalogPolicy.sha256(signers[0].toByteArray()));
                 }
             }
-            InstallSourceInfo source = packageManager.getInstallSourceInfo(packageName);
-            if (source != null && source.getInstallingPackageName() != null) {
-                installerPackage = source.getInstallingPackageName();
-            }
         } catch (PackageManager.NameNotFoundException ignored) {
+        }
+        try {
+            InstallSourceInfo source = packageManager.getInstallSourceInfo(packageName);
+            String sourcePackage = source == null ? null : source.getInstallingPackageName();
+            if (AppCatalogPolicy.validPackageName(sourcePackage)) installerPackage = sourcePackage;
+        } catch (PackageManager.NameNotFoundException | SecurityException ignored) {
+            // Keep the source/status local and unknown when Android withholds provenance.
         }
         AppCatalogPolicy.UpdateSource updateSource = AppCatalogPolicy.updateSource(systemImage, installerPackage);
         AppCatalogPolicy.UpdateState updateState = AppCatalogPolicy.updateState(systemImage, updatedSystemApp, installerPackage);
