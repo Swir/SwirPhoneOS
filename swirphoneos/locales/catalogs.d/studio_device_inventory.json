@@ -1,0 +1,86 @@
+{
+  "schema_version": 1,
+  "source_locale": "en",
+  "strings": {
+    "en": {
+      "studio_inspect_devices": "Inspect connected devices",
+      "inventory_complete": "Read-only device inventory complete.",
+      "inventory_failed": "Read-only device inventory failed. No device changes were attempted.",
+      "inventory_title": "Read-only connected-device inventory",
+      "inventory_none": "No device was reported by the selected transport.",
+      "inventory_item": "{transport} · {state} · ID hash {identifier} · model {model}",
+      "inventory_profile_hint": "Profile hint only: {name} ({profile}) · {status}. Identity and SwirPhoneOS support are not verified.",
+      "inventory_profile_ambiguous": "Multiple metadata profiles matched; no device profile was selected."
+    },
+    "pl": {
+      "studio_inspect_devices": "Sprawdź podłączone urządzenia",
+      "inventory_complete": "Zakończono bezpieczny odczyt podłączonych urządzeń.",
+      "inventory_failed": "Odczyt urządzeń nie powiódł się. Nie wykonano żadnych zmian na urządzeniu.",
+      "inventory_title": "Bezpieczny odczyt podłączonych urządzeń",
+      "inventory_none": "Wybrany transport nie zgłosił żadnego urządzenia.",
+      "inventory_item": "{transport} · {state} · skrót ID {identifier} · model {model}",
+      "inventory_profile_hint": "Tylko wskazówka profilu: {name} ({profile}) · {status}. Tożsamość i obsługa SwirPhoneOS nie są zweryfikowane.",
+      "inventory_profile_ambiguous": "Pasuje wiele profili metadanych; nie wybrano profilu urządzenia."
+    },
+    "nb": {
+      "studio_inspect_devices": "Kontroller tilkoblede enheter",
+      "inventory_complete": "Skrivebeskyttet enhetsoversikt er fullført.",
+      "inventory_failed": "Enhetsoversikten mislyktes. Ingen endringer ble gjort på enheten.",
+      "inventory_title": "Skrivebeskyttet oversikt over tilkoblede enheter",
+      "inventory_none": "Den valgte transporten rapporterte ingen enhet.",
+      "inventory_item": "{transport} · {state} · ID-hash {identifier} · modell {model}",
+      "inventory_profile_hint": "Kun profilhint: {name} ({profile}) · {status}. Identitet og SwirPhoneOS-støtte er ikke verifisert.",
+      "inventory_profile_ambiguous": "Flere metadataprofiler samsvarer; ingen enhetsprofil ble valgt."
+    },
+    "de": {
+      "studio_inspect_devices": "Verbundene Geräte prüfen",
+      "inventory_complete": "Schreibgeschützte Geräteerfassung abgeschlossen.",
+      "inventory_failed": "Geräteerfassung fehlgeschlagen. Am Gerät wurden keine Änderungen vorgenommen.",
+      "inventory_title": "Schreibgeschützte Erfassung verbundener Geräte",
+      "inventory_none": "Der ausgewählte Transport meldete kein Gerät.",
+      "inventory_item": "{transport} · {state} · ID-Hash {identifier} · Modell {model}",
+      "inventory_profile_hint": "Nur Profilhinweis: {name} ({profile}) · {status}. Identität und SwirPhoneOS-Unterstützung sind nicht verifiziert.",
+      "inventory_profile_ambiguous": "Mehrere Metadatenprofile stimmen überein; es wurde kein Geräteprofil ausgewählt."
+    },
+    "es": {
+      "studio_inspect_devices": "Inspeccionar dispositivos conectados",
+      "inventory_complete": "Inventario de dispositivos de solo lectura completado.",
+      "inventory_failed": "El inventario falló. No se realizó ningún cambio en el dispositivo.",
+      "inventory_title": "Inventario de dispositivos conectados de solo lectura",
+      "inventory_none": "El transporte seleccionado no informó ningún dispositivo.",
+      "inventory_item": "{transport} · {state} · hash de ID {identifier} · modelo {model}",
+      "inventory_profile_hint": "Solo indicio de perfil: {name} ({profile}) · {status}. La identidad y la compatibilidad con SwirPhoneOS no están verificadas.",
+      "inventory_profile_ambiguous": "Coinciden varios perfiles de metadatos; no se seleccionó ningún perfil de dispositivo."
+    },
+    "fr": {
+      "studio_inspect_devices": "Inspecter les appareils connectés",
+      "inventory_complete": "Inventaire des appareils en lecture seule terminé.",
+      "inventory_failed": "L’inventaire a échoué. Aucune modification n’a été effectuée sur l’appareil.",
+      "inventory_title": "Inventaire en lecture seule des appareils connectés",
+      "inventory_none": "Le transport sélectionné n’a signalé aucun appareil.",
+      "inventory_item": "{transport} · {state} · empreinte ID {identifier} · modèle {model}",
+      "inventory_profile_hint": "Indice de profil uniquement : {name} ({profile}) · {status}. L’identité et la prise en charge de SwirPhoneOS ne sont pas vérifiées.",
+      "inventory_profile_ambiguous": "Plusieurs profils de métadonnées correspondent ; aucun profil d’appareil n’a été sélectionné."
+    },
+    "pt": {
+      "studio_inspect_devices": "Inspecionar dispositivos conectados",
+      "inventory_complete": "Inventário de dispositivos somente leitura concluído.",
+      "inventory_failed": "O inventário falhou. Nenhuma alteração foi feita no dispositivo.",
+      "inventory_title": "Inventário somente leitura de dispositivos conectados",
+      "inventory_none": "O transporte selecionado não informou nenhum dispositivo.",
+      "inventory_item": "{transport} · {state} · hash do ID {identifier} · modelo {model}",
+      "inventory_profile_hint": "Apenas indicação de perfil: {name} ({profile}) · {status}. A identidade e o suporte do SwirPhoneOS não foram verificados.",
+      "inventory_profile_ambiguous": "Vários perfis de metadados correspondem; nenhum perfil de dispositivo foi selecionado."
+    },
+    "ar": {
+      "studio_inspect_devices": "فحص الأجهزة المتصلة",
+      "inventory_complete": "اكتمل جرد الأجهزة للقراءة فقط.",
+      "inventory_failed": "فشل جرد الأجهزة. لم يتم إجراء أي تغييرات على الجهاز.",
+      "inventory_title": "جرد الأجهزة المتصلة للقراءة فقط",
+      "inventory_none": "لم تبلغ وسيلة النقل المحددة عن أي جهاز.",
+      "inventory_item": "{transport} · {state} · تجزئة المعرّف {identifier} · الطراز {model}",
+      "inventory_profile_hint": "تلميح ملف تعريف فقط: {name} ({profile}) · {status}. لم يتم التحقق من الهوية أو دعم SwirPhoneOS.",
+      "inventory_profile_ambiguous": "تطابقت عدة ملفات تعريف للبيانات الوصفية؛ لم يتم تحديد ملف تعريف للجهاز."
+    }
+  }
+}
