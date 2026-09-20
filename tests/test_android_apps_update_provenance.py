@@ -26,6 +26,11 @@ class SwirAppsUpdateProvenanceTests(unittest.TestCase):
             "EXTERNAL_INSTALLER",
             "LOCAL_UNKNOWN",
             "updateSource",
+            "enum UpdateState",
+            "SYSTEM_BASELINE",
+            "SYSTEM_UPDATED",
+            "EXTERNAL_MANAGED",
+            "updateState",
             "normalizeUpdateTime",
             "validPackageName",
         ):
@@ -40,7 +45,7 @@ class SwirAppsUpdateProvenanceTests(unittest.TestCase):
             "lastUpdateTime",
             "DateFormat.getDateTimeInstance",
             "R.string.update_source_format",
-            "R.string.last_updated_format",
+            "R.string.update_status_format",
             "Settings.ACTION_APPLICATION_DETAILS_SETTINGS",
         ):
             self.assertIn(token, activity)
