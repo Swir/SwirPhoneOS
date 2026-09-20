@@ -35,6 +35,38 @@ class SwirMessagesMediaHandoffTests(unittest.TestCase):
         ):
             self.assertIn(token, source)
 
+    def test_media_draft_uses_persisted_read_grant_and_fails_closed_on_restore(self):
+        source = ACTIVITY.read_text(encoding="utf-8")
+        for token in (
+            "Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION",
+            "takePersistableUriPermission",
+            "getPersistedUriPermissions",
+            "permission.isReadPermission()",
+            "releasePersistableUriPermission",
+            'KEY_ATTACHMENT_URI = "attachment_uri"',
+            'KEY_ATTACHMENT_MIME = "attachment_mime"',
+            'KEY_ATTACHMENT_NAME = "attachment_name"',
+            'KEY_ATTACHMENT_SIZE = "attachment_size"',
+            "persistAttachmentDraft",
+            "restoreAttachmentDraft",
+            "revalidateCurrentAttachment",
+            "storedMime.equals(fresh.mime)",
+            "storedName.equals(freshName)",
+            "storedSize != fresh.sizeBytes",
+        ):
+            self.assertIn(token, source)
+        self.assertIn("putString(KEY_ATTACHMENT_URI, attachmentUri.toString())", source)
+        self.assertIn("putLong(KEY_ATTACHMENT_SIZE, attachmentSize)", source)
+        self.assertIn("remove(KEY_ATTACHMENT_URI)", source)
+        self.assertNotIn("KEY_ATTACHMENT_BYTES", source)
+        self.assertNotIn("openInputStream", source)
+
+    def test_media_handoff_revalidates_provider_and_does_not_create_sms_history(self):
+        source = ACTIVITY.read_text(encoding="utf-8")
+        self.assertIn("hasAttachment && !revalidateCurrentAttachment()", source)
+        self.assertIn("!mediaReady && rememberHistory != null", source)
+        self.assertNotIn("if (rememberHistory != null && rememberHistory.isChecked()", source)
+
     def test_media_policy_is_bounded_and_fail_closed(self):
         source = POLICY.read_text(encoding="utf-8")
         for token in (
