@@ -100,11 +100,116 @@ jobs:
           if require_kvm and report.get("cuttlefish_kvm_available") is not True:
               raise SystemExit("AOSP builder admission requires readable/writable KVM for Cuttlefish runtime evidence.")
           PY
-      - name: Upload bounded builder admission report
+      - name: Bind successful admission to the exact run contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - "$GITHUB_WORKSPACE/builder-admission.json" \
+            "$GITHUB_WORKSPACE/builder-admission-envelope.json" \
+            "$GITHUB_SHA" "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID" \
+            "$SWIR_REQUESTED_JOBS" "$SWIR_REQUIRE_KVM" <<'PY'
+          import hashlib
+          import json
+          import pathlib
+          import re
+          import sys
+
+          report_path = pathlib.Path(sys.argv[1])
+          output_path = pathlib.Path(sys.argv[2])
+          source_commit = sys.argv[3]
+          repository = sys.argv[4]
+          run_id_text = sys.argv[5]
+          jobs_text = sys.argv[6]
+          require_kvm_text = sys.argv[7].lower()
+
+          raw = report_path.read_bytes()
+          if not raw or len(raw) > 262144:
+              raise SystemExit("Builder admission report must be non-empty and bounded to 256 KiB.")
+          report = json.loads(raw.decode("utf-8"))
+          if report.get("operation") != "READ_ONLY_HOST_PREFLIGHT" or report.get("ready_for_full_build") is not True:
+              raise SystemExit("Cannot attest a failed or non-read-only builder preflight.")
+          checks = report.get("checks")
+          if not isinstance(checks, list) or not checks or any(
+              not isinstance(item, dict) or item.get("passed") is not True for item in checks
+          ):
+              raise SystemExit("Cannot attest a builder preflight with missing or failed checks.")
+          if re.fullmatch(r"[0-9a-f]{40}", source_commit) is None:
+              raise SystemExit("Source commit is malformed.")
+          if not repository or len(repository) > 200 or repository.count("/") != 1:
+              raise SystemExit("Repository identity is malformed.")
+          if not run_id_text.isdigit() or int(run_id_text) <= 0:
+              raise SystemExit("Workflow run id is malformed.")
+          if not jobs_text.isdigit() or not 1 <= int(jobs_text) <= 256:
+              raise SystemExit("Requested job budget is malformed.")
+          if require_kvm_text not in {"true", "false"}:
+              raise SystemExit("KVM requirement is malformed.")
+          require_kvm = require_kvm_text == "true"
+          if require_kvm and report.get("cuttlefish_kvm_available") is not True:
+              raise SystemExit("KVM was required but is not admitted by the preflight.")
+
+          envelope = {
+              "schema_version": 1,
+              "operation": "AOSP_BUILDER_ADMISSION_ATTESTATION",
+              "admitted": True,
+              "read_only": True,
+              "source_commit": source_commit,
+              "repository": repository,
+              "workflow_run_id": int(run_id_text),
+              "requested_jobs": int(jobs_text),
+              "require_kvm": require_kvm,
+              "preflight_sha256": hashlib.sha256(raw).hexdigest(),
+              "preflight_operation": report.get("operation"),
+              "ready_for_full_build": True,
+              "cuttlefish_kvm_available": report.get("cuttlefish_kvm_available") is True,
+              "workspace_cleanup_performed": report.get("workspace", {}).get("cleanup_performed"),
+          }
+          output_path.write_text(
+              json.dumps(envelope, sort_keys=True, separators=(",", ":")) + "\n",
+              encoding="utf-8",
+          )
+          PY
+      - name: Re-verify bounded admission attestation before upload
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - "$GITHUB_WORKSPACE/builder-admission.json" \
+            "$GITHUB_WORKSPACE/builder-admission-envelope.json" <<'PY'
+          import hashlib
+          import json
+          import pathlib
+          import re
+          import sys
+
+          report_raw = pathlib.Path(sys.argv[1]).read_bytes()
+          envelope_raw = pathlib.Path(sys.argv[2]).read_bytes()
+          if not envelope_raw or len(envelope_raw) > 8192:
+              raise SystemExit("Builder admission attestation must be non-empty and bounded to 8 KiB.")
+          envelope = json.loads(envelope_raw.decode("utf-8"))
+          expected_keys = {
+              "schema_version", "operation", "admitted", "read_only", "source_commit",
+              "repository", "workflow_run_id", "requested_jobs", "require_kvm",
+              "preflight_sha256", "preflight_operation", "ready_for_full_build",
+              "cuttlefish_kvm_available", "workspace_cleanup_performed",
+          }
+          if set(envelope) != expected_keys:
+              raise SystemExit("Builder admission attestation field set is not exact.")
+          if envelope.get("schema_version") != 1 or envelope.get("operation") != "AOSP_BUILDER_ADMISSION_ATTESTATION":
+              raise SystemExit("Builder admission attestation schema is unexpected.")
+          if envelope.get("admitted") is not True or envelope.get("read_only") is not True:
+              raise SystemExit("Builder admission attestation is not an admitted read-only contract.")
+          if envelope.get("ready_for_full_build") is not True or envelope.get("workspace_cleanup_performed") is not False:
+              raise SystemExit("Builder admission attestation does not preserve the accepted preflight contract.")
+          digest = envelope.get("preflight_sha256")
+          if re.fullmatch(r"[0-9a-f]{64}", str(digest)) is None or digest != hashlib.sha256(report_raw).hexdigest():
+              raise SystemExit("Builder admission attestation is not bound to the exact preflight bytes.")
+          PY
+      - name: Upload bounded builder admission report and attestation
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: SwirPhoneOS-aosp-builder-admission
-          path: builder-admission.json
+          path: |
+            builder-admission.json
+            builder-admission-envelope.json
           if-no-files-found: error
           retention-days: 14
