@@ -13,8 +13,11 @@ from pathlib import Path
 import os
 import subprocess
 import sys
-from typing import Callable
+from typing import Callable, Iterable
 import unicodedata
+
+from .identity import assess_profile_hint
+from .profiles import DeviceProfile
 
 _MAX_OUTPUT_CHARS = 256 * 1024
 _MAX_FIELD_CHARS = 128
@@ -66,6 +69,36 @@ class DeviceInventoryEvidence:
             "fastboot_attempted": self.fastboot_attempted,
             "observation_count": len(self.observations),
             "observations": [item.to_dict() for item in self.observations],
+        }
+
+
+@dataclass(frozen=True)
+class DeviceProfileHint:
+    """Non-authoritative profile assessment for one inventory observation."""
+
+    transport: str
+    identifier_sha256: str
+    result: str
+    candidate_profile_id: str | None
+    candidate_display_name: str | None
+    profile_status: str | None
+    evidence: tuple[str, ...]
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "schema_version": 1,
+            "transport": self.transport,
+            "identifier_sha256": self.identifier_sha256,
+            "result": self.result,
+            "candidate_profile_id": self.candidate_profile_id,
+            "candidate_display_name": self.candidate_display_name,
+            "profile_status": self.profile_status,
+            "evidence": list(self.evidence),
+            "identity_verified": False,
+            "physical_verification": False,
+            "swirphoneos_support": "NOT_VALIDATED",
+            "support_claim": False,
+            "flash_allowed": False,
         }
 
 
@@ -180,6 +213,69 @@ def parse_fastboot_devices(output: str) -> tuple[DeviceObservation, ...]:
             state=state or "fastboot",
         )
     return tuple(sorted(observations.values()))
+
+
+def _profile_match_value(value: str) -> str | None:
+    """Return only ASCII inventory metadata to the conservative profile matcher."""
+    if not value or not value.isascii():
+        return None
+    return value
+
+
+def assess_inventory_profiles(
+    evidence: DeviceInventoryEvidence,
+    profiles: Iterable[DeviceProfile],
+) -> tuple[DeviceProfileHint, ...]:
+    """Assess read-only observations against metadata profiles without trust promotion.
+
+    Profile matches remain hints only. They never establish physical identity,
+    device support or permission to install, unlock, root, erase, flash or
+    restore. Fastboot inventory alone normally has no product metadata and
+    therefore remains ``NO_PROFILE_HINT`` until richer read-only diagnostics are
+    deliberately collected through the existing capture workflow.
+    """
+    profile_snapshot = tuple(profiles)
+    assessments: list[DeviceProfileHint] = []
+    for item in evidence.observations:
+        if item.transport == "adb":
+            report: dict[str, object] = {
+                "codename": _profile_match_value(item.device or item.product),
+                "model": _profile_match_value(item.model),
+            }
+        elif item.transport == "fastboot":
+            report = {
+                "product_reported": _profile_match_value(item.product or item.device),
+            }
+        else:
+            raise ValueError("Unsupported inventory transport.")
+
+        assessment = assess_profile_hint(item.transport, report, profile_snapshot)
+        result = assessment["result"]
+        candidate_profile_id = assessment["candidate_profile_id"]
+        candidate_display_name = assessment["candidate_display_name"]
+        profile_status = assessment["profile_status"]
+        match_evidence = assessment["evidence"]
+        if (
+            not isinstance(result, str)
+            or candidate_profile_id is not None and not isinstance(candidate_profile_id, str)
+            or candidate_display_name is not None and not isinstance(candidate_display_name, str)
+            or profile_status is not None and not isinstance(profile_status, str)
+            or not isinstance(match_evidence, list)
+            or not all(isinstance(value, str) for value in match_evidence)
+        ):
+            raise ValueError("Profile assessment returned an invalid shape.")
+        assessments.append(
+            DeviceProfileHint(
+                transport=item.transport,
+                identifier_sha256=item.identifier_sha256,
+                result=result,
+                candidate_profile_id=candidate_profile_id,
+                candidate_display_name=candidate_display_name,
+                profile_status=profile_status,
+                evidence=tuple(match_evidence),
+            )
+        )
+    return tuple(assessments)
 
 
 def collect_device_inventory(

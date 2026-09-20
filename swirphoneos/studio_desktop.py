@@ -7,9 +7,15 @@ import sys
 import tkinter as tk
 
 from .i18n import translate
+from .profiles import discover_profiles
 from .studio import Studio
-from .studio_capture_wizard import PhysicalCaptureWizard
-from .studio_device_inventory import DeviceInventoryEvidence, collect_device_inventory
+from .studio_capture_wizard import PhysicalCaptureWizard, bundled_profiles_root
+from .studio_device_inventory import (
+    DeviceInventoryEvidence,
+    DeviceProfileHint,
+    assess_inventory_profiles,
+    collect_device_inventory,
+)
 from .studio_toolchain import ToolDiscovery, discover_android_tool
 
 
@@ -37,12 +43,21 @@ def prefill_capture_tools(wizard: PhysicalCaptureWizard) -> tuple[ToolDiscovery,
     return adb, fastboot
 
 
-def render_device_inventory(app: Studio, evidence: DeviceInventoryEvidence) -> str:
+def render_device_inventory(
+    app: Studio,
+    evidence: DeviceInventoryEvidence,
+    profile_hints: tuple[DeviceProfileHint, ...] = (),
+) -> str:
     """Render privacy-minimized inventory data through the shared locale catalog."""
     lines = [app.tr("inventory_title")]
     if not evidence.observations:
         lines.append(app.tr("inventory_none"))
         return "\n\n".join(lines)
+
+    hints = {
+        (hint.transport, hint.identifier_sha256): hint
+        for hint in profile_hints
+    }
     for item in evidence.observations:
         lines.append(
             app.tr(
@@ -53,6 +68,20 @@ def render_device_inventory(app: Studio, evidence: DeviceInventoryEvidence) -> s
                 model=item.model or app.tr("none"),
             )
         )
+        hint = hints.get((item.transport, item.identifier_sha256))
+        if hint is None:
+            continue
+        if hint.result == "PROFILE_HINT_ONLY":
+            lines.append(
+                app.tr(
+                    "inventory_profile_hint",
+                    profile=hint.candidate_profile_id or app.tr("none"),
+                    name=hint.candidate_display_name or app.tr("none"),
+                    status=hint.profile_status or app.tr("none"),
+                )
+            )
+        elif hint.result == "AMBIGUOUS_PROFILE_HINT":
+            lines.append(app.tr("inventory_profile_ambiguous"))
     return "\n".join(lines)
 
 
@@ -76,9 +105,20 @@ def inspect_current_devices(app: Studio) -> DeviceInventoryEvidence | None:
         app.show_report(app.tr("inventory_failed"))
         return None
 
+    # Profile matching is deliberately advisory and must never make basic
+    # inventory unavailable. Registry/profile errors therefore remove only the
+    # hint layer, not the read-only transport result.
+    try:
+        profile_hints = assess_inventory_profiles(
+            evidence,
+            discover_profiles(bundled_profiles_root()),
+        )
+    except (OSError, RuntimeError, ValueError):
+        profile_hints = ()
+
     app.status_key = "inventory_complete"
     app.update_status()
-    app.show_report(render_device_inventory(app, evidence))
+    app.show_report(render_device_inventory(app, evidence, profile_hints))
     return evidence
 
 
