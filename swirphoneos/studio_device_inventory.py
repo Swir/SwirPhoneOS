@@ -13,7 +13,7 @@ from pathlib import Path
 import os
 import subprocess
 import sys
-from typing import Callable, Iterable, Sequence
+from typing import Callable
 
 _MAX_OUTPUT_CHARS = 256 * 1024
 _MAX_FIELD_CHARS = 128
