@@ -49,10 +49,28 @@ jobs:
             --build-evidence "$GITHUB_WORKSPACE/evidence/build-evidence.json" \
             --source-commit "${{ github.event.workflow_run.head_sha }}" \
             > "$GITHUB_WORKSPACE/aosp-artifact-continuity.json"
+      - name: Re-verify exact builder admission chain for the completed run
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f "$GITHUB_WORKSPACE/evidence/aosp-run-evidence.json"
+          test -f "$GITHUB_WORKSPACE/evidence/builder-admission-build-gate.json"
+          test -f "$GITHUB_WORKSPACE/evidence/admission/builder-admission.json"
+          test -f "$GITHUB_WORKSPACE/evidence/admission/builder-admission-envelope.json"
+          PYTHONPATH="$GITHUB_WORKSPACE/tools" python -m swirphoneos.aosp_admission_continuity \
+            --run-evidence "$GITHUB_WORKSPACE/evidence/aosp-run-evidence.json" \
+            --gate "$GITHUB_WORKSPACE/evidence/builder-admission-build-gate.json" \
+            --preflight "$GITHUB_WORKSPACE/evidence/admission/builder-admission.json" \
+            --attestation "$GITHUB_WORKSPACE/evidence/admission/builder-admission-envelope.json" \
+            --repository "${{ github.repository }}" \
+            --source-commit "${{ github.event.workflow_run.head_sha }}" \
+            > "$GITHUB_WORKSPACE/aosp-admission-continuity.json"
       - name: Upload immutable post-run continuity evidence
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: swirphoneos-aosp-postrun-continuity-${{ github.event.workflow_run.head_sha }}
           if-no-files-found: error
           retention-days: 30
-          path: aosp-artifact-continuity.json
+          path: |
+            aosp-artifact-continuity.json
+            aosp-admission-continuity.json
