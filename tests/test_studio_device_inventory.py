@@ -5,9 +5,8 @@ from hashlib import sha256
 from pathlib import Path
 import inspect
 import subprocess
+from unittest import TestCase
 from unittest.mock import patch
-
-import pytest
 
 from swirphoneos.studio_device_inventory import (
     DeviceInventoryEvidence,
@@ -125,12 +124,12 @@ def test_collect_inventory_does_nothing_when_paths_are_omitted() -> None:
 
 def test_collect_inventory_rejects_wrong_tool_basename(tmp_path: Path) -> None:
     wrong = _tool(tmp_path, "not-adb")
-    with pytest.raises(ValueError, match="requested transport"):
+    with TestCase().assertRaisesRegex(ValueError, "requested transport"):
         collect_device_inventory(adb_path=wrong, platform_name="linux")
 
 
 def test_collect_inventory_rejects_relative_tool_path() -> None:
-    with pytest.raises(ValueError, match="absolute"):
+    with TestCase().assertRaisesRegex(ValueError, "absolute"):
         collect_device_inventory(adb_path=Path("adb"), platform_name="linux")
 
 
@@ -140,11 +139,11 @@ def test_collect_inventory_has_bounded_timeout_and_converts_timeout(tmp_path: Pa
     def timeout_runner(command: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
         raise subprocess.TimeoutExpired(command, kwargs["timeout"])
 
-    with pytest.raises(TimeoutError, match="adb inventory timed out"):
+    with TestCase().assertRaisesRegex(TimeoutError, "adb inventory timed out"):
         collect_device_inventory(adb_path=adb, platform_name="linux", runner=timeout_runner)
-    with pytest.raises(ValueError, match="timeout"):
+    with TestCase().assertRaisesRegex(ValueError, "timeout"):
         collect_device_inventory(timeout_seconds=0)
-    with pytest.raises(ValueError, match="timeout"):
+    with TestCase().assertRaisesRegex(ValueError, "timeout"):
         collect_device_inventory(timeout_seconds=61)
 
 
@@ -154,7 +153,7 @@ def test_collect_inventory_fails_closed_on_nonzero_exit(tmp_path: Path) -> None:
     def failing_runner(command: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
         return subprocess.CompletedProcess(command, 1, stdout="", stderr="error")
 
-    with pytest.raises(RuntimeError, match="exit code 1"):
+    with TestCase().assertRaisesRegex(RuntimeError, "exit code 1"):
         collect_device_inventory(adb_path=adb, platform_name="linux", runner=failing_runner)
 
 
