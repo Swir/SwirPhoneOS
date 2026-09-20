@@ -1,0 +1,110 @@
+name: AOSP builder admission
+
+on:
+  workflow_dispatch:
+    inputs:
+      jobs:
+        description: Parallel AOSP build jobs to validate against the host safety budget
+        required: true
+        default: '16'
+        type: string
+      require_kvm:
+        description: Require readable and writable KVM so the builder is ready for Cuttlefish runtime evidence
+        required: true
+        default: true
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: swir-aosp-builder
+  cancel-in-progress: false
+
+jobs:
+  admit-builder:
+    name: Read-only AOSP builder admission
+    runs-on: [self-hosted, linux, x64, swir-aosp-builder]
+    timeout-minutes: 10
+    env:
+      SWIR_REQUESTED_JOBS: ${{ inputs.jobs }}
+      SWIR_REQUIRE_KVM: ${{ inputs.require_kvm }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: tools
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.14'
+      - name: Capture and validate read-only builder admission
+        shell: bash
+        run: |
+          set -euo pipefail
+          case "$SWIR_REQUESTED_JOBS" in
+            ''|*[!0-9]*) printf 'Parallel job count must be an integer.\n' >&2; exit 1 ;;
+          esac
+          test "$SWIR_REQUESTED_JOBS" -ge 1
+          test "$SWIR_REQUESTED_JOBS" -le 256
+          case "$SWIR_REQUIRE_KVM" in
+            true|false) ;;
+            *) printf 'KVM requirement flag is invalid.\n' >&2; exit 1 ;;
+          esac
+
+          report="$GITHUB_WORKSPACE/builder-admission.json"
+          if [[ -z "${SWIR_AOSP_WORKSPACE:-}" ]]; then
+            printf '%s\n' '{"schema_version":1,"operation":"AOSP_BUILDER_ADMISSION","admitted":false,"reason":"SWIR_AOSP_WORKSPACE is not configured"}' > "$report"
+            printf 'Set SWIR_AOSP_WORKSPACE on the dedicated self-hosted runner.\n' >&2
+            exit 1
+          fi
+          if [[ "$SWIR_AOSP_WORKSPACE" != /* ]]; then
+            printf '%s\n' '{"schema_version":1,"operation":"AOSP_BUILDER_ADMISSION","admitted":false,"reason":"SWIR_AOSP_WORKSPACE must be absolute"}' > "$report"
+            printf 'SWIR_AOSP_WORKSPACE must be an absolute path.\n' >&2
+            exit 1
+          fi
+
+          cd "$GITHUB_WORKSPACE/tools"
+          set +e
+          python -m swirphoneos build-preflight --workspace "$SWIR_AOSP_WORKSPACE" > "$report"
+          preflight_status=$?
+          set -e
+
+          python - "$report" "$SWIR_REQUIRE_KVM" "$preflight_status" <<'PY'
+          import json
+          import pathlib
+          import sys
+
+          path = pathlib.Path(sys.argv[1])
+          require_kvm = sys.argv[2].lower() == "true"
+          preflight_status = int(sys.argv[3])
+          try:
+              report = json.loads(path.read_text(encoding="utf-8"))
+          except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+              raise SystemExit(f"AOSP builder admission report is unreadable: {exc}")
+          if report.get("operation") != "READ_ONLY_HOST_PREFLIGHT":
+              raise SystemExit("AOSP builder admission did not receive the read-only preflight contract.")
+          workspace = report.get("workspace")
+          if not isinstance(workspace, dict) or workspace.get("cleanup_performed") is not False:
+              raise SystemExit("AOSP builder admission cannot accept a preflight that mutated or omitted workspace state.")
+          checks = report.get("checks")
+          if not isinstance(checks, list) or not checks:
+              raise SystemExit("AOSP builder preflight report has no checks.")
+          failed = [
+              str(item.get("id", "unknown"))
+              for item in checks
+              if not isinstance(item, dict) or item.get("passed") is not True
+          ]
+          if preflight_status != 0 or report.get("ready_for_full_build") is not True or failed:
+              detail = ", ".join(failed) if failed else f"preflight_exit_{preflight_status}"
+              raise SystemExit("AOSP builder admission rejected host: " + detail)
+          if require_kvm and report.get("cuttlefish_kvm_available") is not True:
+              raise SystemExit("AOSP builder admission requires readable/writable KVM for Cuttlefish runtime evidence.")
+          PY
+      - name: Upload bounded builder admission report
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: SwirPhoneOS-aosp-builder-admission
+          path: builder-admission.json
+          if-no-files-found: error
+          retention-days: 14
