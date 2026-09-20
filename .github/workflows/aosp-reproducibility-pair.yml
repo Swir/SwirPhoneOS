@@ -96,6 +96,29 @@ jobs:
           repository: ${{ github.repository }}
           run-id: ${{ inputs.continuity_run_b_id }}
 
+      - name: Re-verify exact admission continuity for both build chains
+        shell: bash
+        run: |
+          set -euo pipefail
+          for label in a b; do
+            test -f "$GITHUB_WORKSPACE/evidence/run-$label/aosp-run-evidence.json"
+            test -f "$GITHUB_WORKSPACE/evidence/run-$label/builder-admission-build-gate.json"
+            test -f "$GITHUB_WORKSPACE/evidence/run-$label/admission/builder-admission.json"
+            test -f "$GITHUB_WORKSPACE/evidence/run-$label/admission/builder-admission-envelope.json"
+            test -f "$GITHUB_WORKSPACE/continuity/run-$label/aosp-admission-continuity.json"
+            python -m swirphoneos.aosp_admission_continuity \
+              --run-evidence "$GITHUB_WORKSPACE/evidence/run-$label/aosp-run-evidence.json" \
+              --gate "$GITHUB_WORKSPACE/evidence/run-$label/builder-admission-build-gate.json" \
+              --preflight "$GITHUB_WORKSPACE/evidence/run-$label/admission/builder-admission.json" \
+              --attestation "$GITHUB_WORKSPACE/evidence/run-$label/admission/builder-admission-envelope.json" \
+              --repository "${{ github.repository }}" \
+              --source-commit "${{ inputs.source_sha }}" \
+              > "$RUNNER_TEMP/aosp-admission-continuity-$label.json"
+            cmp -s \
+              "$RUNNER_TEMP/aosp-admission-continuity-$label.json" \
+              "$GITHUB_WORKSPACE/continuity/run-$label/aosp-admission-continuity.json"
+          done
+
       - name: Compare exact reviewed inputs and complete retained artifact inventories
         shell: bash
         run: |
