@@ -8,6 +8,7 @@ public final class MessagePolicy {
     public static final int MAX_RECIPIENTS = 10;
     public static final int MAX_RECIPIENT_LENGTH = 32;
     public static final int MAX_BODY_LENGTH = 4000;
+    public static final int MAX_BODY_CODEPOINTS = MAX_BODY_LENGTH;
     public static final long MAX_ATTACHMENT_BYTES = 25L * 1024L * 1024L;
     public static final int MAX_ATTACHMENT_NAME_LENGTH = 180;
 
@@ -32,14 +33,22 @@ public final class MessagePolicy {
         if (value.isEmpty()) return "";
         StringBuilder out = new StringBuilder();
         int digits = 0;
-        for (int i = 0; i < value.length(); i++) {
-            char c = value.charAt(i);
-            if (Character.isDigit(c)) {
-                out.append(c);
+        for (int offset = 0; offset < value.length();) {
+            int codePoint = value.codePointAt(offset);
+            offset += Character.charCount(codePoint);
+            if (Character.isDigit(codePoint)) {
+                int digit = Character.digit(codePoint, 10);
+                if (digit < 0) return "";
+                out.append((char) ('0' + digit));
                 digits++;
-            } else if (c == '+' && out.length() == 0) {
-                out.append(c);
-            } else if (c == ' ' || c == '-' || c == '(' || c == ')' || c == '.') {
+            } else if (codePoint == '+' && out.length() == 0) {
+                out.append('+');
+            } else if (Character.isWhitespace(codePoint)
+                    || Character.isSpaceChar(codePoint)
+                    || codePoint == '-'
+                    || codePoint == '('
+                    || codePoint == ')'
+                    || codePoint == '.') {
                 continue;
             } else {
                 return "";
@@ -53,8 +62,10 @@ public final class MessagePolicy {
     public static String normalizeBody(String raw) {
         if (raw == null) return "";
         String value = raw.replace("\r\n", "\n").replace('\r', '\n');
-        if (value.length() > MAX_BODY_LENGTH) return value.substring(0, MAX_BODY_LENGTH);
-        return value;
+        int codePoints = value.codePointCount(0, value.length());
+        if (codePoints <= MAX_BODY_CODEPOINTS) return value;
+        int end = value.offsetByCodePoints(0, MAX_BODY_CODEPOINTS);
+        return value.substring(0, end);
     }
 
     public static boolean canHandoff(String recipients, String body) {
@@ -103,6 +114,8 @@ public final class MessagePolicy {
     }
 
     public static int remainingCharacters(String body) {
-        return MAX_BODY_LENGTH - normalizeBody(body).length();
+        String normalized = normalizeBody(body);
+        int used = normalized.codePointCount(0, normalized.length());
+        return MAX_BODY_CODEPOINTS - used;
     }
 }
