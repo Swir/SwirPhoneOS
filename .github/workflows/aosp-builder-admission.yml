@@ -3,6 +3,10 @@ name: AOSP builder admission
 on:
   workflow_dispatch:
     inputs:
+      expected_source_commit:
+        description: Exact main commit expected by the admission dispatcher
+        required: true
+        type: string
       jobs:
         description: Parallel AOSP build jobs to validate against the host safety budget
         required: true
@@ -27,9 +31,22 @@ jobs:
     runs-on: [self-hosted, linux, x64, swir-aosp-builder]
     timeout-minutes: 10
     env:
+      SWIR_EXPECTED_SOURCE_COMMIT: ${{ inputs.expected_source_commit }}
       SWIR_REQUESTED_JOBS: ${{ inputs.jobs }}
       SWIR_REQUIRE_KVM: ${{ inputs.require_kvm }}
     steps:
+      - name: Verify exact dispatched source commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ ! "$SWIR_EXPECTED_SOURCE_COMMIT" =~ ^[0-9a-f]{40}$ ]]; then
+            printf 'Expected source commit must be a full lowercase Git SHA.\n' >&2
+            exit 1
+          fi
+          if [[ "$GITHUB_SHA" != "$SWIR_EXPECTED_SOURCE_COMMIT" ]]; then
+            printf 'Admission workflow resolved a different commit than the dispatcher requested.\n' >&2
+            exit 1
+          fi
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           path: tools
