@@ -1,0 +1,66 @@
+from __future__ import annotations
+
+from pathlib import Path
+import unittest
+
+
+WORKFLOW = Path(".github/workflows/aosp-build-request.yml")
+
+
+class AospBuildRequestWorkflowTests(unittest.TestCase):
+    def test_request_workflow_is_hosted_main_only_and_least_privilege(self) -> None:
+        text = WORKFLOW.read_text(encoding="utf-8")
+        required = (
+            "workflow_dispatch:",
+            "contents: read",
+            "actions: write",
+            "group: swir-aosp-build-request",
+            "cancel-in-progress: false",
+            "runs-on: ubuntu-latest",
+            "timeout-minutes: 10",
+            "persist-credentials: false",
+            'test "$GH_API_URL" = "https://api.github.com"',
+            'test "$GH_DEFAULT_BRANCH" = "main"',
+            'test "$GITHUB_REF" = "refs/heads/main"',
+            "actions/runs/{run_id}",
+            "SwirPhoneOS-aosp-builder-admission",
+            "swirphoneos.aosp_build_request",
+            "aosp-build-evidence.yml/dispatches",
+            "aosp-build-request-report.json",
+        )
+        for token in required:
+            self.assertIn(token, text)
+
+        forbidden = (
+            "contents: write",
+            "pull_request:",
+            "pull_request_target:",
+            "schedule:",
+            "runs-on: [self-hosted",
+            "repo init",
+            "repo sync",
+            "launch_cvd",
+            "adb ",
+            "fastboot",
+            "sudo ",
+            "rm -rf",
+        )
+        for token in forbidden:
+            self.assertNotIn(token, text)
+
+    def test_build_dispatch_is_admission_bound_not_user_supplied_job_budget(self) -> None:
+        text = WORKFLOW.read_text(encoding="utf-8")
+        self.assertIn("admission_run_id:", text)
+        self.assertIn("collect_runtime:", text)
+        self.assertNotIn("\n      jobs:\n", text)
+        self.assertIn("builder-admission.json", text)
+        self.assertIn("builder-admission-envelope.json", text)
+        self.assertIn('--preflight "$GITHUB_WORKSPACE/admission/builder-admission.json"', text)
+        self.assertIn('--source-commit "$GITHUB_SHA"', text)
+        self.assertIn('--repository "$GITHUB_REPOSITORY"', text)
+        self.assertIn('--admission-run-id "$SWIR_ADMISSION_RUN_ID"', text)
+        self.assertIn('--collect-runtime "$SWIR_COLLECT_RUNTIME"', text)
+
+
+if __name__ == "__main__":
+    unittest.main()
