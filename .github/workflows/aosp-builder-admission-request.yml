@@ -216,6 +216,7 @@ jobs:
 
           dispatch_performed = False
           dispatch_http_status = None
+          dispatch_workflow_run_id = None
           if not current_run_ids:
               payload = json.dumps(
                   {
@@ -236,18 +237,38 @@ jobs:
                   data=payload,
                   maximum=4096,
               )
-              if dispatch_http_status not in {200, 204}:
+              if dispatch_http_status != 200:
                   raise SystemExit(
                       f"GitHub admission dispatch returned unexpected HTTP {dispatch_http_status}."
                   )
-              if dispatch_raw:
-                  raise SystemExit("GitHub admission dispatch unexpectedly returned a response body.")
+              dispatch_response = parse_json_bytes(
+                  dispatch_raw,
+                  label="GitHub admission dispatch response",
+                  maximum=4096,
+              )
+              expected_dispatch_keys = {"workflow_run_id", "run_url", "html_url"}
+              if not isinstance(dispatch_response, dict) or set(dispatch_response) != expected_dispatch_keys:
+                  raise SystemExit("GitHub admission dispatch response field set is not exact.")
+              dispatch_workflow_run_id = dispatch_response.get("workflow_run_id")
+              if (
+                  not isinstance(dispatch_workflow_run_id, int)
+                  or isinstance(dispatch_workflow_run_id, bool)
+                  or dispatch_workflow_run_id <= 0
+              ):
+                  raise SystemExit("GitHub admission dispatch workflow run id is malformed.")
+              expected_run_url = f"{api_url}/repos/{repository}/actions/runs/{dispatch_workflow_run_id}"
+              expected_html_url = f"https://github.com/{repository}/actions/runs/{dispatch_workflow_run_id}"
+              if dispatch_response.get("run_url") != expected_run_url:
+                  raise SystemExit("GitHub admission dispatch run URL is inconsistent.")
+              if dispatch_response.get("html_url") != expected_html_url:
+                  raise SystemExit("GitHub admission dispatch HTML URL is inconsistent.")
+              current_run_ids.add(dispatch_workflow_run_id)
               dispatch_performed = True
 
           print(
               json.dumps(
                   {
-                      "schema_version": 2,
+                      "schema_version": 3,
                       "operation": "AOSP_BUILDER_ADMISSION_DISPATCH",
                       "request_id": request_id,
                       "target_ref": default_branch,
@@ -258,6 +279,7 @@ jobs:
                       "matching_active_run_ids": sorted(current_run_ids),
                       "dispatch_performed": dispatch_performed,
                       "dispatch_http_status": dispatch_http_status,
+                      "dispatch_workflow_run_id": dispatch_workflow_run_id,
                       "build_verified": False,
                       "boot_verified": False,
                       "status_promotion_performed": False,
