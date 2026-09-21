@@ -165,11 +165,19 @@ class AospAdmissionGateTests(unittest.TestCase):
              redirect_stdout(output):
             self.assertEqual(main(self._cli_args(require_kvm=True)), 0)
 
-        freshness_gate.assert_called_once_with(
-            host_admission_path=self.preflight_path.resolve().parent / "aosp-host-admission.json",
-            workspace=workspace,
-            require_kvm=True,
+        freshness_gate.assert_called_once()
+        call = freshness_gate.call_args
+        self.assertEqual(call.args, ())
+        self.assertEqual(
+            set(call.kwargs),
+            {"host_admission_path", "workspace", "require_kvm"},
         )
+        self.assertEqual(
+            call.kwargs["host_admission_path"],
+            self.preflight_path.resolve().parent / "aosp-host-admission.json",
+        )
+        self.assertTrue(os.path.samefile(call.kwargs["workspace"], workspace))
+        self.assertIs(call.kwargs["require_kvm"], True)
         emitted = json.loads(output.getvalue())
         self.assertEqual(emitted, self._validate(require_kvm=True))
         self.assertNotIn("host_freshness", emitted)
