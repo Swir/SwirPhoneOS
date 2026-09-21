@@ -111,17 +111,31 @@ jobs:
         run: |
           set -euo pipefail
           python - <<'PY'
+          import json
           import os
           import pathlib
           import urllib.error
           import urllib.request
 
+          class DuplicateKeyError(ValueError):
+              pass
+
+          def strict_object(pairs):
+              result = {}
+              for key, value in pairs:
+                  if key in result:
+                      raise DuplicateKeyError(f"duplicate dispatch response key: {key}")
+                  result[key] = value
+              return result
+
           path = pathlib.Path("aosp-build-dispatch.json")
           payload = path.read_bytes()
           if not payload or len(payload) > 4096:
               raise SystemExit("AOSP build dispatch payload is empty or oversized.")
+          api_url = os.environ["GH_API_URL"]
+          repository = os.environ["GH_REPOSITORY"]
           request = urllib.request.Request(
-              f"{os.environ['GH_API_URL']}/repos/{os.environ['GH_REPOSITORY']}/actions/workflows/aosp-build-evidence.yml/dispatches",
+              f"{api_url}/repos/{repository}/actions/workflows/aosp-build-evidence.yml/dispatches",
               data=payload,
               method="POST",
               headers={
@@ -135,15 +149,58 @@ jobs:
           try:
               with urllib.request.urlopen(request, timeout=30) as response:
                   status = int(response.status)
-                  if status not in {200, 204}:
-                      raise SystemExit(f"GitHub AOSP build dispatch returned unexpected HTTP {status}.")
+                  raw = response.read(4097)
           except urllib.error.HTTPError as exc:
               body = exc.read(4096).decode("utf-8", "replace")
               raise SystemExit(f"GitHub AOSP build dispatch failed with HTTP {exc.code}: {body}") from exc
           except urllib.error.URLError as exc:
               raise SystemExit(f"GitHub AOSP build dispatch failed: {exc.reason}") from exc
-          pathlib.Path("aosp-build-dispatch-status.txt").write_text(
-              f"dispatch_http_status={status}\n",
+
+          if status != 200:
+              raise SystemExit(f"GitHub AOSP build dispatch returned unexpected HTTP {status}.")
+          if not raw or len(raw) > 4096:
+              raise SystemExit("GitHub AOSP build dispatch response is empty or oversized.")
+          try:
+              dispatch_response = json.loads(
+                  raw.decode("utf-8", "strict"),
+                  object_pairs_hook=strict_object,
+              )
+          except (UnicodeError, json.JSONDecodeError, DuplicateKeyError) as exc:
+              raise SystemExit(f"GitHub AOSP build dispatch response must be strict JSON: {exc}") from exc
+
+          expected_keys = {"workflow_run_id", "run_url", "html_url"}
+          if not isinstance(dispatch_response, dict) or set(dispatch_response) != expected_keys:
+              raise SystemExit("GitHub AOSP build dispatch response field set is not exact.")
+          workflow_run_id = dispatch_response.get("workflow_run_id")
+          if (
+              not isinstance(workflow_run_id, int)
+              or isinstance(workflow_run_id, bool)
+              or workflow_run_id <= 0
+          ):
+              raise SystemExit("GitHub AOSP build dispatch workflow run id is malformed.")
+          expected_run_url = f"{api_url}/repos/{repository}/actions/runs/{workflow_run_id}"
+          expected_html_url = f"https://github.com/{repository}/actions/runs/{workflow_run_id}"
+          if dispatch_response.get("run_url") != expected_run_url:
+              raise SystemExit("GitHub AOSP build dispatch run URL is inconsistent.")
+          if dispatch_response.get("html_url") != expected_html_url:
+              raise SystemExit("GitHub AOSP build dispatch HTML URL is inconsistent.")
+
+          pathlib.Path("aosp-build-dispatch-status.json").write_text(
+              json.dumps(
+                  {
+                      "schema_version": 1,
+                      "operation": "AOSP_BUILD_WORKFLOW_DISPATCH",
+                      "dispatch_http_status": status,
+                      "workflow_run_id": workflow_run_id,
+                      "run_url": expected_run_url,
+                      "html_url": expected_html_url,
+                      "build_verified": False,
+                      "boot_verified": False,
+                      "status_promotion_performed": False,
+                  },
+                  sort_keys=True,
+                  separators=(",", ":"),
+              ) + "\n",
               encoding="utf-8",
           )
           PY
@@ -155,6 +212,6 @@ jobs:
           path: |
             aosp-build-request-report.json
             aosp-build-dispatch.json
-            aosp-build-dispatch-status.txt
+            aosp-build-dispatch-status.json
           if-no-files-found: warn
           retention-days: 14
