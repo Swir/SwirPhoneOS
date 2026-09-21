@@ -1,0 +1,13 @@
+android_app {
+    name: "SwirLauncher",
+    srcs: ["src/**/*.java"],
+    resource_dirs: ["res"],
+    static_libs: ["SwirDesign"],
+    manifest: "AndroidManifest.xml",
+    sdk_version: "current",
+    min_sdk_version: "35",
+    product_specific: true,
+    optimize: {
+        enabled: true,
+    },
+}

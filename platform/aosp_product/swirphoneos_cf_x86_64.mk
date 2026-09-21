@@ -9,8 +9,14 @@ PRODUCT_BRAND := Swir
 PRODUCT_MANUFACTURER := Swir
 PRODUCT_MODEL := SwirPhoneOS Cuttlefish Developer
 
+# First-beta HOME surface: keep exactly one reviewed launcher in the product so
+# boot does not stop at a launcher chooser. AOSP SystemUI remains authoritative
+# for the lock screen until a separately verified Swir lock-screen integration exists.
+PRODUCT_PACKAGES := $(filter-out Launcher3 Launcher3QuickStep Launcher3QuickStepGo,$(PRODUCT_PACKAGES))
+
 # Source-ready first-party apps. Runtime status remains unverified until an AOSP build/boot succeeds.
 PRODUCT_PACKAGES += \
+    SwirLauncher \
     SwirPhone \
     SwirMessages \
     SwirCamera \

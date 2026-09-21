@@ -15,9 +15,15 @@ PRODUCT_BRAND := Swir
 PRODUCT_MANUFACTURER := Swir
 PRODUCT_MODEL := SwirPhoneOS ARM64 GSI Developer
 
+# Keep one reviewed HOME surface in the first-beta GSI image. This does not
+# claim compatibility with any physical device; AOSP SystemUI remains the
+# authoritative lock-screen implementation for the beta baseline.
+PRODUCT_PACKAGES := $(filter-out Launcher3 Launcher3QuickStep Launcher3QuickStepGo,$(PRODUCT_PACKAGES))
+
 # Source-ready first-party apps. A built system.img still requires Treble/VTS and
 # exact-device validation before it can be described as compatible or installable.
 PRODUCT_PACKAGES += \
+    SwirLauncher \
     SwirPhone \
     SwirMessages \
     SwirCamera \

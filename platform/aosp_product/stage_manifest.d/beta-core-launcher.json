@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "files": [
+    {"source":"apps/SwirLauncher/Android.bp","destination":"vendor/swir/apps/SwirLauncher/Android.bp"},
+    {"source":"apps/SwirLauncher/AndroidManifest.xml","destination":"vendor/swir/apps/SwirLauncher/AndroidManifest.xml"},
+    {"source":"apps/SwirLauncher/src/org/swir/phoneos/launcher/LauncherPolicy.java","destination":"vendor/swir/apps/SwirLauncher/src/org/swir/phoneos/launcher/LauncherPolicy.java"},
+    {"source":"apps/SwirLauncher/src/org/swir/phoneos/launcher/MainActivity.java","destination":"vendor/swir/apps/SwirLauncher/src/org/swir/phoneos/launcher/MainActivity.java"},
+    {"source":"apps/SwirLauncher/res/drawable/ic_launcher.xml","destination":"vendor/swir/apps/SwirLauncher/res/drawable/ic_launcher.xml"},
+    {"source":"apps/SwirLauncher/res/xml/locales_config.xml","destination":"vendor/swir/apps/SwirLauncher/res/xml/locales_config.xml"},
+    {"source":"apps/SwirLauncher/res/values/strings.xml","destination":"vendor/swir/apps/SwirLauncher/res/values/strings.xml"},
+    {"source":"apps/SwirLauncher/res/values-pl/strings.xml","destination":"vendor/swir/apps/SwirLauncher/res/values-pl/strings.xml"},
+    {"source":"apps/SwirLauncher/res/values-nb/strings.xml","destination":"vendor/swir/apps/SwirLauncher/res/values-nb/strings.xml"},
+    {"source":"apps/SwirLauncher/res/values-de/strings.xml","destination":"vendor/swir/apps/SwirLauncher/res/values-de/strings.xml"},
+    {"source":"apps/SwirLauncher/res/values-es/strings.xml","destination":"vendor/swir/apps/SwirLauncher/res/values-es/strings.xml"},
+    {"source":"apps/SwirLauncher/res/values-fr/strings.xml","destination":"vendor/swir/apps/SwirLauncher/res/values-fr/strings.xml"},
+    {"source":"apps/SwirLauncher/res/values-pt/strings.xml","destination":"vendor/swir/apps/SwirLauncher/res/values-pt/strings.xml"},
+    {"source":"apps/SwirLauncher/res/values-ar/strings.xml","destination":"vendor/swir/apps/SwirLauncher/res/values-ar/strings.xml"}
+  ]
+}
