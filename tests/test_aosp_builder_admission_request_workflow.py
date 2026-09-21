@@ -28,6 +28,7 @@ class AospBuilderAdmissionRequestWorkflowTests(unittest.TestCase):
             "GH_SOURCE_COMMIT: ${{ github.sha }}",
             'default_branch != "main"',
             'api_url != "https://api.github.com"',
+            '"X-GitHub-Api-Version": "2026-03-10"',
             "aosp-builder-admission.yml/dispatches",
             '"target_ref": default_branch',
             '"target_commit": source_commit',
@@ -91,11 +92,20 @@ class AospBuilderAdmissionRequestWorkflowTests(unittest.TestCase):
             "len(workflow_runs) != total_count",
             "GitHub admission-run status filter returned inconsistent data.",
             "GitHub admission-run identity is inconsistent with the target workflow.",
-            "dispatch_raw",
-            "GitHub admission dispatch unexpectedly returned a response body.",
+            "dispatch_http_status != 200",
+            'expected_dispatch_keys = {"workflow_run_id", "run_url", "html_url"}',
+            "GitHub admission dispatch response field set is not exact.",
+            "GitHub admission dispatch workflow run id is malformed.",
+            "GitHub admission dispatch run URL is inconsistent.",
+            "GitHub admission dispatch HTML URL is inconsistent.",
+            '"dispatch_workflow_run_id": dispatch_workflow_run_id',
+            '"schema_version": 3',
         )
         for token in required:
             self.assertIn(token, text)
+
+        self.assertNotIn("GitHub admission dispatch unexpectedly returned a response body.", text)
+        self.assertNotIn("dispatch_http_status not in {200, 204}", text)
 
     def test_checked_in_request_is_exact_and_requires_runtime_ready_builder(self) -> None:
         raw = REQUEST.read_bytes()
