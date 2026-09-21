@@ -10,7 +10,7 @@ read-only host/toolchain identity and requires it to match the exact
 ``aosp-host-admission.json`` snapshot downloaded beside the admission files.
 This closes stale-admission reuse before any AOSP source synchronization while
 keeping the public ``validate_admission`` contract deterministic for post-run
-continuity verification.
+continuity verification and standalone validation tooling.
 """
 from __future__ import annotations
 
@@ -201,7 +201,7 @@ def validate_admitted_host_freshness(
 ) -> dict[str, object]:
     """Re-capture and verify the exact host before build-workspace mutation.
 
-    The downloaded admission snapshot is validated as PRE_BUILD evidence.  The
+    The downloaded admission snapshot is validated as PRE_BUILD evidence. The
     current snapshot is collected entirely read-only and must retain the same
     workspace, host and exact required-tool identity while still satisfying the
     build preflight's current RAM/free-space floors. Runtime runs additionally
@@ -249,15 +249,23 @@ def main(argv: list[str] | None = None) -> int:
             requested_jobs=args.jobs,
             require_kvm=args.require_kvm,
         )
-        workspace_value = os.environ.get("SWIR_AOSP_WORKSPACE", "")
-        if not workspace_value:
-            raise AospAdmissionGateError("SWIR_AOSP_WORKSPACE is required for admitted host freshness verification.")
-        host_admission_path = args.preflight.resolve().parent / "aosp-host-admission.json"
-        validate_admitted_host_freshness(
-            host_admission_path=host_admission_path,
-            workspace=Path(workspace_value),
-            require_kvm=args.require_kvm,
-        )
+        workflow_run_id = os.environ.get("SWIR_ADMISSION_RUN_ID")
+        if workflow_run_id is not None:
+            if workflow_run_id != str(args.admission_run_id):
+                raise AospAdmissionGateError(
+                    "SWIR_ADMISSION_RUN_ID does not match the requested admission run id."
+                )
+            workspace_value = os.environ.get("SWIR_AOSP_WORKSPACE", "")
+            if not workspace_value:
+                raise AospAdmissionGateError(
+                    "SWIR_AOSP_WORKSPACE is required for admitted host freshness verification."
+                )
+            host_admission_path = args.preflight.resolve().parent / "aosp-host-admission.json"
+            validate_admitted_host_freshness(
+                host_admission_path=host_admission_path,
+                workspace=Path(workspace_value),
+                require_kvm=args.require_kvm,
+            )
     except (
         AospAdmissionGateError,
         AospHostEvidenceError,
