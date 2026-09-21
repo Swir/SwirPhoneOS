@@ -12,9 +12,8 @@ The full **AOSP build evidence** workflow downloads that exact admission artifac
 
 ## Safety boundary
 
-Admission and freshness verification are intentionally smaller than the build workflow. They:
+Admission and freshness verification are intentionally smaller than the build workflow. Admission does not sync Android source, and neither step performs any AOSP workspace mutation before the freshness gate passes. Together they:
 
-- do not sync Android source;
 - do not stage SwirPhoneOS into the AOSP workspace;
 - do not compile AOSP;
 - do not launch Cuttlefish;
