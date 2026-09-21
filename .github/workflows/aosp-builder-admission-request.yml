@@ -24,13 +24,14 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - name: Validate bounded request and dispatch admission
+      - name: Validate bounded request, prune stale admission runs and dispatch current main
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPOSITORY: ${{ github.repository }}
           GH_API_URL: ${{ github.api_url }}
           GH_DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          GH_SOURCE_COMMIT: ${{ github.sha }}
         run: |
           set -euo pipefail
           python - <<'PY'
@@ -38,6 +39,7 @@ jobs:
           import os
           import re
           import urllib.error
+          import urllib.parse
           import urllib.request
 
           class DuplicateKeyError(ValueError):
@@ -47,19 +49,52 @@ jobs:
               result = {}
               for key, value in pairs:
                   if key in result:
-                      raise DuplicateKeyError(f"duplicate request key: {key}")
+                      raise DuplicateKeyError(f"duplicate JSON key: {key}")
                   result[key] = value
               return result
 
+          def parse_json_bytes(raw, *, label, maximum):
+              if not raw or len(raw) > maximum:
+                  raise SystemExit(f"{label} must be non-empty and bounded to {maximum} bytes.")
+              try:
+                  return json.loads(raw.decode("utf-8", "strict"), object_pairs_hook=strict_object)
+              except (UnicodeError, json.JSONDecodeError, DuplicateKeyError) as exc:
+                  raise SystemExit(f"{label} must be strict UTF-8 JSON: {exc}")
+
+          def github_request(url, *, method="GET", data=None, maximum=524288):
+              request = urllib.request.Request(
+                  url,
+                  data=data,
+                  method=method,
+                  headers={
+                      "Accept": "application/vnd.github+json",
+                      "Authorization": f"Bearer {token}",
+                      "Content-Type": "application/json",
+                      "X-GitHub-Api-Version": "2026-03-10",
+                      "User-Agent": "SwirPhoneOS-aosp-admission-dispatcher",
+                  },
+              )
+              try:
+                  with urllib.request.urlopen(request, timeout=30) as response:
+                      status = int(response.status)
+                      raw = response.read(maximum + 1)
+              except urllib.error.HTTPError as exc:
+                  body = exc.read(4096).decode("utf-8", "replace")
+                  raise SystemExit(f"GitHub API request failed with HTTP {exc.code}: {body}") from exc
+              except urllib.error.URLError as exc:
+                  raise SystemExit(f"GitHub API request failed: {exc.reason}") from exc
+              if len(raw) > maximum:
+                  raise SystemExit("GitHub API response exceeded the bounded response size.")
+              return status, raw
+
           request_path = ".github/aosp-admission-request.json"
           with open(request_path, "rb") as handle:
-              raw = handle.read(8193)
-          if not raw or len(raw) > 8192:
-              raise SystemExit("AOSP admission request must be non-empty and bounded to 8 KiB.")
-          try:
-              request = json.loads(raw.decode("utf-8", "strict"), object_pairs_hook=strict_object)
-          except (UnicodeError, json.JSONDecodeError, DuplicateKeyError) as exc:
-              raise SystemExit(f"AOSP admission request must be strict UTF-8 JSON: {exc}")
+              request_raw = handle.read(8193)
+          request = parse_json_bytes(
+              request_raw,
+              label="AOSP admission request",
+              maximum=8192,
+          )
 
           expected_keys = {"schema_version", "operation", "request_id", "jobs", "require_kvm"}
           if not isinstance(request, dict) or set(request) != expected_keys:
@@ -80,7 +115,8 @@ jobs:
           api_url = os.environ.get("GH_API_URL", "")
           token = os.environ.get("GH_TOKEN", "")
           default_branch = os.environ.get("GH_DEFAULT_BRANCH", "")
-          if not repository or repository.count("/") != 1:
+          source_commit = os.environ.get("GH_SOURCE_COMMIT", "")
+          if not repository or len(repository) > 200 or repository.count("/") != 1:
               raise SystemExit("GitHub repository identity is unavailable.")
           if api_url != "https://api.github.com":
               raise SystemExit("Unexpected GitHub API origin.")
@@ -88,52 +124,139 @@ jobs:
               raise SystemExit("GitHub workflow token is unavailable.")
           if default_branch != "main":
               raise SystemExit("Admission dispatcher only targets the verified main branch.")
+          if re.fullmatch(r"[0-9a-f]{40}", source_commit) is None:
+              raise SystemExit("Admission dispatcher source commit is malformed.")
 
-          payload = json.dumps(
-              {
-                  "ref": default_branch,
-                  "inputs": {
-                      "jobs": str(jobs),
-                      "require_kvm": require_kvm,
+          ref_url = f"{api_url}/repos/{repository}/git/ref/heads/{urllib.parse.quote(default_branch, safe='')}"
+          status, ref_raw = github_request(ref_url, maximum=32768)
+          if status != 200:
+              raise SystemExit(f"GitHub main-ref lookup returned unexpected HTTP {status}.")
+          ref_payload = parse_json_bytes(ref_raw, label="GitHub main-ref response", maximum=32768)
+          current_main = ref_payload.get("object", {}).get("sha") if isinstance(ref_payload, dict) else None
+          if current_main != source_commit:
+              raise SystemExit(
+                  "Main moved after this admission request started; refusing to dispatch a stale admission."
+              )
+
+          active_statuses = ("pending", "queued", "waiting", "requested", "in_progress")
+          stale_run_ids = set()
+          current_run_ids = set()
+          workflow_name = "AOSP builder admission"
+          workflow_path = ".github/workflows/aosp-builder-admission.yml"
+
+          for active_status in active_statuses:
+              query = urllib.parse.urlencode(
+                  {
+                      "branch": default_branch,
+                      "status": active_status,
+                      "per_page": 100,
+                  }
+              )
+              runs_url = (
+                  f"{api_url}/repos/{repository}/actions/workflows/"
+                  f"aosp-builder-admission.yml/runs?{query}"
+              )
+              response_status, runs_raw = github_request(runs_url)
+              if response_status != 200:
+                  raise SystemExit(
+                      f"GitHub admission-run lookup returned unexpected HTTP {response_status}."
+                  )
+              runs_payload = parse_json_bytes(
+                  runs_raw,
+                  label=f"GitHub admission-run {active_status} response",
+                  maximum=524288,
+              )
+              if not isinstance(runs_payload, dict):
+                  raise SystemExit("GitHub admission-run response must be an object.")
+              total_count = runs_payload.get("total_count")
+              workflow_runs = runs_payload.get("workflow_runs")
+              if not isinstance(total_count, int) or isinstance(total_count, bool) or total_count < 0:
+                  raise SystemExit("GitHub admission-run total_count is malformed.")
+              if total_count > 100:
+                  raise SystemExit("More than 100 active admission runs exist; refusing partial cleanup.")
+              if not isinstance(workflow_runs, list) or len(workflow_runs) != total_count:
+                  raise SystemExit("GitHub admission-run list is incomplete or malformed.")
+
+              for run in workflow_runs:
+                  if not isinstance(run, dict):
+                      raise SystemExit("GitHub admission-run entry is malformed.")
+                  run_id = run.get("id")
+                  head_sha = run.get("head_sha")
+                  run_status = run.get("status")
+                  run_name = run.get("name")
+                  run_path = run.get("path")
+                  head_branch = run.get("head_branch")
+                  if not isinstance(run_id, int) or isinstance(run_id, bool) or run_id <= 0:
+                      raise SystemExit("GitHub admission-run id is malformed.")
+                  if not isinstance(head_sha, str) or re.fullmatch(r"[0-9a-f]{40}", head_sha) is None:
+                      raise SystemExit("GitHub admission-run head SHA is malformed.")
+                  if run_status != active_status:
+                      raise SystemExit("GitHub admission-run status filter returned inconsistent data.")
+                  if run_name != workflow_name or run_path != workflow_path or head_branch != default_branch:
+                      raise SystemExit("GitHub admission-run identity is inconsistent with the target workflow.")
+                  if head_sha == source_commit:
+                      current_run_ids.add(run_id)
+                  else:
+                      stale_run_ids.add(run_id)
+
+          cancelled_run_ids = []
+          for run_id in sorted(stale_run_ids):
+              cancel_url = f"{api_url}/repos/{repository}/actions/runs/{run_id}/cancel"
+              cancel_status, _ = github_request(
+                  cancel_url,
+                  method="POST",
+                  data=b"{}",
+                  maximum=4096,
+              )
+              if cancel_status != 202:
+                  raise SystemExit(
+                      f"Cancelling stale AOSP admission run {run_id} returned HTTP {cancel_status}."
+                  )
+              cancelled_run_ids.append(run_id)
+
+          dispatch_performed = False
+          dispatch_http_status = None
+          if not current_run_ids:
+              payload = json.dumps(
+                  {
+                      "ref": default_branch,
+                      "inputs": {
+                          "jobs": str(jobs),
+                          "require_kvm": require_kvm,
+                      },
                   },
-              },
-              sort_keys=True,
-              separators=(",", ":"),
-          ).encode("utf-8")
-          url = f"{api_url}/repos/{repository}/actions/workflows/aosp-builder-admission.yml/dispatches"
-          http_request = urllib.request.Request(
-              url,
-              data=payload,
-              method="POST",
-              headers={
-                  "Accept": "application/vnd.github+json",
-                  "Authorization": f"Bearer {token}",
-                  "Content-Type": "application/json",
-                  "X-GitHub-Api-Version": "2026-03-10",
-                  "User-Agent": "SwirPhoneOS-aosp-admission-dispatcher",
-              },
-          )
-          try:
-              with urllib.request.urlopen(http_request, timeout=30) as response:
-                  status = int(response.status)
-                  if status not in {200, 204}:
-                      raise SystemExit(f"GitHub admission dispatch returned unexpected HTTP {status}.")
-          except urllib.error.HTTPError as exc:
-              body = exc.read(4096).decode("utf-8", "replace")
-              raise SystemExit(f"GitHub admission dispatch failed with HTTP {exc.code}: {body}") from exc
-          except urllib.error.URLError as exc:
-              raise SystemExit(f"GitHub admission dispatch failed: {exc.reason}") from exc
+                  sort_keys=True,
+                  separators=(",", ":"),
+              ).encode("utf-8")
+              url = f"{api_url}/repos/{repository}/actions/workflows/aosp-builder-admission.yml/dispatches"
+              dispatch_http_status, dispatch_raw = github_request(
+                  url,
+                  method="POST",
+                  data=payload,
+                  maximum=4096,
+              )
+              if dispatch_http_status not in {200, 204}:
+                  raise SystemExit(
+                      f"GitHub admission dispatch returned unexpected HTTP {dispatch_http_status}."
+                  )
+              if dispatch_raw:
+                  raise SystemExit("GitHub admission dispatch unexpectedly returned a response body.")
+              dispatch_performed = True
 
           print(
               json.dumps(
                   {
-                      "schema_version": 1,
+                      "schema_version": 2,
                       "operation": "AOSP_BUILDER_ADMISSION_DISPATCH",
                       "request_id": request_id,
                       "target_ref": default_branch,
+                      "target_commit": source_commit,
                       "jobs": jobs,
                       "require_kvm": require_kvm,
-                      "dispatch_http_status": status,
+                      "stale_run_ids_cancelled": cancelled_run_ids,
+                      "matching_active_run_ids": sorted(current_run_ids),
+                      "dispatch_performed": dispatch_performed,
+                      "dispatch_http_status": dispatch_http_status,
                       "build_verified": False,
                       "boot_verified": False,
                       "status_promotion_performed": False,
