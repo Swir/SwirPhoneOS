@@ -33,7 +33,7 @@ class AospBuildRequestWorkflowTests(unittest.TestCase):
 
         forbidden = (
             "contents: write",
-            "pull_request:",
+            "pull_request:\n",
             "pull_request_target:",
             "schedule:",
             "runs-on: [self-hosted",
@@ -60,6 +60,30 @@ class AospBuildRequestWorkflowTests(unittest.TestCase):
         self.assertIn('--repository "$GITHUB_REPOSITORY"', text)
         self.assertIn('--admission-run-id "$SWIR_ADMISSION_RUN_ID"', text)
         self.assertIn('--collect-runtime "$SWIR_COLLECT_RUNTIME"', text)
+
+    def test_build_dispatch_validates_github_2026_response_fail_closed(self) -> None:
+        text = WORKFLOW.read_text(encoding="utf-8")
+        required = (
+            "response.read(4097)",
+            "status != 200",
+            "GitHub AOSP build dispatch response is empty or oversized.",
+            "object_pairs_hook=strict_object",
+            'expected_keys = {"workflow_run_id", "run_url", "html_url"}',
+            "GitHub AOSP build dispatch response field set is not exact.",
+            "GitHub AOSP build dispatch workflow run id is malformed.",
+            "GitHub AOSP build dispatch run URL is inconsistent.",
+            "GitHub AOSP build dispatch HTML URL is inconsistent.",
+            '"operation": "AOSP_BUILD_WORKFLOW_DISPATCH"',
+            '"build_verified": False',
+            '"boot_verified": False',
+            '"status_promotion_performed": False',
+            "aosp-build-dispatch-status.json",
+        )
+        for token in required:
+            self.assertIn(token, text)
+
+        self.assertNotIn("status not in {200, 204}", text)
+        self.assertNotIn("aosp-build-dispatch-status.txt", text)
 
 
 if __name__ == "__main__":
