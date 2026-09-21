@@ -1,0 +1,145 @@
+name: Request AOSP builder admission
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/aosp-admission-request.json'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: write
+
+concurrency:
+  group: swir-aosp-admission-request
+  cancel-in-progress: false
+
+jobs:
+  dispatch-admission:
+    name: Dispatch exact AOSP builder admission
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Validate bounded request and dispatch admission
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPOSITORY: ${{ github.repository }}
+          GH_API_URL: ${{ github.api_url }}
+          GH_DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          import os
+          import re
+          import urllib.error
+          import urllib.request
+
+          class DuplicateKeyError(ValueError):
+              pass
+
+          def strict_object(pairs):
+              result = {}
+              for key, value in pairs:
+                  if key in result:
+                      raise DuplicateKeyError(f"duplicate request key: {key}")
+                  result[key] = value
+              return result
+
+          request_path = ".github/aosp-admission-request.json"
+          with open(request_path, "rb") as handle:
+              raw = handle.read(8193)
+          if not raw or len(raw) > 8192:
+              raise SystemExit("AOSP admission request must be non-empty and bounded to 8 KiB.")
+          try:
+              request = json.loads(raw.decode("utf-8", "strict"), object_pairs_hook=strict_object)
+          except (UnicodeError, json.JSONDecodeError, DuplicateKeyError) as exc:
+              raise SystemExit(f"AOSP admission request must be strict UTF-8 JSON: {exc}")
+
+          expected_keys = {"schema_version", "operation", "request_id", "jobs", "require_kvm"}
+          if not isinstance(request, dict) or set(request) != expected_keys:
+              raise SystemExit("AOSP admission request field set is not exact.")
+          if request.get("schema_version") != 1 or request.get("operation") != "AOSP_BUILDER_ADMISSION_REQUEST":
+              raise SystemExit("AOSP admission request schema is unsupported.")
+          request_id = request.get("request_id")
+          if not isinstance(request_id, str) or re.fullmatch(r"[a-z0-9][a-z0-9._-]{0,63}", request_id) is None:
+              raise SystemExit("AOSP admission request id is malformed.")
+          jobs = request.get("jobs")
+          if not isinstance(jobs, int) or isinstance(jobs, bool) or not 1 <= jobs <= 256:
+              raise SystemExit("AOSP admission request jobs must be an integer from 1 to 256.")
+          require_kvm = request.get("require_kvm")
+          if not isinstance(require_kvm, bool):
+              raise SystemExit("AOSP admission request require_kvm must be boolean.")
+
+          repository = os.environ.get("GH_REPOSITORY", "")
+          api_url = os.environ.get("GH_API_URL", "")
+          token = os.environ.get("GH_TOKEN", "")
+          default_branch = os.environ.get("GH_DEFAULT_BRANCH", "")
+          if not repository or repository.count("/") != 1:
+              raise SystemExit("GitHub repository identity is unavailable.")
+          if api_url != "https://api.github.com":
+              raise SystemExit("Unexpected GitHub API origin.")
+          if not token:
+              raise SystemExit("GitHub workflow token is unavailable.")
+          if default_branch != "main":
+              raise SystemExit("Admission dispatcher only targets the verified main branch.")
+
+          payload = json.dumps(
+              {
+                  "ref": default_branch,
+                  "inputs": {
+                      "jobs": str(jobs),
+                      "require_kvm": require_kvm,
+                  },
+              },
+              sort_keys=True,
+              separators=(",", ":"),
+          ).encode("utf-8")
+          url = f"{api_url}/repos/{repository}/actions/workflows/aosp-builder-admission.yml/dispatches"
+          http_request = urllib.request.Request(
+              url,
+              data=payload,
+              method="POST",
+              headers={
+                  "Accept": "application/vnd.github+json",
+                  "Authorization": f"Bearer {token}",
+                  "Content-Type": "application/json",
+                  "X-GitHub-Api-Version": "2026-03-10",
+                  "User-Agent": "SwirPhoneOS-aosp-admission-dispatcher",
+              },
+          )
+          try:
+              with urllib.request.urlopen(http_request, timeout=30) as response:
+                  status = int(response.status)
+                  if status not in {200, 204}:
+                      raise SystemExit(f"GitHub admission dispatch returned unexpected HTTP {status}.")
+          except urllib.error.HTTPError as exc:
+              body = exc.read(4096).decode("utf-8", "replace")
+              raise SystemExit(f"GitHub admission dispatch failed with HTTP {exc.code}: {body}") from exc
+          except urllib.error.URLError as exc:
+              raise SystemExit(f"GitHub admission dispatch failed: {exc.reason}") from exc
+
+          print(
+              json.dumps(
+                  {
+                      "schema_version": 1,
+                      "operation": "AOSP_BUILDER_ADMISSION_DISPATCH",
+                      "request_id": request_id,
+                      "target_ref": default_branch,
+                      "jobs": jobs,
+                      "require_kvm": require_kvm,
+                      "dispatch_http_status": status,
+                      "build_verified": False,
+                      "boot_verified": False,
+                      "status_promotion_performed": False,
+                  },
+                  sort_keys=True,
+                  separators=(",", ":"),
+              )
+          )
+          PY
