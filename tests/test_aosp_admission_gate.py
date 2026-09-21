@@ -166,7 +166,7 @@ class AospAdmissionGateTests(unittest.TestCase):
             self.assertEqual(main(self._cli_args(require_kvm=True)), 0)
 
         freshness_gate.assert_called_once_with(
-            host_admission_path=self.root / "aosp-host-admission.json",
+            host_admission_path=self.preflight_path.resolve().parent / "aosp-host-admission.json",
             workspace=workspace,
             require_kvm=True,
         )
