@@ -4,15 +4,31 @@ The admission workflow is intentionally read-only. This module verifies that a
 previous successful admission artifact belongs to the exact repository, source
 commit, workflow run and requested build budget before the expensive AOSP build
 workflow is allowed to touch its persistent workspace.
+
+When invoked by the build workflow, the CLI also re-captures the current
+read-only host/toolchain identity and requires it to match the exact
+``aosp-host-admission.json`` snapshot downloaded beside the admission files.
+This closes stale-admission reuse before any AOSP source synchronization while
+keeping the public ``validate_admission`` contract deterministic for post-run
+continuity verification.
 """
 from __future__ import annotations
 
 import argparse
 import hashlib
 import json
+import os
 from pathlib import Path
 import re
 from typing import Any
+
+from .aosp_host_evidence import (
+    AospHostEvidenceError,
+    collect_host_evidence,
+    load_host_evidence,
+)
+from .aosp_host_freshness import AospHostFreshnessError, verify_host_freshness
+from .build_preflight import MIN_FREE_BYTES, MIN_RAM_BYTES
 
 
 class AospAdmissionGateError(ValueError):
@@ -177,6 +193,38 @@ def validate_admission(
     }
 
 
+def validate_admitted_host_freshness(
+    *,
+    host_admission_path: Path,
+    workspace: Path,
+    require_kvm: bool,
+) -> dict[str, object]:
+    """Re-capture and verify the exact host before build-workspace mutation.
+
+    The downloaded admission snapshot is validated as PRE_BUILD evidence.  The
+    current snapshot is collected entirely read-only and must retain the same
+    workspace, host and exact required-tool identity while still satisfying the
+    build preflight's current RAM/free-space floors. Runtime runs additionally
+    require KVM to still be readable and writable.
+    """
+
+    admitted, admitted_file_sha = load_host_evidence(
+        host_admission_path.resolve(), expected_phase="PRE_BUILD"
+    )
+    current = collect_host_evidence(workspace, "PRE_BUILD")
+    current_raw = (json.dumps(current, indent=2, ensure_ascii=True) + "\n").encode("utf-8")
+    current_file_sha = hashlib.sha256(current_raw).hexdigest()
+    return verify_host_freshness(
+        admitted,
+        current,
+        admitted_file_sha256=admitted_file_sha,
+        current_file_sha256=current_file_sha,
+        require_kvm=require_kvm,
+        min_ram_bytes=MIN_RAM_BYTES,
+        min_free_bytes=MIN_FREE_BYTES,
+    )
+
+
 def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Validate exact AOSP builder admission before build work.")
     parser.add_argument("--preflight", required=True, type=Path)
@@ -201,7 +249,22 @@ def main(argv: list[str] | None = None) -> int:
             requested_jobs=args.jobs,
             require_kvm=args.require_kvm,
         )
-    except (AospAdmissionGateError, OSError) as exc:
+        workspace_value = os.environ.get("SWIR_AOSP_WORKSPACE", "")
+        if not workspace_value:
+            raise AospAdmissionGateError("SWIR_AOSP_WORKSPACE is required for admitted host freshness verification.")
+        host_admission_path = args.preflight.resolve().parent / "aosp-host-admission.json"
+        validate_admitted_host_freshness(
+            host_admission_path=host_admission_path,
+            workspace=Path(workspace_value),
+            require_kvm=args.require_kvm,
+        )
+    except (
+        AospAdmissionGateError,
+        AospHostEvidenceError,
+        AospHostFreshnessError,
+        OSError,
+        ValueError,
+    ) as exc:
         raise SystemExit(f"AOSP build admission gate rejected: {exc}") from exc
     print(json.dumps(report, sort_keys=True, separators=(",", ":")))
     return 0
