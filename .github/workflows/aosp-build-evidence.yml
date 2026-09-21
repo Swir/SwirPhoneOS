@@ -146,6 +146,24 @@ jobs:
             --workspace "$SWIR_AOSP_WORKSPACE" \
             --phase PRE_BUILD \
             > "$GITHUB_WORKSPACE/aosp-host-pre.json"
+      - name: Re-verify exact admitted host immediately before source synchronization
+        shell: bash
+        run: |
+          set -euo pipefail
+          printf '%s\n' "PRESYNC_FRESHNESS" > "$GITHUB_WORKSPACE/aosp-phase.txt"
+          PYTHONPATH="$GITHUB_WORKSPACE/tools" python -m swirphoneos.aosp_host_evidence \
+            --workspace "$SWIR_AOSP_WORKSPACE" \
+            --phase PRE_BUILD \
+            > "$GITHUB_WORKSPACE/aosp-host-presync.json"
+          args=(
+            --admitted "$GITHUB_WORKSPACE/admission/aosp-host-admission.json"
+            --current "$GITHUB_WORKSPACE/aosp-host-presync.json"
+          )
+          if [[ "$SWIR_COLLECT_RUNTIME" == "true" ]]; then
+            args+=(--require-kvm)
+          fi
+          PYTHONPATH="$GITHUB_WORKSPACE/tools" python -m swirphoneos.aosp_host_freshness "${args[@]}" \
+            > "$GITHUB_WORKSPACE/aosp-host-presync-freshness.json"
       - name: Initialize and synchronize exact Android 17 tag
         shell: bash
         run: |
@@ -505,9 +523,12 @@ jobs:
             aosp-phase.txt
             admission/builder-admission.json
             admission/builder-admission-envelope.json
+            admission/aosp-host-admission.json
             builder-admission-build-gate.json
             builder-preflight.json
             aosp-host-pre.json
+            aosp-host-presync.json
+            aosp-host-presync-freshness.json
             aosp-host-post.json
             aosp-host-trust-bundle.json
             cuttlefish-host-tool-evidence.json
