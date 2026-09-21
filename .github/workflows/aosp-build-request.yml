@@ -98,6 +98,7 @@ jobs:
           set -euo pipefail
           PYTHONPATH="$GITHUB_WORKSPACE" python -m swirphoneos.aosp_build_request \
             --admission-run "$GITHUB_WORKSPACE/admission-run.json" \
+            --preflight "$GITHUB_WORKSPACE/admission/builder-admission.json" \
             --attestation "$GITHUB_WORKSPACE/admission/builder-admission-envelope.json" \
             --source-commit "$GITHUB_SHA" \
             --repository "$GITHUB_REPOSITORY" \
