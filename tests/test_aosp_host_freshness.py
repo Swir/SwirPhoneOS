@@ -32,6 +32,14 @@ class AospHostFreshnessTests(unittest.TestCase):
         free_inodes: int = 123456,
         kvm: bool = True,
     ) -> dict[str, object]:
+        def access_side_effect(path: object, mode: int) -> bool:
+            # KVM availability is independent from executable permission on the
+            # synthetic required host tools.  Keep tool executability true so
+            # a negative KVM fixture reaches the freshness gate itself.
+            if str(path) == "/dev/kvm":
+                return kvm
+            return True
+
         with mock.patch.object(host.shutil, "which", side_effect=lambda name: tools.get(name)), \
              mock.patch.object(host.platform, "system", return_value="Linux"), \
              mock.patch.object(host.platform, "machine", return_value="x86_64"), \
@@ -44,7 +52,7 @@ class AospHostFreshnessTests(unittest.TestCase):
                  "free_inodes": free_inodes,
              }), \
              mock.patch.object(host.os.path, "exists", return_value=kvm), \
-             mock.patch.object(host.os, "access", return_value=kvm):
+             mock.patch.object(host.os, "access", side_effect=access_side_effect):
             return host.collect_host_evidence(workspace, "PRE_BUILD")
 
     @staticmethod
