@@ -153,7 +153,11 @@ class AospAdmissionGateTests(unittest.TestCase):
         workspace.mkdir()
         output = io.StringIO()
 
-        with mock.patch.dict(os.environ, {"SWIR_AOSP_WORKSPACE": str(workspace)}, clear=False), \
+        with mock.patch.dict(
+                 os.environ,
+                 {"SWIR_AOSP_WORKSPACE": str(workspace), "SWIR_ADMISSION_RUN_ID": str(RUN_ID)},
+                 clear=False,
+             ), \
              mock.patch(
                  "swirphoneos.aosp_admission_gate.validate_admitted_host_freshness",
                  return_value={"fresh": True},
@@ -172,8 +176,14 @@ class AospAdmissionGateTests(unittest.TestCase):
 
     def test_cli_requires_workspace_for_host_freshness_verification(self) -> None:
         self._write_fixture(require_kvm=True, kvm_available=True)
-        with mock.patch.dict(os.environ, {}, clear=True):
+        with mock.patch.dict(os.environ, {"SWIR_ADMISSION_RUN_ID": str(RUN_ID)}, clear=True):
             with self.assertRaisesRegex(SystemExit, "SWIR_AOSP_WORKSPACE is required"):
+                main(self._cli_args(require_kvm=True))
+
+    def test_cli_rejects_workflow_run_environment_mismatch(self) -> None:
+        self._write_fixture(require_kvm=True, kvm_available=True)
+        with mock.patch.dict(os.environ, {"SWIR_ADMISSION_RUN_ID": str(RUN_ID + 1)}, clear=True):
+            with self.assertRaisesRegex(SystemExit, "does not match the requested admission run id"):
                 main(self._cli_args(require_kvm=True))
 
     def test_cli_fails_closed_when_current_host_no_longer_matches_admission(self) -> None:
@@ -181,13 +191,24 @@ class AospAdmissionGateTests(unittest.TestCase):
         workspace = self.root / "aosp"
         workspace.mkdir()
 
-        with mock.patch.dict(os.environ, {"SWIR_AOSP_WORKSPACE": str(workspace)}, clear=False), \
+        with mock.patch.dict(
+                 os.environ,
+                 {"SWIR_AOSP_WORKSPACE": str(workspace), "SWIR_ADMISSION_RUN_ID": str(RUN_ID)},
+                 clear=False,
+             ), \
              mock.patch(
                  "swirphoneos.aosp_admission_gate.validate_admitted_host_freshness",
                  side_effect=AospHostFreshnessError("identity drift: toolchain_sha256"),
              ):
             with self.assertRaisesRegex(SystemExit, "identity drift: toolchain_sha256"):
                 main(self._cli_args(require_kvm=True))
+
+    def test_cli_standalone_validation_does_not_require_workflow_environment(self) -> None:
+        self._write_fixture(require_kvm=True, kvm_available=True)
+        output = io.StringIO()
+        with mock.patch.dict(os.environ, {}, clear=True), redirect_stdout(output):
+            self.assertEqual(main(self._cli_args(require_kvm=True)), 0)
+        self.assertEqual(json.loads(output.getvalue()), self._validate(require_kvm=True))
 
     def test_workflow_requires_exact_downloaded_admission_before_source_sync(self) -> None:
         workflow = Path(".github/workflows/aosp-build-evidence.yml").read_text(encoding="utf-8")
