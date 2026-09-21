@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Swir Home</string>
+    <string name="launcher_title">SwirPhoneOS</string>
+    <string name="launcher_subtitle">Tu pantalla de inicio beta</string>
+    <string name="setup_title">Completa la configuración inicial</string>
+    <string name="setup_body">Revisa el idioma y la privacidad antes de usar la beta.</string>
+    <string name="language_region">Idioma y región</string>
+    <string name="privacy">Privacidad</string>
+    <string name="finish_setup">Finalizar configuración</string>
+    <string name="setup_done">Configuración guardada</string>
+    <string name="essentials">Esenciales</string>
+    <string name="settings">Ajustes</string>
+    <string name="files">Archivos</string>
+    <string name="update">Actualización del sistema</string>
+    <string name="apps">Aplicaciones</string>
+    <string name="unknown_app">Aplicación</string>
+    <string name="no_apps">No se encontraron aplicaciones disponibles</string>
+    <string name="open_failed">Esta pantalla no está disponible</string>
+</resources>
