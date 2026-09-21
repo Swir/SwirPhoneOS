@@ -80,6 +80,7 @@ class AospBuilderAdmissionWorkflowTests(unittest.TestCase):
             "aosp-host-admission.json",
             "64 GiB RAM",
             "400 GiB free-space",
+            "Any drift rejects the run before",
             "before source synchronization begins",
             "SWIR_AOSP_WORKSPACE",
             "swir-aosp-builder",
