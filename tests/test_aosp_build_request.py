@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 from pathlib import Path
 import tempfile
@@ -28,6 +29,18 @@ def _run_payload(**changes: object) -> dict[str, object]:
     return payload
 
 
+def _preflight(**changes: object) -> dict[str, object]:
+    payload: dict[str, object] = {
+        "operation": "READ_ONLY_HOST_PREFLIGHT",
+        "ready_for_full_build": True,
+        "workspace": {"cleanup_performed": False},
+        "checks": [{"id": "host", "passed": True}],
+        "cuttlefish_kvm_available": True,
+    }
+    payload.update(changes)
+    return payload
+
+
 def _attestation(**changes: object) -> dict[str, object]:
     payload: dict[str, object] = {
         "schema_version": 1,
@@ -39,7 +52,7 @@ def _attestation(**changes: object) -> dict[str, object]:
         "workflow_run_id": RUN_ID,
         "requested_jobs": 16,
         "require_kvm": True,
-        "preflight_sha256": "b" * 64,
+        "preflight_sha256": None,
         "preflight_operation": "READ_ONLY_HOST_PREFLIGHT",
         "ready_for_full_build": True,
         "cuttlefish_kvm_available": True,
@@ -54,19 +67,34 @@ class AospBuildRequestTests(unittest.TestCase):
         self,
         *,
         run: dict[str, object] | None = None,
+        preflight: dict[str, object] | None = None,
         attestation: dict[str, object] | None = None,
         collect_runtime: bool = False,
     ) -> dict[str, object]:
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
             run_path = root / "run.json"
+            preflight_path = root / "preflight.json"
             attestation_path = root / "attestation.json"
             run_path.write_text(json.dumps(run or _run_payload()), encoding="utf-8")
+            preflight_raw = (
+                json.dumps(
+                    preflight or _preflight(), sort_keys=True, separators=(",", ":")
+                )
+                + "\n"
+            ).encode("utf-8")
+            preflight_path.write_bytes(preflight_raw)
+            attestation_value = dict(attestation or _attestation())
+            if attestation_value.get("preflight_sha256") is None:
+                attestation_value["preflight_sha256"] = hashlib.sha256(
+                    preflight_raw
+                ).hexdigest()
             attestation_path.write_text(
-                json.dumps(attestation or _attestation()), encoding="utf-8"
+                json.dumps(attestation_value), encoding="utf-8"
             )
             return validate_build_request(
                 admission_run_path=run_path,
+                preflight_path=preflight_path,
                 attestation_path=attestation_path,
                 source_commit=SHA,
                 repository=REPOSITORY,
@@ -91,7 +119,7 @@ class AospBuildRequestTests(unittest.TestCase):
         self.assertIs(payload["inputs"]["collect_runtime"], True)
         with self.assertRaisesRegex(AospBuildRequestError, "required and admitted KVM"):
             self._validate(
-                attestation=_attestation(require_kvm=False, cuttlefish_kvm_available=True),
+                attestation=_attestation(require_kvm=False),
                 collect_runtime=True,
             )
 
@@ -114,6 +142,19 @@ class AospBuildRequestTests(unittest.TestCase):
         with self.assertRaisesRegex(AospBuildRequestError, "different source commit"):
             self._validate(attestation=_attestation(source_commit="c" * 40))
 
+    def test_rejects_preflight_mutation_failure_and_digest_tampering(self) -> None:
+        cases = (
+            (_preflight(ready_for_full_build=False), _attestation()),
+            (_preflight(workspace={"cleanup_performed": True}), _attestation()),
+            (_preflight(checks=[{"id": "host", "passed": False}]), _attestation()),
+            (_preflight(cuttlefish_kvm_available=False), _attestation()),
+            (_preflight(), _attestation(preflight_sha256="not-a-digest")),
+        )
+        for preflight, attestation in cases:
+            with self.subTest(preflight=preflight, attestation=attestation):
+                with self.assertRaises(AospBuildRequestError):
+                    self._validate(preflight=preflight, attestation=attestation)
+
     def test_rejects_attestation_that_is_not_exact_read_only_and_build_ready(self) -> None:
         cases = (
             _attestation(admitted=False),
@@ -127,12 +168,11 @@ class AospBuildRequestTests(unittest.TestCase):
                 with self.assertRaises(AospBuildRequestError):
                     self._validate(attestation=attestation)
 
-    def test_rejects_job_budget_kvm_and_digest_tampering(self) -> None:
+    def test_rejects_job_budget_and_kvm_tampering(self) -> None:
         cases = (
             _attestation(requested_jobs=0),
             _attestation(requested_jobs=257),
             _attestation(require_kvm=True, cuttlefish_kvm_available=False),
-            _attestation(preflight_sha256="not-a-digest"),
         )
         for attestation in cases:
             with self.subTest(attestation=attestation):
