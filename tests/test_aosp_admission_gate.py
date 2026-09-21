@@ -1,12 +1,21 @@
 from __future__ import annotations
 
+from contextlib import redirect_stdout
 import hashlib
+import io
 import json
+import os
 from pathlib import Path
 import tempfile
 import unittest
+from unittest import mock
 
-from swirphoneos.aosp_admission_gate import AospAdmissionGateError, validate_admission
+from swirphoneos.aosp_admission_gate import (
+    AospAdmissionGateError,
+    main,
+    validate_admission,
+)
+from swirphoneos.aosp_host_freshness import AospHostFreshnessError
 
 
 SOURCE_COMMIT = "a" * 40
@@ -73,6 +82,19 @@ class AospAdmissionGateTests(unittest.TestCase):
         values.update(overrides)
         return validate_admission(**values)  # type: ignore[arg-type]
 
+    def _cli_args(self, *, require_kvm: bool = False) -> list[str]:
+        args = [
+            "--preflight", str(self.preflight_path),
+            "--attestation", str(self.attestation_path),
+            "--source-commit", SOURCE_COMMIT,
+            "--repository", REPOSITORY,
+            "--admission-run-id", str(RUN_ID),
+            "--jobs", str(JOBS),
+        ]
+        if require_kvm:
+            args.append("--require-kvm")
+        return args
+
     def test_accepts_exact_build_contract_and_emits_fail_closed_gate(self) -> None:
         self._write_fixture(require_kvm=True, kvm_available=True)
         report = self._validate(require_kvm=True)
@@ -124,6 +146,42 @@ class AospAdmissionGateTests(unittest.TestCase):
         self.attestation_path.write_text('{"schema_version":1,"schema_version":1}\n', encoding="utf-8")
         with self.assertRaisesRegex(AospAdmissionGateError, "duplicate key"):
             self._validate()
+
+    def test_cli_rechecks_exact_host_snapshot_before_emitting_unchanged_gate_contract(self) -> None:
+        self._write_fixture(require_kvm=True, kvm_available=True)
+        workspace = self.root / "aosp"
+        workspace.mkdir()
+        output = io.StringIO()
+
+        with mock.patch.dict(os.environ, {"SWIR_AOSP_WORKSPACE": str(workspace)}, clear=False), \
+             mock.patch(
+                 "swirphoneos.aosp_admission_gate.validate_admitted_host_freshness",
+                 return_value={"fresh": True},
+             ) as freshness_gate, \
+             redirect_stdout(output):
+            self.assertEqual(main(self._cli_args(require_kvm=True)), 0)
+
+        freshness_gate.assert_called_once_with(
+            host_admission_path=self.root / "aosp-host-admission.json",
+            workspace=workspace,
+            require_kvm=True,
+        )
+        emitted = json.loads(output.getvalue())
+        self.assertEqual(emitted, self._validate(require_kvm=True))
+        self.assertNotIn("host_freshness", emitted)
+
+    def test_cli_fails_closed_when_current_host_no_longer_matches_admission(self) -> None:
+        self._write_fixture(require_kvm=True, kvm_available=True)
+        workspace = self.root / "aosp"
+        workspace.mkdir()
+
+        with mock.patch.dict(os.environ, {"SWIR_AOSP_WORKSPACE": str(workspace)}, clear=False), \
+             mock.patch(
+                 "swirphoneos.aosp_admission_gate.validate_admitted_host_freshness",
+                 side_effect=AospHostFreshnessError("identity drift: toolchain_sha256"),
+             ):
+            with self.assertRaisesRegex(SystemExit, "identity drift: toolchain_sha256"):
+                main(self._cli_args(require_kvm=True))
 
     def test_workflow_requires_exact_downloaded_admission_before_source_sync(self) -> None:
         workflow = Path(".github/workflows/aosp-build-evidence.yml").read_text(encoding="utf-8")
