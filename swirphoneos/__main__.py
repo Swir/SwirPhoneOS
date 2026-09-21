@@ -7,6 +7,7 @@ import sys
 from . import __version__
 from .android_apps import AndroidAppSourceError, public_android_app_source_summary, validate_android_app_sources
 from .aosp_run_evidence import AospRunEvidenceError, collect_aosp_run_evidence
+from .aosp_runner_setup import RunnerSetupError, apply_local_runner_setup, plan_local_runner_setup
 from .aosp_workspace import AospWorkspaceError, make_workspace_plan, public_manifest_evidence, public_workspace_plan, stage_product_tree, validate_resolved_manifest
 from .build_evidence import BuildEvidenceError, collect_build_evidence, create_evidence_bundle, load_json_report
 from .build_preflight import BuildPreflightError, capture_host, evaluate_preflight
@@ -41,6 +42,7 @@ def main(argv: list[str] | None = None) -> int:
     product_contract=sub.add_parser("product-contract",help="Validate the checked-in SwirPhoneOS Cuttlefish product integration contract"); product_contract.add_argument("--root",type=Path,default=Path("platform/aosp_product"))
     gsi_contract=sub.add_parser("gsi-contract",help="Validate the checked-in SwirPhoneOS ARM64 GSI source contract without claiming compatibility"); gsi_contract.add_argument("--root",type=Path,default=Path("platform/aosp_product"))
     build_preflight=sub.add_parser("build-preflight",help="Inspect the local build host without installing/downloading/changing anything"); build_preflight.add_argument("--workspace",type=Path,default=Path.cwd())
+    runner_setup=sub.add_parser("runner-local-setup",help="Prepare only the local registered self-hosted runner workspace/env; never registers or labels the runner"); runner_setup.add_argument("--runner-dir",type=Path,required=True); runner_setup.add_argument("--workspace",type=Path,required=True); runner_setup.add_argument("--execute",action="store_true")
     aosp_plan=sub.add_parser("aosp-plan",help="Generate an argv-only exact-tag AOSP sync/stage/build plan without executing it"); aosp_plan.add_argument("--workspace",type=Path,required=True); aosp_plan.add_argument("--jobs",type=int,default=8); aosp_plan.add_argument("--baseline",type=Path,default=Path("platform/aosp_baseline.json")); aosp_plan.add_argument("--product-root",type=Path,default=Path("platform/aosp_product"))
     gsi_plan=sub.add_parser("gsi-plan",help="Generate an exact-tag ARM64 GSI sync/stage/systemimage plan without executing it"); gsi_plan.add_argument("--workspace",type=Path,required=True); gsi_plan.add_argument("--jobs",type=int,default=8); gsi_plan.add_argument("--baseline",type=Path,default=Path("platform/aosp_baseline.json")); gsi_plan.add_argument("--product-root",type=Path,default=Path("platform/aosp_product"))
     resolved_manifest=sub.add_parser("aosp-manifest",help="Validate a captured repo manifest -r snapshot and report SHA-256"); resolved_manifest.add_argument("--file",type=Path,required=True)
@@ -72,6 +74,7 @@ def main(argv: list[str] | None = None) -> int:
         elif args.command=="product-contract": result=public_product_summary(validate_product_contract(args.root))
         elif args.command=="gsi-contract": result=public_gsi_contract_summary(validate_gsi_contract(args.root))
         elif args.command=="build-preflight": result=evaluate_preflight(capture_host(args.workspace.resolve()))
+        elif args.command=="runner-local-setup": result=apply_local_runner_setup(args.runner_dir,args.workspace) if args.execute else plan_local_runner_setup(args.runner_dir,args.workspace)
         elif args.command=="aosp-plan": result=public_workspace_plan(make_workspace_plan(load_baseline(args.baseline),validate_product_contract(args.product_root),args.workspace,jobs=args.jobs))
         elif args.command=="gsi-plan": result=public_gsi_workspace_plan(make_gsi_workspace_plan(load_baseline(args.baseline),validate_gsi_contract(args.product_root),args.workspace,jobs=args.jobs))
         elif args.command=="aosp-manifest": result=public_manifest_evidence(validate_resolved_manifest(args.file))
