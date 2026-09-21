@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Swir Home</string>
+    <string name="launcher_title">SwirPhoneOS</string>
+    <string name="launcher_subtitle">شاشة البداية للإصدار التجريبي</string>
+    <string name="setup_title">أكمل الإعداد الأولي</string>
+    <string name="setup_body">راجع اللغة والخصوصية قبل استخدام الإصدار التجريبي.</string>
+    <string name="language_region">اللغة والمنطقة</string>
+    <string name="privacy">الخصوصية</string>
+    <string name="finish_setup">إنهاء الإعداد</string>
+    <string name="setup_done">تم حفظ الإعداد</string>
+    <string name="essentials">الأساسيات</string>
+    <string name="settings">الإعدادات</string>
+    <string name="files">الملفات</string>
+    <string name="update">تحديث النظام</string>
+    <string name="apps">التطبيقات</string>
+    <string name="unknown_app">تطبيق</string>
+    <string name="no_apps">لم يتم العثور على تطبيقات قابلة للتشغيل</string>
+    <string name="open_failed">هذه الشاشة غير متاحة</string>
+</resources>
