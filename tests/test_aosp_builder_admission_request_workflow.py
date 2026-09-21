@@ -31,6 +31,7 @@ class AospBuilderAdmissionRequestWorkflowTests(unittest.TestCase):
             "aosp-builder-admission.yml/dispatches",
             '"target_ref": default_branch',
             '"target_commit": source_commit',
+            '"expected_source_commit": source_commit',
             '"build_verified": False',
             '"boot_verified": False',
             '"status_promotion_performed": False',
@@ -114,6 +115,11 @@ class AospBuilderAdmissionRequestWorkflowTests(unittest.TestCase):
     def test_dispatch_target_remains_read_only_self_hosted_admission(self) -> None:
         text = TARGET.read_text(encoding="utf-8")
         self.assertIn("workflow_dispatch:", text)
+        self.assertIn("expected_source_commit:", text)
+        self.assertIn("required: true", text)
+        self.assertIn("SWIR_EXPECTED_SOURCE_COMMIT: ${{ inputs.expected_source_commit }}", text)
+        self.assertIn("Verify exact dispatched source commit", text)
+        self.assertIn('"$GITHUB_SHA" != "$SWIR_EXPECTED_SOURCE_COMMIT"', text)
         self.assertIn("runs-on: [self-hosted, linux, x64, swir-aosp-builder]", text)
         self.assertIn("name: Read-only AOSP builder admission", text)
         self.assertIn("python -m swirphoneos build-preflight", text)
