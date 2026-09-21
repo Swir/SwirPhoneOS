@@ -17,6 +17,9 @@ class AospBuilderAdmissionWorkflowTests(unittest.TestCase):
             "timeout-minutes: 10",
             "permissions:\n  contents: read",
             "python -m swirphoneos build-preflight",
+            "python -m swirphoneos.aosp_host_evidence",
+            "--phase PRE_BUILD",
+            "aosp-host-admission.json",
             'report.get("operation") != "READ_ONLY_HOST_PREFLIGHT"',
             'workspace.get("cleanup_performed") is not False',
             'report.get("ready_for_full_build") is not True',
@@ -27,6 +30,16 @@ class AospBuilderAdmissionWorkflowTests(unittest.TestCase):
         )
         for token in required:
             self.assertIn(token, text)
+
+        self.assertEqual(text.count("python -m swirphoneos.aosp_host_evidence"), 1)
+        self.assertLess(
+            text.index("python -m swirphoneos build-preflight"),
+            text.index("python -m swirphoneos.aosp_host_evidence"),
+        )
+        self.assertLess(
+            text.index("python -m swirphoneos.aosp_host_evidence"),
+            text.index("- name: Upload bounded builder admission report and attestation"),
+        )
 
         forbidden = (
             "repo init",
@@ -63,6 +76,7 @@ class AospBuilderAdmissionWorkflowTests(unittest.TestCase):
             "not boot evidence",
             "does not sync Android source",
             "does not write to a phone",
+            "exact host/toolchain identity snapshot",
             "SWIR_AOSP_WORKSPACE",
             "swir-aosp-builder",
             "AOSP build evidence",

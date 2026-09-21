@@ -100,6 +100,14 @@ jobs:
           if require_kvm and report.get("cuttlefish_kvm_available") is not True:
               raise SystemExit("AOSP builder admission requires readable/writable KVM for Cuttlefish runtime evidence.")
           PY
+      - name: Capture exact admitted host and toolchain identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH="$GITHUB_WORKSPACE/tools" python -m swirphoneos.aosp_host_evidence \
+            --workspace "$SWIR_AOSP_WORKSPACE" \
+            --phase PRE_BUILD \
+            > "$GITHUB_WORKSPACE/aosp-host-admission.json"
       - name: Bind successful admission to the exact run contract
         shell: bash
         run: |
@@ -211,5 +219,6 @@ jobs:
           path: |
             builder-admission.json
             builder-admission-envelope.json
+            aosp-host-admission.json
           if-no-files-found: error
           retention-days: 14
