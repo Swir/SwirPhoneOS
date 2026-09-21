@@ -2,13 +2,15 @@
 
 This module does not build Android and does not contact GitHub. It validates a
 completed builder-admission workflow snapshot plus the exact admission
-envelope, then emits a deterministic workflow-dispatch payload for the matching
-``aosp-build-evidence.yml`` run. The source commit, repository, workflow run,
-job budget and optional runtime/KVM requirement must all remain exact.
+preflight/envelope pair, then emits a deterministic workflow-dispatch payload
+for the matching ``aosp-build-evidence.yml`` run. The source commit,
+repository, workflow run, job budget and optional runtime/KVM requirement must
+all remain exact.
 """
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 from pathlib import Path
 import re
@@ -20,6 +22,7 @@ class AospBuildRequestError(ValueError):
 
 
 _MAX_RUN_BYTES = 512 * 1024
+_MAX_PREFLIGHT_BYTES = 256 * 1024
 _MAX_ATTESTATION_BYTES = 8 * 1024
 _HEX40 = re.compile(r"[0-9a-f]{40}\Z")
 _HEX64 = re.compile(r"[0-9a-f]{64}\Z")
@@ -50,7 +53,9 @@ def _strict_object(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
     return result
 
 
-def _load_json(path: Path, *, maximum: int, label: str) -> dict[str, object]:
+def _load_json(
+    path: Path, *, maximum: int, label: str
+) -> tuple[dict[str, object], str]:
     if not path.is_file() or path.is_symlink():
         raise AospBuildRequestError(f"{label} is missing or is not a regular file.")
     raw = path.read_bytes()
@@ -62,7 +67,7 @@ def _load_json(path: Path, *, maximum: int, label: str) -> dict[str, object]:
         raise AospBuildRequestError(f"{label} must be strict UTF-8 JSON.") from exc
     if not isinstance(value, dict):
         raise AospBuildRequestError(f"{label} root must be an object.")
-    return value
+    return value, hashlib.sha256(raw).hexdigest()
 
 
 def _positive_int(value: object, *, field: str, maximum: int | None = None) -> int:
@@ -80,6 +85,7 @@ def _positive_int(value: object, *, field: str, maximum: int | None = None) -> i
 def validate_build_request(
     *,
     admission_run_path: Path,
+    preflight_path: Path,
     attestation_path: Path,
     source_commit: str,
     repository: str,
@@ -98,7 +104,7 @@ def validate_build_request(
         raise AospBuildRequestError("collect_runtime must be boolean.")
     expected_run_id = _positive_int(admission_run_id, field="admission_run_id")
 
-    run = _load_json(
+    run, _ = _load_json(
         admission_run_path,
         maximum=_MAX_RUN_BYTES,
         label="Admission workflow run metadata",
@@ -117,7 +123,25 @@ def validate_build_request(
     if not isinstance(run_repository, dict) or run_repository.get("full_name") != repository:
         raise AospBuildRequestError("Admission workflow belongs to a different repository.")
 
-    attestation = _load_json(
+    preflight, preflight_sha256 = _load_json(
+        preflight_path,
+        maximum=_MAX_PREFLIGHT_BYTES,
+        label="Admission preflight",
+    )
+    if preflight.get("operation") != "READ_ONLY_HOST_PREFLIGHT":
+        raise AospBuildRequestError("Admission preflight is not the read-only host contract.")
+    if preflight.get("ready_for_full_build") is not True:
+        raise AospBuildRequestError("Admission preflight did not prove a build-ready host.")
+    workspace = preflight.get("workspace")
+    if not isinstance(workspace, dict) or workspace.get("cleanup_performed") is not False:
+        raise AospBuildRequestError("Admission preflight mutated or omitted workspace state.")
+    checks = preflight.get("checks")
+    if not isinstance(checks, list) or not checks:
+        raise AospBuildRequestError("Admission preflight has no checks.")
+    if any(not isinstance(item, dict) or item.get("passed") is not True for item in checks):
+        raise AospBuildRequestError("Admission preflight contains a failed or malformed check.")
+
+    attestation, _ = _load_json(
         attestation_path,
         maximum=_MAX_ATTESTATION_BYTES,
         label="Admission attestation",
@@ -143,21 +167,24 @@ def validate_build_request(
         raise AospBuildRequestError("Admission did not prove a build-ready host.")
     if attestation.get("workspace_cleanup_performed") is not False:
         raise AospBuildRequestError("Admission mutated or ambiguously reported workspace state.")
+    digest = str(attestation.get("preflight_sha256") or "")
+    if _HEX64.fullmatch(digest) is None or digest != preflight_sha256:
+        raise AospBuildRequestError("Admission attestation is not bound to the exact preflight bytes.")
 
     jobs = _positive_int(attestation.get("requested_jobs"), field="requested_jobs", maximum=256)
     require_kvm = attestation.get("require_kvm")
-    kvm_available = attestation.get("cuttlefish_kvm_available")
-    if not isinstance(require_kvm, bool) or not isinstance(kvm_available, bool):
+    attested_kvm = attestation.get("cuttlefish_kvm_available")
+    if not isinstance(require_kvm, bool) or not isinstance(attested_kvm, bool):
         raise AospBuildRequestError("Admission KVM state is malformed.")
-    if require_kvm and not kvm_available:
+    preflight_kvm = preflight.get("cuttlefish_kvm_available") is True
+    if attested_kvm != preflight_kvm:
+        raise AospBuildRequestError("Admission KVM state does not match the exact preflight.")
+    if require_kvm and not attested_kvm:
         raise AospBuildRequestError("Admission required KVM without proving KVM availability.")
-    if collect_runtime and (not require_kvm or not kvm_available):
+    if collect_runtime and (not require_kvm or not attested_kvm):
         raise AospBuildRequestError(
             "Runtime collection requires an admission that required and admitted KVM."
         )
-    digest = str(attestation.get("preflight_sha256") or "")
-    if _HEX64.fullmatch(digest) is None:
-        raise AospBuildRequestError("Admission preflight digest is malformed.")
 
     return {
         "ref": "main",
@@ -169,7 +196,9 @@ def validate_build_request(
     }
 
 
-def public_request_report(payload: dict[str, object], *, source_commit: str, repository: str) -> dict[str, object]:
+def public_request_report(
+    payload: dict[str, object], *, source_commit: str, repository: str
+) -> dict[str, object]:
     inputs = payload["inputs"]
     assert isinstance(inputs, dict)
     return {
@@ -203,6 +232,7 @@ def _parser() -> argparse.ArgumentParser:
         description="Validate an exact successful AOSP admission before build dispatch."
     )
     parser.add_argument("--admission-run", required=True, type=Path)
+    parser.add_argument("--preflight", required=True, type=Path)
     parser.add_argument("--attestation", required=True, type=Path)
     parser.add_argument("--source-commit", required=True)
     parser.add_argument("--repository", required=True)
@@ -217,6 +247,7 @@ def main(argv: list[str] | None = None) -> int:
     try:
         payload = validate_build_request(
             admission_run_path=args.admission_run,
+            preflight_path=args.preflight,
             attestation_path=args.attestation,
             source_commit=args.source_commit,
             repository=args.repository,
@@ -235,7 +266,9 @@ def main(argv: list[str] | None = None) -> int:
         raise SystemExit(f"AOSP build request rejected: {exc}") from exc
     print(
         json.dumps(
-            public_request_report(payload, source_commit=args.source_commit, repository=args.repository),
+            public_request_report(
+                payload, source_commit=args.source_commit, repository=args.repository
+            ),
             sort_keys=True,
             separators=(",", ":"),
         )
