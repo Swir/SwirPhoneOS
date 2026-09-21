@@ -25,10 +25,12 @@ class AospBuilderAdmissionRequestWorkflowTests(unittest.TestCase):
             "timeout-minutes: 5",
             "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1",
             "persist-credentials: false",
+            "GH_SOURCE_COMMIT: ${{ github.sha }}",
             'default_branch != "main"',
             'api_url != "https://api.github.com"',
             "aosp-builder-admission.yml/dispatches",
             '"target_ref": default_branch',
+            '"target_commit": source_commit',
             '"build_verified": False',
             '"boot_verified": False',
             '"status_promotion_performed": False',
@@ -51,6 +53,48 @@ class AospBuilderAdmissionRequestWorkflowTests(unittest.TestCase):
         )
         for token in forbidden:
             self.assertNotIn(token, text)
+
+    def test_dispatcher_refuses_stale_main_and_prunes_only_admission_runs(self) -> None:
+        text = WORKFLOW.read_text(encoding="utf-8")
+        required = (
+            "/git/ref/heads/",
+            "current_main != source_commit",
+            "refusing to dispatch a stale admission",
+            'active_statuses = ("pending", "queued", "waiting", "requested", "in_progress")',
+            "actions/workflows/",
+            "aosp-builder-admission.yml/runs?",
+            'workflow_name = "AOSP builder admission"',
+            'workflow_path = ".github/workflows/aosp-builder-admission.yml"',
+            "head_branch != default_branch",
+            "head_sha == source_commit",
+            "stale_run_ids.add(run_id)",
+            "/actions/runs/{run_id}/cancel",
+            "cancel_status != 202",
+            '"stale_run_ids_cancelled": cancelled_run_ids',
+            '"matching_active_run_ids": sorted(current_run_ids)',
+            '"dispatch_performed": dispatch_performed',
+        )
+        for token in required:
+            self.assertIn(token, text)
+
+        self.assertNotIn("cancel-in-progress: true", text)
+        self.assertNotIn("aosp-build-evidence.yml/runs?", text)
+        self.assertNotIn("/actions/runs/{run_id}/delete", text)
+
+    def test_dispatcher_bounds_and_strictly_validates_github_api_responses(self) -> None:
+        text = WORKFLOW.read_text(encoding="utf-8")
+        required = (
+            "object_pairs_hook=strict_object",
+            "response.read(maximum + 1)",
+            "More than 100 active admission runs exist; refusing partial cleanup.",
+            "len(workflow_runs) != total_count",
+            "GitHub admission-run status filter returned inconsistent data.",
+            "GitHub admission-run identity is inconsistent with the target workflow.",
+            "dispatch_raw",
+            "GitHub admission dispatch unexpectedly returned a response body.",
+        )
+        for token in required:
+            self.assertIn(token, text)
 
     def test_checked_in_request_is_exact_and_requires_runtime_ready_builder(self) -> None:
         raw = REQUEST.read_bytes()
