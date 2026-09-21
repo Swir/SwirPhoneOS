@@ -221,6 +221,7 @@ jobs:
                   {
                       "ref": default_branch,
                       "inputs": {
+                          "expected_source_commit": source_commit,
                           "jobs": str(jobs),
                           "require_kvm": require_kvm,
                       },
