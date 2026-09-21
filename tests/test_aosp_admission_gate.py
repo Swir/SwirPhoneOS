@@ -170,6 +170,12 @@ class AospAdmissionGateTests(unittest.TestCase):
         self.assertEqual(emitted, self._validate(require_kvm=True))
         self.assertNotIn("host_freshness", emitted)
 
+    def test_cli_requires_workspace_for_host_freshness_verification(self) -> None:
+        self._write_fixture(require_kvm=True, kvm_available=True)
+        with mock.patch.dict(os.environ, {}, clear=True):
+            with self.assertRaisesRegex(SystemExit, "SWIR_AOSP_WORKSPACE is required"):
+                main(self._cli_args(require_kvm=True))
+
     def test_cli_fails_closed_when_current_host_no_longer_matches_admission(self) -> None:
         self._write_fixture(require_kvm=True, kvm_available=True)
         workspace = self.root / "aosp"
