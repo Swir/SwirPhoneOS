@@ -12,14 +12,13 @@ The full **AOSP build evidence** workflow downloads that exact admission artifac
 
 ## Safety boundary
 
-Admission and freshness verification are intentionally smaller than the build workflow. Admission does not sync Android source, and neither step performs any AOSP workspace mutation before the freshness gate passes. Together they:
+Admission and freshness verification are intentionally smaller than the build workflow. Admission does not sync Android source and does not write to a phone; neither step performs any AOSP workspace mutation before the freshness gate passes. Together they:
 
 - do not stage SwirPhoneOS into the AOSP workspace;
 - do not compile AOSP;
 - do not launch Cuttlefish;
 - do not invoke `adb` or `fastboot`;
-- do not install host packages or clean the workspace;
-- do not write to a phone.
+- do not install host packages or clean the workspace.
 
 A green admission or freshness gate is **not build evidence** and is **not boot evidence**. It only proves that the dedicated builder satisfies the checked-in host/workspace prerequisites and that the exact admitted host/toolchain identity has not drifted before the build window. The canonical build, boot and runtime evidence must still come from the separate **AOSP build evidence** workflow and its bound artifacts.
 
