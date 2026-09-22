@@ -23,6 +23,6 @@
     {"id":"privacy","package":"org.swir.phoneos.privacy","display_name":"Swir Privacy","phase":"emulator_core","status":"ANDROID_SOURCE","hardware_dependent":false,"critical_for_beta":true,"capabilities":["permission_review","privacy_indicators","access_history"]},
     {"id":"device_care","package":"org.swir.phoneos.device_care","display_name":"Swir Device Care","phase":"emulator_core","status":"ANDROID_SOURCE","hardware_dependent":true,"critical_for_beta":true,"capabilities":["storage_status","battery_status","thermal_status","hardware_diagnostics"]},
     {"id":"apps","package":"org.swir.phoneos.apps","display_name":"Swir Apps","phase":"beta_integration","status":"ANDROID_SOURCE","hardware_dependent":false,"critical_for_beta":false,"capabilities":["package_catalog","signature_provenance","update_status"]},
-    {"id":"swirroot","package":"org.swir.phoneos.swirroot","display_name":"SwirRoot","phase":"beta_integration","status":"ANDROID_SOURCE","hardware_dependent":true,"critical_for_beta":false,"capabilities":["root_state","guided_enable","guided_unroot","authorization_audit"]}
+    {"id":"swirroot","package":"org.swir.phoneos.swirroot","display_name":"SwirRoot","phase":"beta_integration","status":"ANDROID_SOURCE","hardware_dependent":true,"critical_for_beta":true,"capabilities":["root_state","guided_enable","guided_unroot","authorization_audit"]}
   ]
 }
