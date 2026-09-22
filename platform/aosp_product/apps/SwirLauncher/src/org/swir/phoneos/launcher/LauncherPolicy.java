@@ -48,7 +48,11 @@ public final class LauncherPolicy {
                 || REVIEW_SECURITY.equals(review);
     }
 
-    public static boolean setupReady(boolean languageReviewed, boolean privacyReviewed, boolean securityReviewed) {
-        return languageReviewed && privacyReviewed && securityReviewed;
+    public static boolean setupReady(
+            boolean languageReviewed,
+            boolean privacyReviewed,
+            boolean securityReviewed,
+            boolean deviceSecure) {
+        return languageReviewed && privacyReviewed && securityReviewed && deviceSecure;
     }
 }
