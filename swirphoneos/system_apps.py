@@ -11,8 +11,30 @@ PACKAGE = re.compile(r"org\.swir\.phoneos\.[a-z][a-z0-9_.]{1,63}\Z")
 ALLOWED_PHASES = {"emulator_core", "reference_hardware", "beta_integration"}
 ALLOWED_STATUS = {"PLANNED", "HOST_CONTRACT", "ANDROID_SOURCE", "ANDROID_RUNTIME", "HARDWARE_VERIFIED"}
 EXPECTED_DESIGN_CONTRACT = "swirphoneos-design-v7"
-REQUIRED_APP_IDS = frozenset({"phone","contacts","messages","camera","gallery","files","settings","browser","clock","calculator","notes","recorder","calendar","weather","update","backup","privacy","device_care","apps","swirroot"})
-REQUIRED_KEYS = {"id","package","display_name","phase","status","hardware_dependent","critical_for_beta","capabilities"}
+REQUIRED_APP_IDS = frozenset({
+    "phone", "contacts", "messages", "camera", "gallery", "files", "settings", "browser",
+    "clock", "calculator", "notes", "recorder", "calendar", "weather", "update", "backup",
+    "privacy", "device_care", "apps", "swirroot",
+})
+
+# FIRST-BETA scope freeze: these are the only registry-managed application surfaces
+# that are allowed to gate the first public Beta. SwirLauncher/first-run Setup and
+# AOSP SystemUI/lockscreen are product surfaces outside this 20-app registry.
+# Expanding this set requires an explicit first-Beta product decision; source-ready
+# post-Beta apps must not silently expand the runtime/review acceptance scope.
+FIRST_BETA_APP_IDS = frozenset({
+    "files",
+    "settings",
+    "update",
+    "privacy",
+    "device_care",
+    "swirroot",
+})
+
+REQUIRED_KEYS = {
+    "id", "package", "display_name", "phase", "status", "hardware_dependent",
+    "critical_for_beta", "capabilities",
+}
 
 
 class SystemAppRegistryError(ValueError):
@@ -54,6 +76,19 @@ class SystemAppRegistry:
     def app_ids(self) -> frozenset[str]:
         return frozenset(app.app_id for app in self.apps)
 
+    @property
+    def first_beta_apps(self) -> tuple[SystemApp, ...]:
+        """Return the finite first-Beta application scope in deterministic order."""
+        return tuple(sorted(
+            (app for app in self.apps if app.app_id in FIRST_BETA_APP_IDS),
+            key=lambda app: app.app_id,
+        ))
+
+    @property
+    def first_beta_source_ready(self) -> bool:
+        """Whether every frozen first-Beta app has real Android source."""
+        return all(app.source_ready for app in self.first_beta_apps)
+
 
 def _load_json(path: Path) -> object:
     if not path.is_file():
@@ -82,51 +117,100 @@ def _safe_text(value: object, field: str, limit: int = 160) -> str:
 
 
 def validate_registry(data: object) -> SystemAppRegistry:
-    if not isinstance(data, dict) or set(data) != {"schema_version","namespace","design_contract","source_language","apps"}:
+    if not isinstance(data, dict) or set(data) != {
+        "schema_version", "namespace", "design_contract", "source_language", "apps"
+    }:
         raise SystemAppRegistryError("System-app manifest must match schema v1 exactly.")
     if data["schema_version"] != 1:
         raise SystemAppRegistryError("Unsupported system-app manifest schema.")
+
     namespace = _safe_text(data["namespace"], "namespace", 80)
-    if namespace != "org.swir.phoneos": raise SystemAppRegistryError("Unexpected application namespace.")
+    if namespace != "org.swir.phoneos":
+        raise SystemAppRegistryError("Unexpected application namespace.")
     design_contract = _safe_text(data["design_contract"], "design_contract", 80)
     if design_contract != EXPECTED_DESIGN_CONTRACT:
         raise SystemAppRegistryError(
             f"System-app manifest design contract must be {EXPECTED_DESIGN_CONTRACT}."
         )
     source_language = _safe_text(data["source_language"], "source_language", 16)
-    if source_language != "en": raise SystemAppRegistryError("English must remain the canonical fallback language.")
+    if source_language != "en":
+        raise SystemAppRegistryError("English must remain the canonical fallback language.")
+
     raw_apps = data["apps"]
-    if not isinstance(raw_apps, list) or not raw_apps: raise SystemAppRegistryError("System-app manifest must contain apps.")
+    if not isinstance(raw_apps, list) or not raw_apps:
+        raise SystemAppRegistryError("System-app manifest must contain apps.")
+
     apps: list[SystemApp] = []
     ids: set[str] = set()
     packages: set[str] = set()
     for raw in raw_apps:
-        if not isinstance(raw, dict) or set(raw) != REQUIRED_KEYS: raise SystemAppRegistryError("Every system app must match schema v1 exactly.")
+        if not isinstance(raw, dict) or set(raw) != REQUIRED_KEYS:
+            raise SystemAppRegistryError("Every system app must match schema v1 exactly.")
         app_id = _safe_text(raw["id"], "id", 32)
         package = _safe_text(raw["package"], "package", 96)
         display_name = _safe_text(raw["display_name"], "display_name", 80)
         phase = _safe_text(raw["phase"], "phase", 32)
         status = _safe_text(raw["status"], "status", 32)
-        if not APP_ID.fullmatch(app_id): raise SystemAppRegistryError("System app id is invalid.")
-        if not PACKAGE.fullmatch(package): raise SystemAppRegistryError(f"Package for {app_id} is outside the SwirPhoneOS namespace.")
-        if app_id in ids or package in packages: raise SystemAppRegistryError("System app ids and packages must be unique.")
-        if phase not in ALLOWED_PHASES or status not in ALLOWED_STATUS: raise SystemAppRegistryError(f"Unknown phase/status for {app_id}.")
+        if not APP_ID.fullmatch(app_id):
+            raise SystemAppRegistryError("System app id is invalid.")
+        if not PACKAGE.fullmatch(package):
+            raise SystemAppRegistryError(f"Package for {app_id} is outside the SwirPhoneOS namespace.")
+        if app_id in ids or package in packages:
+            raise SystemAppRegistryError("System app ids and packages must be unique.")
+        if phase not in ALLOWED_PHASES or status not in ALLOWED_STATUS:
+            raise SystemAppRegistryError(f"Unknown phase/status for {app_id}.")
+
         hardware_dependent = raw["hardware_dependent"]
         critical_for_beta = raw["critical_for_beta"]
-        if type(hardware_dependent) is not bool or type(critical_for_beta) is not bool: raise SystemAppRegistryError("System app flags must be booleans.")
+        if type(hardware_dependent) is not bool or type(critical_for_beta) is not bool:
+            raise SystemAppRegistryError("System app flags must be booleans.")
+
         capabilities = raw["capabilities"]
-        if not isinstance(capabilities, list) or not capabilities or len(capabilities) > 32: raise SystemAppRegistryError(f"{app_id} must define bounded capabilities.")
+        if not isinstance(capabilities, list) or not capabilities or len(capabilities) > 32:
+            raise SystemAppRegistryError(f"{app_id} must define bounded capabilities.")
         clean: list[str] = []
         for capability in capabilities:
             capability = _safe_text(capability, "capability", 96)
-            if capability in clean: raise SystemAppRegistryError(f"{app_id} contains duplicate capabilities.")
+            if capability in clean:
+                raise SystemAppRegistryError(f"{app_id} contains duplicate capabilities.")
             clean.append(capability)
+
         if status == "HARDWARE_VERIFIED" and not hardware_dependent:
-            raise SystemAppRegistryError(f"{app_id} cannot claim HARDWARE_VERIFIED without a hardware-dependent contract.")
-        ids.add(app_id); packages.add(package)
-        apps.append(SystemApp(app_id, package, display_name, phase, status, hardware_dependent, critical_for_beta, tuple(clean)))
+            raise SystemAppRegistryError(
+                f"{app_id} cannot claim HARDWARE_VERIFIED without a hardware-dependent contract."
+            )
+        ids.add(app_id)
+        packages.add(package)
+        apps.append(SystemApp(
+            app_id,
+            package,
+            display_name,
+            phase,
+            status,
+            hardware_dependent,
+            critical_for_beta,
+            tuple(clean),
+        ))
+
     if ids != REQUIRED_APP_IDS:
-        raise SystemAppRegistryError(f"Essential system-app set mismatch. Missing={sorted(REQUIRED_APP_IDS-ids)}, extra={sorted(ids-REQUIRED_APP_IDS)}.")
+        raise SystemAppRegistryError(
+            f"Essential system-app set mismatch. Missing={sorted(REQUIRED_APP_IDS-ids)}, "
+            f"extra={sorted(ids-REQUIRED_APP_IDS)}."
+        )
+
+    beta_ids = frozenset(app.app_id for app in apps if app.critical_for_beta)
+    if beta_ids != FIRST_BETA_APP_IDS:
+        raise SystemAppRegistryError(
+            "First-Beta app scope drifted. The frozen critical_for_beta set must match "
+            f"{sorted(FIRST_BETA_APP_IDS)} exactly."
+        )
+
+    beta_apps = [app for app in apps if app.app_id in FIRST_BETA_APP_IDS]
+    if any(not app.source_ready for app in beta_apps):
+        raise SystemAppRegistryError(
+            "Every frozen first-Beta app must remain source-ready before runtime qualification."
+        )
+
     return SystemAppRegistry(namespace, design_contract, source_language, tuple(apps))
 
 
@@ -138,12 +222,33 @@ def public_registry_summary(registry: SystemAppRegistry) -> dict[str, object]:
     source_ready = sum(app.source_ready for app in registry.apps)
     runtime = sum(app.runtime_implemented for app in registry.apps)
     hardware_verified = sum(app.hardware_verified for app in registry.apps)
-    beta_critical = [app for app in registry.apps if app.critical_for_beta]
+    beta_critical = list(registry.first_beta_apps)
     beta_runtime = sum(app.runtime_implemented for app in beta_critical)
     return {
-        "schema_version": 1, "namespace": registry.namespace, "design_contract": registry.design_contract,
-        "source_language": registry.source_language, "app_count": len(registry.apps), "source_ready": source_ready,
-        "runtime_implemented": runtime, "hardware_verified": hardware_verified, "beta_critical_count": len(beta_critical),
+        "schema_version": 1,
+        "namespace": registry.namespace,
+        "design_contract": registry.design_contract,
+        "source_language": registry.source_language,
+        "app_count": len(registry.apps),
+        "source_ready": source_ready,
+        "runtime_implemented": runtime,
+        "hardware_verified": hardware_verified,
+        "beta_critical_count": len(beta_critical),
         "beta_critical_runtime_implemented": beta_runtime,
-        "apps": [{"id": app.app_id,"package": app.package,"display_name": app.display_name,"phase": app.phase,"status": app.status,"hardware_dependent": app.hardware_dependent,"critical_for_beta": app.critical_for_beta} for app in registry.apps],
+        "first_beta_scope_frozen": True,
+        "first_beta_source_ready": registry.first_beta_source_ready,
+        "first_beta_app_ids": [app.app_id for app in beta_critical],
+        "first_beta_packages": [app.package for app in beta_critical],
+        "apps": [
+            {
+                "id": app.app_id,
+                "package": app.package,
+                "display_name": app.display_name,
+                "phase": app.phase,
+                "status": app.status,
+                "hardware_dependent": app.hardware_dependent,
+                "critical_for_beta": app.critical_for_beta,
+            }
+            for app in registry.apps
+        ],
     }
