@@ -36,6 +36,7 @@ jobs:
         run: |
           set -euo pipefail
           for app in \
+            'SwirLauncher org/swir/phoneos/launcher LauncherPolicy LauncherPolicyHostTest' \
             'SwirCamera org/swir/phoneos/camera CameraPolicy CameraPolicyHostTest' \
             'SwirBrowser org/swir/phoneos/browser BrowserPolicy BrowserPolicyHostTest' \
             'SwirWeather org/swir/phoneos/weather WeatherPolicy WeatherPolicyHostTest' \

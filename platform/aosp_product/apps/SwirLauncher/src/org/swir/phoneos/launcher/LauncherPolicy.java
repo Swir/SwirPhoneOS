@@ -1,8 +1,11 @@
 package org.swir.phoneos.launcher;
 
-/** Pure-Java bounds used by the beta-core launcher surface. */
+/** Pure-Java bounds used by the beta-core launcher and first-run setup surface. */
 public final class LauncherPolicy {
     public static final int MAX_LABEL_CODEPOINTS = 80;
+    public static final String REVIEW_LANGUAGE = "language";
+    public static final String REVIEW_PRIVACY = "privacy";
+    public static final String REVIEW_SECURITY = "security";
 
     private LauncherPolicy() {}
 
@@ -37,5 +40,15 @@ public final class LauncherPolicy {
 
     public static boolean showPackage(String ownPackage, String packageName) {
         return packageName != null && !packageName.isEmpty() && !packageName.equals(ownPackage);
+    }
+
+    public static boolean isKnownReview(String review) {
+        return REVIEW_LANGUAGE.equals(review)
+                || REVIEW_PRIVACY.equals(review)
+                || REVIEW_SECURITY.equals(review);
+    }
+
+    public static boolean setupReady(boolean languageReviewed, boolean privacyReviewed, boolean securityReviewed) {
+        return languageReviewed && privacyReviewed && securityReviewed;
     }
 }

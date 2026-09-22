@@ -22,10 +22,14 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
-/** Minimal first-beta HOME surface with a safe first-run setup flow. */
+/** Minimal first-beta HOME surface with a fail-closed first-run setup review. */
 public final class MainActivity extends Activity {
     private static final String PREFS = "swir_launcher_state";
     private static final String SETUP_COMPLETE = "setup_complete";
+    private static final String PENDING_REVIEW = "pending_review";
+    private static final String REVIEWED_LANGUAGE = "reviewed_language";
+    private static final String REVIEWED_PRIVACY = "reviewed_privacy";
+    private static final String REVIEWED_SECURITY = "reviewed_security";
     private static final String SETTINGS_PACKAGE = "org.swir.phoneos.settings";
     private static final String FILES_PACKAGE = "org.swir.phoneos.files";
     private static final String UPDATE_PACKAGE = "org.swir.phoneos.update";
@@ -44,6 +48,7 @@ public final class MainActivity extends Activity {
         if (isFinishing()) {
             return;
         }
+        completePendingReview();
         setContentView(buildUi());
     }
 
@@ -98,17 +103,60 @@ public final class MainActivity extends Activity {
         body.setPadding(0, dp(6), 0, dp(8));
         card.addView(body, matchWrap());
 
-        card.addView(actionButton(R.string.language_region, () -> openSystem(Settings.ACTION_LOCALE_SETTINGS)), matchWrap());
-        card.addView(actionButton(R.string.privacy, () -> openSystem(Settings.ACTION_PRIVACY_SETTINGS)), matchWrap());
-        card.addView(actionButton(R.string.finish_setup, this::finishSetup), matchWrap());
+        card.addView(actionButton(
+                R.string.language_region,
+                () -> reviewSystem(Settings.ACTION_LOCALE_SETTINGS, LauncherPolicy.REVIEW_LANGUAGE)), matchWrap());
+        card.addView(actionButton(
+                R.string.privacy,
+                () -> reviewSystem(Settings.ACTION_PRIVACY_SETTINGS, LauncherPolicy.REVIEW_PRIVACY)), matchWrap());
+        card.addView(actionButton(
+                R.string.security,
+                () -> reviewSystem(Settings.ACTION_SECURITY_SETTINGS, LauncherPolicy.REVIEW_SECURITY)), matchWrap());
+
+        Button finish = actionButton(R.string.finish_setup, this::finishSetup);
+        boolean ready = setupReady();
+        finish.setEnabled(ready);
+        finish.setAlpha(ready ? 1.0f : 0.55f);
+        card.addView(finish, matchWrap());
 
         LinearLayout.LayoutParams params = matchWrap();
         params.setMargins(0, 0, 0, dp(8));
         root.addView(card, params);
     }
 
+    private void completePendingReview() {
+        SharedPreferences state = prefs();
+        String pending = state.getString(PENDING_REVIEW, "");
+        if (pending == null || pending.isEmpty()) {
+            return;
+        }
+        SharedPreferences.Editor editor = state.edit().remove(PENDING_REVIEW);
+        if (LauncherPolicy.REVIEW_LANGUAGE.equals(pending)) {
+            editor.putBoolean(REVIEWED_LANGUAGE, true);
+        } else if (LauncherPolicy.REVIEW_PRIVACY.equals(pending)) {
+            editor.putBoolean(REVIEWED_PRIVACY, true);
+        } else if (LauncherPolicy.REVIEW_SECURITY.equals(pending)) {
+            editor.putBoolean(REVIEWED_SECURITY, true);
+        }
+        editor.apply();
+    }
+
+    private boolean setupReady() {
+        SharedPreferences state = prefs();
+        return LauncherPolicy.setupReady(
+                state.getBoolean(REVIEWED_LANGUAGE, false),
+                state.getBoolean(REVIEWED_PRIVACY, false),
+                state.getBoolean(REVIEWED_SECURITY, false));
+    }
+
     private void finishSetup() {
-        prefs().edit().putBoolean(SETUP_COMPLETE, true).apply();
+        if (!setupReady()) {
+            return;
+        }
+        prefs().edit()
+                .remove(PENDING_REVIEW)
+                .putBoolean(SETUP_COMPLETE, true)
+                .apply();
         Toast.makeText(this, R.string.setup_done, Toast.LENGTH_SHORT).show();
         setContentView(buildUi());
     }
@@ -171,10 +219,15 @@ public final class MainActivity extends Activity {
         }
     }
 
-    private void openSystem(String action) {
+    private void reviewSystem(String action, String review) {
+        if (!LauncherPolicy.isKnownReview(review)) {
+            return;
+        }
+        prefs().edit().putString(PENDING_REVIEW, review).apply();
         try {
             startActivity(new Intent(action));
         } catch (ActivityNotFoundException | SecurityException exception) {
+            prefs().edit().remove(PENDING_REVIEW).apply();
             Toast.makeText(this, R.string.open_failed, Toast.LENGTH_SHORT).show();
         }
     }

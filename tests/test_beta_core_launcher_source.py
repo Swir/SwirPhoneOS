@@ -58,9 +58,13 @@ class BetaCoreLauncherSourceTest(unittest.TestCase):
 
     def test_first_run_setup_is_local_and_delegates_authoritative_settings(self) -> None:
         source = (APP / "src/org/swir/phoneos/launcher/MainActivity.java").read_text(encoding="utf-8")
+        policy = (APP / "src/org/swir/phoneos/launcher/LauncherPolicy.java").read_text(encoding="utf-8")
         self.assertIn("SharedPreferences", source)
         self.assertIn("Settings.ACTION_LOCALE_SETTINGS", source)
         self.assertIn("Settings.ACTION_PRIVACY_SETTINGS", source)
+        self.assertIn("Settings.ACTION_SECURITY_SETTINGS", source)
+        self.assertIn("LauncherPolicy.setupReady", source)
+        self.assertIn("return languageReviewed && privacyReviewed && securityReviewed", policy)
         self.assertIn("PackageManager", source)
         self.assertIn("Intent.CATEGORY_LAUNCHER", source)
         self.assertNotRegex(source, r"setText\(\s*\"")
@@ -101,6 +105,7 @@ class BetaCoreLauncherSourceTest(unittest.TestCase):
                 "setup_body",
                 "language_region",
                 "privacy",
+                "security",
                 "finish_setup",
                 "setup_done",
                 "essentials",
