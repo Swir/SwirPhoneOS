@@ -8,9 +8,9 @@ on:
         required: true
         type: string
       collect_runtime:
-        description: Collect Cuttlefish runtime evidence in the dispatched build; requires admitted KVM
+        description: Collect Cuttlefish runtime evidence in the dispatched build; First-Beta path keeps this enabled and requires admitted KVM
         required: true
-        default: false
+        default: true
         type: boolean
 
 permissions:
