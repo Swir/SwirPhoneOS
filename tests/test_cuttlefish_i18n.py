@@ -67,7 +67,7 @@ class CuttlefishI18nTests(unittest.TestCase):
 
     def _make_runner(self, adb: Path):
         registry = load_registry(Path("system_apps/manifest.json"))
-        apps = sorted((app for app in registry.apps if app.source_ready), key=lambda app: app.package)
+        apps = sorted(registry.first_beta_apps, key=lambda app: app.package)
         runner = CuttlefishI18nRunner(adb)
         runtime = {
             "runtime_evidence_complete": True,
@@ -112,7 +112,7 @@ class CuttlefishI18nTests(unittest.TestCase):
         runner._run = fake_run
         return registry, apps, runner, runtime, current, original
 
-    def test_exercise_covers_every_package_locale_pair_and_restores_overrides(self):
+    def test_exercise_covers_every_first_beta_package_locale_pair_and_restores_overrides(self):
         with tempfile.TemporaryDirectory() as temp:
             adb = Path(temp) / ("adb.exe" if os.name == "nt" else "adb")
             adb.write_text("placeholder", encoding="utf-8")
