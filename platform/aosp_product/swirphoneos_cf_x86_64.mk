@@ -14,26 +14,32 @@ PRODUCT_MODEL := SwirPhoneOS Cuttlefish Developer
 # for the lock screen until a separately verified Swir lock-screen integration exists.
 PRODUCT_PACKAGES := $(filter-out Launcher3 Launcher3QuickStep Launcher3QuickStepGo,$(PRODUCT_PACKAGES))
 
-# Source-ready first-party apps. Runtime status remains unverified until an AOSP build/boot succeeds.
-PRODUCT_PACKAGES += \
-    SwirLauncher \
+# Keep the full source-contract inventory visible to host source validation without
+# installing these post-Beta modules into the frozen first-Beta image.
+SWIR_POST_BETA_SOURCE_MODULES := \
     SwirPhone \
+    SwirContacts \
     SwirMessages \
     SwirCamera \
+    SwirGallery \
+    SwirBrowser \
+    SwirClock \
     SwirCalculator \
+    SwirNotes \
+    SwirRecorder \
+    SwirCalendar \
+    SwirWeather \
+    SwirBackup \
+    SwirApps
+
+# FINISH FIRST: package only the six frozen registry-managed first-Beta apps plus
+# SwirLauncher. The remaining source-ready apps stay available for post-Beta work
+# but must not silently expand the first-Beta build/runtime acceptance surface.
+PRODUCT_PACKAGES += \
+    SwirLauncher \
     SwirSettings \
     SwirFiles \
-    SwirBrowser \
     SwirDeviceCare \
     SwirUpdate \
     SwirPrivacy \
-    SwirClock \
-    SwirNotes \
-    SwirCalendar \
-    SwirWeather \
-    SwirGallery \
-    SwirRecorder \
-    SwirContacts \
-    SwirBackup \
-    SwirApps \
     SwirRoot
