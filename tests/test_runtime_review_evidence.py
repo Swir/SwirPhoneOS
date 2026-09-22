@@ -25,7 +25,7 @@ from swirphoneos.system_apps import load_registry
 class RuntimeReviewEvidenceTests(unittest.TestCase):
     def setUp(self):
         registry = load_registry(Path("system_apps/manifest.json"))
-        self.packages = sorted(app.package for app in registry.apps if app.source_ready)
+        self.packages = sorted(app.package for app in registry.first_beta_apps)
         self.fingerprint = "Swir/test:17/TEST/1:userdebug/test-keys"
         self.digest = hashlib.sha256(self.fingerprint.encode("ascii")).hexdigest()
         self.runtime = {

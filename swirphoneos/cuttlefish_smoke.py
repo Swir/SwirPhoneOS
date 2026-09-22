@@ -103,7 +103,7 @@ def foreground_contains_component(output: str, package: str, component: str) -> 
 
 
 class CuttlefishAppSmokeRunner:
-    """Verify the exact Swir HOME surface, then launch every source-ready app."""
+    """Verify the exact Swir HOME surface, then launch every frozen first-Beta app."""
     def __init__(self, executable: Path, timeout: float = 15.0):
         self.evidence = CuttlefishEvidenceCollector(executable, timeout=min(timeout, 60.0))
         self.executable = self.evidence.executable
@@ -207,9 +207,9 @@ class CuttlefishAppSmokeRunner:
         if not home_foreground:
             raise CuttlefishSmokeError("SwirLauncher resolved as HOME but was not confirmed as the resumed foreground activity.")
 
-        source_apps = sorted((app for app in registry.apps if app.source_ready), key=lambda app: app.package)
+        beta_apps = sorted(registry.first_beta_apps, key=lambda app: app.package)
         results: list[LaunchResult] = []
-        for app in source_apps:
+        for app in beta_apps:
             resolution = self.evidence._run(
                 ("-s", device.serial, "shell", "cmd", "package", "resolve-activity", "--brief", app.package)
             )
@@ -223,7 +223,7 @@ class CuttlefishAppSmokeRunner:
             )
             foreground = foreground_contains_component(activity_state, app.package, component)
             if not foreground:
-                raise CuttlefishSmokeError("Launched source-ready app was not confirmed as the resumed foreground activity.")
+                raise CuttlefishSmokeError("Launched first-Beta app was not confirmed as the resumed foreground activity.")
             results.append(LaunchResult(app.package, component, status, foreground))
 
         after = select_local_device(parse_local_devices(self._run(("devices", "-l"))))
@@ -256,13 +256,14 @@ class CuttlefishAppSmokeRunner:
                 }
                 for result in results
             ],
-            "app_smoke_complete": home_complete and len(results) == len(source_apps) and all(result.foreground_confirmed for result in results),
+            "app_smoke_complete": home_complete and len(results) == len(beta_apps) and all(result.foreground_confirmed for result in results),
             "status_promotion_performed": False,
             "physical_device_support_claimed": False,
             "persistent_device_write_allowed": False,
             "runtime_state_mutation_performed": True,
             "warnings": [
-                "This check first requires SwirLauncher to resolve as the exact HOME activity, then changes only transient emulator foreground activity state by launching already-installed apps.",
+                "This check first requires SwirLauncher to resolve as the exact HOME activity, then changes only transient emulator foreground activity state by launching already-installed first-Beta apps.",
+                "Post-Beta source-ready apps are intentionally non-blocking while the frozen first-Beta scope is active.",
                 "It is hard-gated on exact local SwirPhoneOS Cuttlefish identity and is not permitted for physical-device evidence.",
                 "Successful HOME/app launch smoke does not prove every app feature, accessibility flow, locale switch or hardware integration.",
                 "No package install, root, reboot, flash, erase, settings mutation or registry status promotion is performed.",
@@ -272,7 +273,7 @@ class CuttlefishAppSmokeRunner:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
-        description="Verify SwirLauncher HOME and launch-smoke source-ready apps on one exact local SwirPhoneOS Cuttlefish instance."
+        description="Verify SwirLauncher HOME and launch-smoke frozen first-Beta apps on one exact local SwirPhoneOS Cuttlefish instance."
     )
     parser.add_argument("--adb", required=True, type=Path, help="Absolute path to a trusted Android SDK adb executable")
     parser.add_argument("--manifest", type=Path, default=Path("system_apps/manifest.json"))
@@ -283,7 +284,7 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     except (CuttlefishSmokeError, CuttlefishEvidenceError, SystemAppRegistryError, OSError, ValueError):
         print(
-            "Operation failed: exact local SwirPhoneOS Cuttlefish runtime evidence, SwirLauncher HOME resolution and every source-ready app foreground launch are required. Raw errors are withheld.",
+            "Operation failed: exact local SwirPhoneOS Cuttlefish runtime evidence, SwirLauncher HOME resolution and every frozen first-Beta app foreground launch are required. Raw errors are withheld.",
             file=sys.stderr,
         )
         return 1

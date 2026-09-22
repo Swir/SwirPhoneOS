@@ -17,7 +17,7 @@ class AospRunEvidenceTests(unittest.TestCase):
     WORKSPACE = "/tmp/swir-aosp"
     FINGERPRINT = "Swir/swirphoneos_cf_x86_64/vsoc_x86_64_only:17/CP2A.260605.016/1:userdebug/test-keys"
     APP_MANIFEST = Path("system_apps/manifest.json")
-    PACKAGES = sorted(app.package for app in load_registry(APP_MANIFEST).apps if app.source_ready)
+    PACKAGES = sorted(app.package for app in load_registry(APP_MANIFEST).first_beta_apps)
 
     def _reports(self) -> dict[str, dict[str, object]]:
         manifest_sha = "a" * 64
@@ -249,7 +249,7 @@ class AospRunEvidenceTests(unittest.TestCase):
             with self.assertRaises(AospRunEvidenceError):
                 self._collect(paths, runtime=True)
 
-    def test_rejects_runtime_package_set_that_omits_registry_app(self):
+    def test_rejects_runtime_package_set_that_omits_first_beta_app(self):
         with tempfile.TemporaryDirectory() as temporary:
             reports = self._reports()
             subset = self.PACKAGES[:-1]

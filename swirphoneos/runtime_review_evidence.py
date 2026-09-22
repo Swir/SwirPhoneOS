@@ -66,9 +66,9 @@ def _registry_identity(path: Path) -> tuple[list[str], str]:
         registry = load_registry(path)
     except (SystemAppRegistryError, OSError, ValueError) as exc:
         raise RuntimeReviewEvidenceError("System-app manifest could not be validated.") from exc
-    packages = sorted(app.package for app in registry.apps if app.source_ready)
+    packages = sorted(app.package for app in registry.first_beta_apps)
     if not packages or len(packages) != len(set(packages)):
-        raise RuntimeReviewEvidenceError("System-app manifest has no unique source-ready package set.")
+        raise RuntimeReviewEvidenceError("System-app manifest has no unique frozen first-Beta package set.")
     return packages, hashlib.sha256(raw).hexdigest()
 
 
@@ -119,7 +119,7 @@ def _validate_runtime(runtime: dict[str, object], packages: list[str]) -> str:
     present = sorted(_unique_strings(runtime.get("present_required_packages"), "present_required_packages"))
     launchable = sorted(_unique_strings(runtime.get("present_launchable_packages"), "present_launchable_packages"))
     if required != packages or present != packages or launchable != packages:
-        raise RuntimeReviewEvidenceError("Runtime package inventory does not match the checked-in source-ready app set.")
+        raise RuntimeReviewEvidenceError("Runtime package inventory does not match the frozen first-Beta app set.")
     if runtime.get("missing_required_packages") != [] or runtime.get("missing_launchable_packages") != []:
         raise RuntimeReviewEvidenceError("Runtime evidence still reports missing required packages or launchers.")
     return fingerprint
@@ -156,7 +156,7 @@ def _validate_smoke(smoke: dict[str, object], packages: list[str], fingerprint: 
         raise RuntimeReviewEvidenceError("SwirLauncher was not proven as the exact usable HOME surface.")
 
     if sorted(_unique_strings(smoke.get("tested_packages"), "tested_packages")) != packages:
-        raise RuntimeReviewEvidenceError("Application launch-smoke package set is incomplete.")
+        raise RuntimeReviewEvidenceError("Application launch-smoke first-Beta package set is incomplete.")
 
     results = smoke.get("launch_results")
     if not isinstance(results, list) or len(results) != len(packages):
@@ -196,7 +196,7 @@ def _validate_i18n(i18n: dict[str, object], packages: list[str], fingerprint: st
     ):
         raise RuntimeReviewEvidenceError("Runtime locale-matrix safety/restoration flags are invalid.")
     if sorted(_unique_strings(i18n.get("tested_packages"), "tested_packages")) != packages:
-        raise RuntimeReviewEvidenceError("Runtime locale-matrix package set is incomplete.")
+        raise RuntimeReviewEvidenceError("Runtime locale-matrix first-Beta package set is incomplete.")
 
     locales = _unique_strings(i18n.get("tested_locales"), "tested_locales")
     expected_locales = list(LOCALES)
@@ -228,7 +228,7 @@ def _validate_i18n(i18n: dict[str, object], packages: list[str], fingerprint: st
             raise RuntimeReviewEvidenceError("Runtime locale-matrix did not confirm a foreground launch.")
         seen.add(key)
     if seen != {(package, locale) for locale in expected_locales for package in packages}:
-        raise RuntimeReviewEvidenceError("Runtime locale-matrix does not cover every package/locale pair.")
+        raise RuntimeReviewEvidenceError("Runtime locale-matrix does not cover every first-Beta package/locale pair.")
     return expected_locales
 
 
@@ -276,7 +276,8 @@ def collect_runtime_review_evidence(
         "device_write_allowed": False,
         "status_promotion_performed": False,
         "warnings": [
-            "This bundle proves exact Cuttlefish boot identity, SwirLauncher HOME resolution/foreground launch, source-ready app launch smoke and per-app locale switching/restoration only.",
+            "This bundle proves exact Cuttlefish boot identity, SwirLauncher HOME resolution/foreground launch, frozen first-Beta app launch smoke and per-app locale switching/restoration only.",
+            "Post-Beta source-ready apps are intentionally non-blocking while the frozen first-Beta scope is active.",
             "Visual translation quality, RTL mirroring, text expansion, accessibility, fonts/input methods and physical-device behavior still require focused review.",
             "This evidence does not promote any application to ANDROID_RUNTIME automatically and never authorizes physical-device writes.",
         ],
@@ -289,7 +290,7 @@ def collect_runtime_review_evidence(
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
-        description="Bind exact Cuttlefish boot, HOME, app-launch and locale-matrix evidence without status promotion."
+        description="Bind exact Cuttlefish boot, HOME, first-Beta app-launch and locale-matrix evidence without status promotion."
     )
     parser.add_argument("--runtime", required=True, type=Path)
     parser.add_argument("--smoke", required=True, type=Path)
@@ -307,7 +308,7 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     except (RuntimeReviewEvidenceError, SystemAppRegistryError, OSError, ValueError):
         print(
-            "Operation failed: exact Cuttlefish runtime, HOME, app-launch, locale-matrix and manifest evidence must agree. Raw errors are withheld.",
+            "Operation failed: exact Cuttlefish runtime, HOME, first-Beta app-launch, locale-matrix and manifest evidence must agree. Raw errors are withheld.",
             file=sys.stderr,
         )
         return 1

@@ -67,9 +67,9 @@ def _load_app_registry_identity(path: Path) -> tuple[list[str], str]:
         registry = load_registry(path)
     except (SystemAppRegistryError, OSError, ValueError) as exc:
         raise AospRunEvidenceError("System-app manifest could not be validated.") from exc
-    packages = sorted(app.package for app in registry.apps if app.source_ready)
+    packages = sorted(app.package for app in registry.first_beta_apps)
     if not packages or len(packages) != len(set(packages)):
-        raise AospRunEvidenceError("System-app manifest has no unique source-ready package set.")
+        raise AospRunEvidenceError("System-app manifest has no unique frozen first-Beta package set.")
     return packages, hashlib.sha256(raw).hexdigest()
 
 
@@ -288,13 +288,13 @@ def _validate_runtime_chain(
         raise AospRunEvidenceError("Runtime fingerprint digest is inconsistent with the build fingerprint.")
     required_packages = _unique_strings(runtime.get("required_source_ready_packages"), "required_source_ready_packages")
     if sorted(required_packages) != expected_packages:
-        raise AospRunEvidenceError("Runtime source-ready package set does not match the checked-in system-app manifest.")
+        raise AospRunEvidenceError("Runtime package set does not match the checked-in frozen first-Beta app set.")
     if runtime.get("missing_required_packages") != [] or runtime.get("missing_launchable_packages") != []:
-        raise AospRunEvidenceError("Runtime evidence still reports missing source-ready packages or launchers.")
+        raise AospRunEvidenceError("Runtime evidence still reports missing first-Beta packages or launchers.")
     if sorted(runtime.get("present_required_packages", [])) != expected_packages:
-        raise AospRunEvidenceError("Runtime package presence does not cover the full source-ready set.")
+        raise AospRunEvidenceError("Runtime package presence does not cover the full first-Beta set.")
     if sorted(runtime.get("present_launchable_packages", [])) != expected_packages:
-        raise AospRunEvidenceError("Runtime launcher presence does not cover the full source-ready set.")
+        raise AospRunEvidenceError("Runtime launcher presence does not cover the full first-Beta set.")
 
     if smoke.get("schema_version") != 1 or smoke.get("app_smoke_complete") is not True:
         raise AospRunEvidenceError("Cuttlefish application smoke evidence is incomplete.")
@@ -310,7 +310,7 @@ def _validate_runtime_chain(
         raise AospRunEvidenceError("Application smoke evidence belongs to a different build.")
     tested_packages = _unique_strings(smoke.get("tested_packages"), "tested_packages")
     if sorted(tested_packages) != expected_packages:
-        raise AospRunEvidenceError("Application smoke did not exercise the checked-in source-ready package set.")
+        raise AospRunEvidenceError("Application smoke did not exercise the checked-in frozen first-Beta package set.")
     launch_results = smoke.get("launch_results")
     if not isinstance(launch_results, list) or len(launch_results) != len(expected_packages):
         raise AospRunEvidenceError("Application smoke launch-result count is invalid.")
@@ -430,6 +430,7 @@ def collect_aosp_run_evidence(
         "status_promotion_performed": False,
         "warnings": [
             "This report binds evidence files from one host-side AOSP run; it is not physical-device compatibility evidence.",
+            "The runtime acceptance package set is the frozen first-Beta scope; post-Beta source-ready apps remain non-blocking.",
             "BUILD_ONLY does not prove Cuttlefish boot. BUILD_AND_RUNTIME still requires interactive UI/accessibility/locale review before Android runtime promotion.",
             "No phone write, flash, root, unlock, release publication or registry status promotion is performed.",
         ],
