@@ -7,6 +7,16 @@ android_app {
     sdk_version: "current",
     min_sdk_version: "35",
     product_specific: true,
+    // PRODUCT_PACKAGES filtering in a child product is not sufficient evidence that
+    // launchers inherited by the Cuttlefish/GSI base are removed. Use Soong's
+    // supported override mechanism so the assembled product has one reviewed HOME.
+    overrides: [
+        "Home",
+        "Launcher2",
+        "Launcher3",
+        "Launcher3QuickStep",
+        "Launcher3QuickStepGo",
+    ],
     optimize: {
         enabled: true,
     },
