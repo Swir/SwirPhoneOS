@@ -13,6 +13,7 @@ from swirphoneos.cuttlefish_evidence import (
     EXPECTED_BUILD_TYPE,
     EXPECTED_PRODUCT,
 )
+from swirphoneos.cuttlefish_smoke import EXPECTED_HOME_PACKAGE
 from swirphoneos.i18n import LOCALES
 from swirphoneos.runtime_review_evidence import (
     RuntimeReviewEvidenceError,
@@ -52,6 +53,12 @@ class RuntimeReviewEvidenceTests(unittest.TestCase):
             "expected_product": EXPECTED_PRODUCT,
             "build_fingerprint": self.fingerprint,
             "build_fingerprint_sha256": self.digest,
+            "home_package": EXPECTED_HOME_PACKAGE,
+            "home_component": f"{EXPECTED_HOME_PACKAGE}/.MainActivity",
+            "home_resolved": True,
+            "home_am_start_status": "ok",
+            "home_foreground_confirmed": True,
+            "home_surface_complete": True,
             "tested_packages": self.packages,
             "launch_results": [
                 {
@@ -118,10 +125,11 @@ class RuntimeReviewEvidenceTests(unittest.TestCase):
                 app_manifest_path=Path("system_apps/manifest.json"),
             )
 
-    def test_collect_binds_exact_boot_launch_and_locale_matrix(self):
+    def test_collect_binds_exact_boot_home_launch_and_locale_matrix(self):
         report = self._collect()
         self.assertTrue(report["runtime_review_evidence_complete"])
         self.assertTrue(report["boot_identity_complete"])
+        self.assertTrue(report["home_surface_complete"])
         self.assertTrue(report["app_launch_matrix_complete"])
         self.assertTrue(report["locale_matrix_complete"])
         self.assertTrue(report["original_app_locales_restored"])
@@ -134,6 +142,20 @@ class RuntimeReviewEvidenceTests(unittest.TestCase):
         self.assertFalse(report["device_write_allowed"])
         self.assertFalse(report["status_promotion_performed"])
         self.assertRegex(report["runtime_review_sha256"], r"^[0-9a-f]{64}$")
+
+    def test_rejects_wrong_home_package(self):
+        smoke = copy.deepcopy(self.smoke)
+        smoke["home_package"] = "com.android.launcher3"
+        smoke["home_component"] = "com.android.launcher3/.Launcher"
+        with self.assertRaises(RuntimeReviewEvidenceError):
+            self._collect(smoke=smoke)
+
+    def test_rejects_incomplete_home_surface(self):
+        smoke = copy.deepcopy(self.smoke)
+        smoke["home_foreground_confirmed"] = False
+        smoke["home_surface_complete"] = False
+        with self.assertRaises(RuntimeReviewEvidenceError):
+            self._collect(smoke=smoke)
 
     def test_rejects_cross_runtime_fingerprint(self):
         smoke = copy.deepcopy(self.smoke)
