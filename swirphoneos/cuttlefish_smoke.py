@@ -44,7 +44,11 @@ class LaunchResult:
 
 def _clean_component(value: str, expected_package: str) -> str:
     component = value.strip()
-    if not parse_resolved_activity(component, expected_package):
+    try:
+        resolved = parse_resolved_activity(component, expected_package)
+    except CuttlefishEvidenceError as exc:
+        raise CuttlefishSmokeError("Resolved activity escaped the expected package.") from exc
+    if not resolved:
         raise CuttlefishSmokeError("Expected package has no package-local launchable activity.")
     if not _COMPONENT.fullmatch(component):
         raise CuttlefishSmokeError("Resolved launcher component is malformed.")
