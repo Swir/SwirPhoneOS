@@ -1,7 +1,9 @@
 package org.swir.phoneos.launcher;
 
 import android.app.Activity;
+import android.app.KeyguardManager;
 import android.content.ActivityNotFoundException;
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
@@ -146,7 +148,13 @@ public final class MainActivity extends Activity {
         return LauncherPolicy.setupReady(
                 state.getBoolean(REVIEWED_LANGUAGE, false),
                 state.getBoolean(REVIEWED_PRIVACY, false),
-                state.getBoolean(REVIEWED_SECURITY, false));
+                state.getBoolean(REVIEWED_SECURITY, false),
+                isDeviceSecure());
+    }
+
+    private boolean isDeviceSecure() {
+        KeyguardManager keyguard = (KeyguardManager) getSystemService(Context.KEYGUARD_SERVICE);
+        return keyguard != null && keyguard.isDeviceSecure();
     }
 
     private void finishSetup() {
