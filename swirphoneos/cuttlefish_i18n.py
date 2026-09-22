@@ -1,4 +1,4 @@
-"""Emulator-only locale-matrix evidence for source-ready SwirPhoneOS apps.
+"""Emulator-only locale-matrix evidence for frozen first-Beta SwirPhoneOS apps.
 
 The runner is intentionally restricted to one exact local SwirPhoneOS
 Cuttlefish instance. It changes only per-app locale overrides and transient
@@ -100,7 +100,7 @@ def _supported_runtime_locales() -> tuple[str, ...]:
 
 
 class CuttlefishI18nRunner:
-    """Exercise every source-ready app under every checked-in locale on Cuttlefish."""
+    """Exercise every frozen first-Beta app under every checked-in locale on Cuttlefish."""
 
     def __init__(self, executable: Path, timeout: float = 15.0):
         self.evidence = CuttlefishEvidenceCollector(executable, timeout=min(timeout, 60.0))
@@ -213,10 +213,10 @@ class CuttlefishI18nRunner:
 
         device = select_local_device(parse_local_devices(self._run(("devices", "-l"))))
         user_id = parse_current_user(self._run(("-s", device.serial, "shell", "am", "get-current-user")))
-        source_apps = sorted((app for app in registry.apps if app.source_ready), key=lambda app: app.package)
+        beta_apps = sorted(registry.first_beta_apps, key=lambda app: app.package)
         locales = _supported_runtime_locales()
-        if not source_apps:
-            raise CuttlefishI18nError("System-app registry has no source-ready packages.")
+        if not beta_apps:
+            raise CuttlefishI18nError("System-app registry has no frozen first-Beta packages.")
 
         original: dict[str, tuple[str, ...]] = {}
         results: list[LocaleLaunchResult] = []
@@ -224,11 +224,11 @@ class CuttlefishI18nRunner:
         restore_error: Exception | None = None
 
         try:
-            for app in source_apps:
+            for app in beta_apps:
                 original[app.package] = self._get_locales(device.serial, app.package, user_id)
 
             for locale in locales:
-                for app in source_apps:
+                for app in beta_apps:
                     self._set_locales(device.serial, app.package, user_id, (locale,))
                     observed = self._get_locales(device.serial, app.package, user_id)
                     if observed != (locale,):
@@ -239,7 +239,7 @@ class CuttlefishI18nRunner:
                     )
                     component = resolution.strip()
                     if not parse_resolved_activity(component, app.package) or _COMPONENT.fullmatch(component) is None:
-                        raise CuttlefishI18nError("Localized source-ready app has no package-local launcher activity.")
+                        raise CuttlefishI18nError("Localized first-Beta app has no package-local launcher activity.")
 
                     launch_output = self._run(
                         ("-s", device.serial, "shell", "am", "start", "-W", "-n", component)
@@ -248,7 +248,7 @@ class CuttlefishI18nRunner:
                     state = self._run(("-s", device.serial, "shell", "dumpsys", "activity", "activities"))
                     foreground = foreground_contains_component(state, app.package, component)
                     if not foreground:
-                        raise CuttlefishI18nError("Localized source-ready app was not confirmed as resumed foreground activity.")
+                        raise CuttlefishI18nError("Localized first-Beta app was not confirmed as resumed foreground activity.")
                     results.append(LocaleLaunchResult(app.package, locale, component, foreground))
         except Exception as exc:
             primary_error = exc
@@ -282,7 +282,7 @@ class CuttlefishI18nRunner:
             raise CuttlefishI18nError("Runtime fingerprint is missing from prerequisite evidence.")
 
         rtl_locales = [code for code in locales if LOCALES[code].direction == "rtl"]
-        expected_count = len(source_apps) * len(locales)
+        expected_count = len(beta_apps) * len(locales)
         return {
             "schema_version": 1,
             "source": "local_cuttlefish_runtime_locale_matrix",
@@ -292,7 +292,7 @@ class CuttlefishI18nRunner:
             "android_user_id": user_id,
             "tested_locales": list(locales),
             "rtl_locales_exercised": rtl_locales,
-            "tested_packages": [app.package for app in source_apps],
+            "tested_packages": [app.package for app in beta_apps],
             "locale_results": [
                 {
                     "package": item.package,
@@ -312,7 +312,8 @@ class CuttlefishI18nRunner:
             "runtime_state_mutation_performed": True,
             "warnings": [
                 "This check changes only per-app locale overrides and foreground activity state on one exact disposable local Cuttlefish guest.",
-                "Every captured locale override must be restored exactly before evidence is accepted.",
+                "Every captured first-Beta app locale override must be restored exactly before evidence is accepted.",
+                "Post-Beta source-ready apps are intentionally non-blocking while the frozen first-Beta scope is active.",
                 "Locale switching and launch success do not prove visual translation quality, RTL mirroring, text expansion, accessibility, input methods, fonts, or physical-device behavior.",
                 "No package install, system-settings write, root, reboot, flash, erase, registry promotion, or physical-device operation is performed.",
             ],
@@ -321,7 +322,7 @@ class CuttlefishI18nRunner:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
-        description="Exercise every source-ready SwirPhoneOS app under every checked-in locale on exact local Cuttlefish."
+        description="Exercise every frozen first-Beta SwirPhoneOS app under every checked-in locale on exact local Cuttlefish."
     )
     parser.add_argument("--adb", required=True, type=Path, help="Absolute path to a trusted Android SDK adb executable")
     parser.add_argument("--manifest", type=Path, default=Path("system_apps/manifest.json"))
@@ -339,7 +340,7 @@ def main(argv: list[str] | None = None) -> int:
         ValueError,
     ):
         print(
-            "Operation failed: exact local SwirPhoneOS Cuttlefish runtime is required, every locale/app launch must pass, and all original locale overrides must be restored. Raw errors are withheld.",
+            "Operation failed: exact local SwirPhoneOS Cuttlefish runtime is required, every first-Beta locale/app launch must pass, and all original locale overrides must be restored. Raw errors are withheld.",
             file=sys.stderr,
         )
         return 1
