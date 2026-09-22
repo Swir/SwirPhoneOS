@@ -165,11 +165,12 @@ def _validate_runtime_review(
         raise RuntimeReviewTrustBundleError("Runtime localization review evidence is invalid or incomplete.")
     if (
         report.get("boot_identity_complete") is not True
+        or report.get("home_surface_complete") is not True
         or report.get("app_launch_matrix_complete") is not True
         or report.get("locale_matrix_complete") is not True
         or report.get("original_app_locales_restored") is not True
     ):
-        raise RuntimeReviewTrustBundleError("Runtime localization review does not prove the complete boot/launch/locale matrix.")
+        raise RuntimeReviewTrustBundleError("Runtime review does not prove the complete boot/HOME/launch/locale matrix.")
     if (
         report.get("rtl_visual_mirroring_verified") is not False
         or report.get("accessibility_review_complete") is not False
@@ -246,6 +247,7 @@ def create_runtime_review_trust_bundle(
             "runtime_review_evidence": review_file_sha,
         },
         "build_runtime_chain_complete": True,
+        "home_surface_complete": True,
         "locale_review_chain_complete": True,
         "runtime_tool_unchanged_across_evidence_window": True,
         "rtl_visual_mirroring_verified": False,
@@ -255,7 +257,7 @@ def create_runtime_review_trust_bundle(
         "device_write_allowed": False,
         "status_promotion_performed": False,
         "warnings": [
-            "This bundle binds one exact SwirPhoneOS Cuttlefish build/runtime run, locale matrix and unchanged local adb tool identity.",
+            "This bundle binds one exact SwirPhoneOS Cuttlefish build/runtime run, verified SwirLauncher HOME surface, locale matrix and unchanged local adb tool identity.",
             "It does not prove visual RTL quality, accessibility, translation quality, physical-device support or hardware behavior.",
             "It never authorizes phone writes, flashing, root, application status promotion or beta release.",
         ],
@@ -266,7 +268,7 @@ def create_runtime_review_trust_bundle(
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
-        description="Bind exact SwirPhoneOS Cuttlefish runtime/i18n review to the unchanged trusted adb evidence window."
+        description="Bind exact SwirPhoneOS Cuttlefish runtime/HOME/i18n review to the unchanged trusted adb evidence window."
     )
     parser.add_argument("--run-evidence", required=True, type=Path)
     parser.add_argument("--runtime-trust", required=True, type=Path)
@@ -282,7 +284,7 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     except (RuntimeReviewTrustBundleError, OSError, ValueError):
         print(
-            "Runtime review trust binding failed: use one exact complete AOSP runtime, localization review and unchanged adb trust window.",
+            "Runtime review trust binding failed: use one exact complete AOSP runtime, HOME, localization review and unchanged adb trust window.",
             file=sys.stderr,
         )
         return 1
