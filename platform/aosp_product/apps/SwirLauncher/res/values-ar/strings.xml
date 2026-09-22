@@ -4,9 +4,10 @@
     <string name="launcher_title">SwirPhoneOS</string>
     <string name="launcher_subtitle">شاشة البداية للإصدار التجريبي</string>
     <string name="setup_title">أكمل الإعداد الأولي</string>
-    <string name="setup_body">راجع اللغة والخصوصية قبل استخدام الإصدار التجريبي.</string>
+    <string name="setup_body">راجع اللغة والخصوصية وقفل الشاشة قبل استخدام الإصدار التجريبي.</string>
     <string name="language_region">اللغة والمنطقة</string>
     <string name="privacy">الخصوصية</string>
+    <string name="security">قفل الشاشة والأمان</string>
     <string name="finish_setup">إنهاء الإعداد</string>
     <string name="setup_done">تم حفظ الإعداد</string>
     <string name="essentials">الأساسيات</string>

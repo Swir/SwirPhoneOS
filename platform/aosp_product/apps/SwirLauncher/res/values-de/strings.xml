@@ -4,9 +4,10 @@
     <string name="launcher_title">SwirPhoneOS</string>
     <string name="launcher_subtitle">Dein Beta-Startbildschirm</string>
     <string name="setup_title">Ersteinrichtung abschließen</string>
-    <string name="setup_body">Prüfe Sprache und Datenschutz, bevor du die Beta verwendest.</string>
+    <string name="setup_body">Prüfe Sprache, Datenschutz und Displaysperre, bevor du die Beta verwendest.</string>
     <string name="language_region">Sprache und Region</string>
     <string name="privacy">Datenschutz</string>
+    <string name="security">Displaysperre und Sicherheit</string>
     <string name="finish_setup">Einrichtung abschließen</string>
     <string name="setup_done">Einrichtung gespeichert</string>
     <string name="essentials">Wichtig</string>

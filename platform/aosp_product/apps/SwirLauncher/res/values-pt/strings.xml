@@ -4,9 +4,10 @@
     <string name="launcher_title">SwirPhoneOS</string>
     <string name="launcher_subtitle">Seu ecrã inicial beta</string>
     <string name="setup_title">Concluir a configuração inicial</string>
-    <string name="setup_body">Reveja o idioma e a privacidade antes de usar a beta.</string>
+    <string name="setup_body">Reveja o idioma, a privacidade e o bloqueio de ecrã antes de usar a beta.</string>
     <string name="language_region">Idioma e região</string>
     <string name="privacy">Privacidade</string>
+    <string name="security">Bloqueio de ecrã e segurança</string>
     <string name="finish_setup">Concluir configuração</string>
     <string name="setup_done">Configuração guardada</string>
     <string name="essentials">Essenciais</string>
