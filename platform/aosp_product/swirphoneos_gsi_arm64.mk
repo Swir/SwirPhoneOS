@@ -20,27 +20,14 @@ PRODUCT_MODEL := SwirPhoneOS ARM64 GSI Developer
 # authoritative lock-screen implementation for the beta baseline.
 PRODUCT_PACKAGES := $(filter-out Launcher3 Launcher3QuickStep Launcher3QuickStepGo,$(PRODUCT_PACKAGES))
 
-# Source-ready first-party apps. A built system.img still requires Treble/VTS and
-# exact-device validation before it can be described as compatible or installable.
+# FINISH FIRST: package only the six frozen registry-managed first-Beta apps plus
+# SwirLauncher. Post-Beta source-ready apps stay out of this image until the first
+# Beta is published and verified on the supported path.
 PRODUCT_PACKAGES += \
     SwirLauncher \
-    SwirPhone \
-    SwirMessages \
-    SwirCamera \
-    SwirCalculator \
     SwirSettings \
     SwirFiles \
-    SwirBrowser \
     SwirDeviceCare \
     SwirUpdate \
     SwirPrivacy \
-    SwirClock \
-    SwirNotes \
-    SwirCalendar \
-    SwirWeather \
-    SwirGallery \
-    SwirRecorder \
-    SwirContacts \
-    SwirBackup \
-    SwirApps \
     SwirRoot
