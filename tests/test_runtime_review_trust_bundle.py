@@ -90,6 +90,7 @@ class RuntimeReviewTrustBundleTests(unittest.TestCase):
             "tested_locales": locales,
             "report_file_sha256": {"runtime": "2" * 64, "smoke": "3" * 64, "i18n": "4" * 64},
             "boot_identity_complete": True,
+            "home_surface_complete": True,
             "app_launch_matrix_complete": True,
             "locale_matrix_complete": True,
             "original_app_locales_restored": True,
@@ -122,10 +123,11 @@ class RuntimeReviewTrustBundleTests(unittest.TestCase):
             self._write(review_path, base_review if review is None else review)
             return create_runtime_review_trust_bundle(run_path, trust_path, review_path)
 
-    def test_binds_exact_run_review_and_adb_trust(self) -> None:
+    def test_binds_exact_run_home_review_and_adb_trust(self) -> None:
         report = self._collect()
         self.assertEqual(report["scope"], "CUTTLEFISH_BUILD_RUNTIME_I18N_AND_EXACT_ADB")
         self.assertTrue(report["build_runtime_chain_complete"])
+        self.assertTrue(report["home_surface_complete"])
         self.assertTrue(report["locale_review_chain_complete"])
         self.assertTrue(report["runtime_tool_unchanged_across_evidence_window"])
         self.assertEqual(report["source_ready_packages"], self.packages)
@@ -165,6 +167,15 @@ class RuntimeReviewTrustBundleTests(unittest.TestCase):
     def test_rejects_review_manifest_mismatch_even_with_recomputed_digest(self) -> None:
         run, trust, review = self._reports()
         review["app_manifest_sha256"] = "9" * 64
+        review["runtime_review_sha256"] = self._canonical(
+            review, {"runtime_review_sha256", "runtime_review_evidence_complete"}
+        )
+        with self.assertRaises(RuntimeReviewTrustBundleError):
+            self._collect(run=run, trust=trust, review=review)
+
+    def test_rejects_missing_home_surface_even_with_recomputed_digest(self) -> None:
+        run, trust, review = self._reports()
+        review["home_surface_complete"] = False
         review["runtime_review_sha256"] = self._canonical(
             review, {"runtime_review_sha256", "runtime_review_evidence_complete"}
         )

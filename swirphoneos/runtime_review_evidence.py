@@ -1,4 +1,4 @@
-"""Bind exact Cuttlefish boot, app-launch and locale-matrix evidence.
+"""Bind exact Cuttlefish boot, HOME, app-launch and locale-matrix evidence.
 
 This report is emulator/runtime evidence only. It never promotes app status,
 claims visual RTL/accessibility quality, or authorizes physical-device writes.
@@ -19,6 +19,7 @@ from .cuttlefish_evidence import (
     EXPECTED_BUILD_TYPE,
     EXPECTED_PRODUCT,
 )
+from .cuttlefish_smoke import EXPECTED_HOME_PACKAGE
 from .i18n import LOCALES
 from .system_apps import SystemAppRegistryError, load_registry
 
@@ -141,6 +142,19 @@ def _validate_smoke(smoke: dict[str, object], packages: list[str], fingerprint: 
         or smoke.get("runtime_state_mutation_performed") is not True
     ):
         raise RuntimeReviewEvidenceError("Application launch-smoke safety flags are invalid.")
+
+    home_component = smoke.get("home_component")
+    if (
+        smoke.get("home_package") != EXPECTED_HOME_PACKAGE
+        or smoke.get("home_resolved") is not True
+        or smoke.get("home_am_start_status") != "ok"
+        or smoke.get("home_foreground_confirmed") is not True
+        or smoke.get("home_surface_complete") is not True
+        or not isinstance(home_component, str)
+        or not home_component.startswith(EXPECTED_HOME_PACKAGE + "/")
+    ):
+        raise RuntimeReviewEvidenceError("SwirLauncher was not proven as the exact usable HOME surface.")
+
     if sorted(_unique_strings(smoke.get("tested_packages"), "tested_packages")) != packages:
         raise RuntimeReviewEvidenceError("Application launch-smoke package set is incomplete.")
 
@@ -250,6 +264,7 @@ def collect_runtime_review_evidence(
             "i18n": i18n_sha,
         },
         "boot_identity_complete": True,
+        "home_surface_complete": True,
         "app_launch_matrix_complete": True,
         "locale_matrix_complete": True,
         "original_app_locales_restored": True,
@@ -261,7 +276,7 @@ def collect_runtime_review_evidence(
         "device_write_allowed": False,
         "status_promotion_performed": False,
         "warnings": [
-            "This bundle proves exact Cuttlefish boot identity, package launch smoke and per-app locale switching/restoration only.",
+            "This bundle proves exact Cuttlefish boot identity, SwirLauncher HOME resolution/foreground launch, source-ready app launch smoke and per-app locale switching/restoration only.",
             "Visual translation quality, RTL mirroring, text expansion, accessibility, fonts/input methods and physical-device behavior still require focused review.",
             "This evidence does not promote any application to ANDROID_RUNTIME automatically and never authorizes physical-device writes.",
         ],
@@ -274,7 +289,7 @@ def collect_runtime_review_evidence(
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
-        description="Bind exact Cuttlefish boot, app-launch and locale-matrix evidence without status promotion."
+        description="Bind exact Cuttlefish boot, HOME, app-launch and locale-matrix evidence without status promotion."
     )
     parser.add_argument("--runtime", required=True, type=Path)
     parser.add_argument("--smoke", required=True, type=Path)
@@ -292,7 +307,7 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     except (RuntimeReviewEvidenceError, SystemAppRegistryError, OSError, ValueError):
         print(
-            "Operation failed: exact Cuttlefish runtime, app-launch, locale-matrix and manifest evidence must agree. Raw errors are withheld.",
+            "Operation failed: exact Cuttlefish runtime, HOME, app-launch, locale-matrix and manifest evidence must agree. Raw errors are withheld.",
             file=sys.stderr,
         )
         return 1
