@@ -6,6 +6,7 @@ import unittest
 from unittest.mock import patch
 
 from swirphoneos.cuttlefish_smoke import (
+    EXPECTED_HOME_PACKAGE,
     CuttlefishAppSmokeRunner,
     CuttlefishSmokeError,
     foreground_contains_component,
@@ -67,8 +68,10 @@ class CuttlefishSmokeTests(unittest.TestCase):
                 runner._run(("-s", "127.0.0.1:6520", "install", "app.apk"))
             with self.assertRaises(CuttlefishSmokeError):
                 runner._run(("-s", "127.0.0.1:6520", "shell", "settings", "put", "system", "x", "1"))
+            with self.assertRaises(CuttlefishSmokeError):
+                runner._run(("-s", "127.0.0.1:6520", "shell", "cmd", "package", "resolve-activity", "--brief", "-a", "android.intent.action.VIEW"))
 
-    def test_exercise_launches_every_source_ready_app_after_exact_runtime_gate(self):
+    def _exercise_report(self, *, home_package: str = EXPECTED_HOME_PACKAGE):
         registry = load_registry(Path("system_apps/manifest.json"))
         source_apps = sorted((app for app in registry.apps if app.source_ready), key=lambda app: app.package)
         with tempfile.TemporaryDirectory() as temp:
@@ -87,6 +90,18 @@ class CuttlefishSmokeTests(unittest.TestCase):
             def fake_run(args):
                 if args == ("devices", "-l"):
                     return "List of devices attached\n127.0.0.1:6520 device product:swir\n"
+                if args[2:] == (
+                    "shell",
+                    "cmd",
+                    "package",
+                    "resolve-activity",
+                    "--brief",
+                    "-a",
+                    "android.intent.action.MAIN",
+                    "-c",
+                    "android.intent.category.HOME",
+                ):
+                    return f"{home_package}/.MainActivity\n"
                 if len(args) == 8 and args[2:7] == ("shell", "am", "start", "-W", "-n"):
                     current["component"] = args[-1]
                     return f"Status: ok\nActivity: {args[-1]}\nComplete\n"
@@ -97,11 +112,24 @@ class CuttlefishSmokeTests(unittest.TestCase):
             runner._run = fake_run
             with patch.object(runner.evidence, "inspect", return_value=runtime):
                 report = runner.exercise(registry)
-            self.assertTrue(report["app_smoke_complete"])
-            self.assertEqual(report["tested_packages"], [app.package for app in source_apps])
-            self.assertEqual(len(report["launch_results"]), len(source_apps))
-            self.assertTrue(report["runtime_state_mutation_performed"])
-            self.assertFalse(report["physical_device_support_claimed"])
+            return report, source_apps
+
+    def test_exercise_requires_swirlauncher_home_then_launches_every_source_ready_app(self):
+        report, source_apps = self._exercise_report()
+        self.assertTrue(report["home_surface_complete"])
+        self.assertTrue(report["home_resolved"])
+        self.assertTrue(report["home_foreground_confirmed"])
+        self.assertEqual(report["home_package"], EXPECTED_HOME_PACKAGE)
+        self.assertTrue(report["home_component"].startswith(EXPECTED_HOME_PACKAGE + "/"))
+        self.assertTrue(report["app_smoke_complete"])
+        self.assertEqual(report["tested_packages"], [app.package for app in source_apps])
+        self.assertEqual(len(report["launch_results"]), len(source_apps))
+        self.assertTrue(report["runtime_state_mutation_performed"])
+        self.assertFalse(report["physical_device_support_claimed"])
+
+    def test_exercise_rejects_wrong_home_package(self):
+        with self.assertRaises(CuttlefishSmokeError):
+            self._exercise_report(home_package="com.android.launcher3")
 
 
 if __name__ == "__main__":
