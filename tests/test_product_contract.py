@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+import re
 from tempfile import TemporaryDirectory
 import unittest
 
@@ -15,6 +16,14 @@ FIRST_BETA_PRODUCT_PACKAGES = (
     "SwirUpdate",
     "SwirPrivacy",
     "SwirRoot",
+)
+
+EXPECTED_LAUNCHER_OVERRIDES = (
+    "Home",
+    "Launcher2",
+    "Launcher3",
+    "Launcher3QuickStep",
+    "Launcher3QuickStepGo",
 )
 
 
@@ -40,6 +49,14 @@ def _explicit_product_packages(path: Path) -> tuple[str, ...]:
     return tuple(packages)
 
 
+def _launcher_overrides(path: Path) -> tuple[str, ...]:
+    text = path.read_text(encoding="utf-8")
+    match = re.search(r"overrides:\s*\[(.*?)\],", text, flags=re.DOTALL)
+    if match is None:
+        raise AssertionError("SwirLauncher has no Soong overrides block")
+    return tuple(re.findall(r'"([A-Za-z0-9_]+)"', match.group(1)))
+
+
 class ProductContractTests(unittest.TestCase):
     def test_checked_in_contract(self):
         contract = validate_product_contract(Path("platform/aosp_product"))
@@ -57,6 +74,13 @@ class ProductContractTests(unittest.TestCase):
                     FIRST_BETA_PRODUCT_PACKAGES,
                     "First-Beta product scope drifted; post-Beta apps must stay out of the image.",
                 )
+
+    def test_first_beta_launcher_overrides_inherited_aosp_homes(self):
+        self.assertEqual(
+            _launcher_overrides(Path("platform/aosp_product/apps/SwirLauncher/Android.bp")),
+            EXPECTED_LAUNCHER_OVERRIDES,
+            "First-Beta image must not retain an inherited competing HOME/Launcher module.",
+        )
 
     def test_security_weakening_is_rejected(self):
         with TemporaryDirectory() as tmp:
