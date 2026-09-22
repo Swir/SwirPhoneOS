@@ -73,7 +73,7 @@ class CuttlefishSmokeTests(unittest.TestCase):
 
     def _exercise_report(self, *, home_package: str = EXPECTED_HOME_PACKAGE):
         registry = load_registry(Path("system_apps/manifest.json"))
-        source_apps = sorted((app for app in registry.apps if app.source_ready), key=lambda app: app.package)
+        beta_apps = sorted(registry.first_beta_apps, key=lambda app: app.package)
         with tempfile.TemporaryDirectory() as temp:
             adb = Path(temp) / ("adb.exe" if __import__("os").name == "nt" else "adb")
             adb.write_text("placeholder", encoding="utf-8")
@@ -112,18 +112,18 @@ class CuttlefishSmokeTests(unittest.TestCase):
             runner._run = fake_run
             with patch.object(runner.evidence, "inspect", return_value=runtime):
                 report = runner.exercise(registry)
-            return report, source_apps
+            return report, beta_apps
 
-    def test_exercise_requires_swirlauncher_home_then_launches_every_source_ready_app(self):
-        report, source_apps = self._exercise_report()
+    def test_exercise_requires_swirlauncher_home_then_launches_every_first_beta_app(self):
+        report, beta_apps = self._exercise_report()
         self.assertTrue(report["home_surface_complete"])
         self.assertTrue(report["home_resolved"])
         self.assertTrue(report["home_foreground_confirmed"])
         self.assertEqual(report["home_package"], EXPECTED_HOME_PACKAGE)
         self.assertTrue(report["home_component"].startswith(EXPECTED_HOME_PACKAGE + "/"))
         self.assertTrue(report["app_smoke_complete"])
-        self.assertEqual(report["tested_packages"], [app.package for app in source_apps])
-        self.assertEqual(len(report["launch_results"]), len(source_apps))
+        self.assertEqual(report["tested_packages"], [app.package for app in beta_apps])
+        self.assertEqual(len(report["launch_results"]), len(beta_apps))
         self.assertTrue(report["runtime_state_mutation_performed"])
         self.assertFalse(report["physical_device_support_claimed"])
 
