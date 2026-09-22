@@ -11,11 +11,10 @@ TARGET = Path(".github/workflows/aosp-builder-admission.yml")
 
 
 class AospBuilderAdmissionRequestWorkflowTests(unittest.TestCase):
-    def test_dispatcher_is_bounded_main_only_and_least_privilege(self) -> None:
+    def test_dispatcher_tracks_every_main_push_and_is_least_privilege(self) -> None:
         text = WORKFLOW.read_text(encoding="utf-8")
         required = (
             "push:\n    branches: [main]",
-            "- '.github/aosp-admission-request.json'",
             "workflow_dispatch:",
             "contents: read",
             "actions: write",
@@ -39,6 +38,11 @@ class AospBuilderAdmissionRequestWorkflowTests(unittest.TestCase):
         )
         for token in required:
             self.assertIn(token, text)
+
+        # The dispatcher intentionally follows every real main revision. A paths
+        # filter would recreate the stale-admission/heartbeat problem this
+        # workflow is designed to remove.
+        self.assertNotIn("\n    paths:\n", text)
 
         forbidden = (
             "contents: write",

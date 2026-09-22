@@ -3,8 +3,6 @@ name: Request AOSP builder admission
 on:
   push:
     branches: [main]
-    paths:
-      - '.github/aosp-admission-request.json'
   workflow_dispatch:
 
 permissions:
