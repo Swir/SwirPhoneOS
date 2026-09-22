@@ -5,6 +5,7 @@
     {"source":"apps/SwirLauncher/AndroidManifest.xml","destination":"vendor/swir/apps/SwirLauncher/AndroidManifest.xml"},
     {"source":"apps/SwirLauncher/src/org/swir/phoneos/launcher/LauncherPolicy.java","destination":"vendor/swir/apps/SwirLauncher/src/org/swir/phoneos/launcher/LauncherPolicy.java"},
     {"source":"apps/SwirLauncher/src/org/swir/phoneos/launcher/MainActivity.java","destination":"vendor/swir/apps/SwirLauncher/src/org/swir/phoneos/launcher/MainActivity.java"},
+    {"source":"apps/SwirLauncher/hosttest/LauncherPolicyHostTest.java","destination":"vendor/swir/apps/SwirLauncher/hosttest/LauncherPolicyHostTest.java"},
     {"source":"apps/SwirLauncher/res/drawable/ic_launcher.xml","destination":"vendor/swir/apps/SwirLauncher/res/drawable/ic_launcher.xml"},
     {"source":"apps/SwirLauncher/res/xml/locales_config.xml","destination":"vendor/swir/apps/SwirLauncher/res/xml/locales_config.xml"},
     {"source":"apps/SwirLauncher/res/values/strings.xml","destination":"vendor/swir/apps/SwirLauncher/res/values/strings.xml"},
