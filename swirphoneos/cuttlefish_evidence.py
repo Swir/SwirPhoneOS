@@ -116,7 +116,7 @@ def _property(raw: str, limit: int = 512) -> str | None:
 
 def evaluate_runtime_snapshot(properties: dict[str, str], packages: frozenset[str], registry: SystemAppRegistry, launchable_packages: frozenset[str] | None = None) -> dict[str, object]:
     values = {key: _property(properties.get(key, "")) for key in _PROPERTIES}
-    required = sorted(app.package for app in registry.apps if app.source_ready)
+    required = sorted(app.package for app in registry.first_beta_apps)
     present = [p for p in required if p in packages]
     missing = [p for p in required if p not in packages]
     launchable = packages if launchable_packages is None else launchable_packages
@@ -167,7 +167,8 @@ def evaluate_runtime_snapshot(properties: dict[str, str], packages: frozenset[st
         "device_write_allowed": False,
         "warnings": [
             "This report is emulator runtime evidence only; it is not physical-device compatibility evidence.",
-            "Package presence and launcher resolution do not prove every app feature; interactive runtime testing remains required.",
+            "First-Beta package presence and launcher resolution do not prove every app feature; interactive runtime testing remains required.",
+            "Post-Beta source-ready apps are intentionally non-blocking while the frozen first-Beta scope is active.",
             "No registry status is promoted automatically; evidence must be reviewed with the exact build manifest and artifact hashes.",
             "No install, root, flash, reboot, package mutation or other device write was attempted.",
         ],
@@ -213,7 +214,7 @@ class CuttlefishEvidenceCollector:
         device = select_local_device(parse_local_devices(self._run(("devices", "-l"))))
         properties = {key: self._run(("-s", device.serial, "shell", "getprop", key)) for key in _PROPERTIES}
         packages = parse_packages(self._run(("-s", device.serial, "shell", "cmd", "package", "list", "packages")))
-        required = sorted(app.package for app in registry.apps if app.source_ready)
+        required = sorted(app.package for app in registry.first_beta_apps)
         launchable = set()
         for package in required:
             output = self._run(("-s", device.serial, "shell", "cmd", "package", "resolve-activity", "--brief", package))
