@@ -1,9 +1,11 @@
 """Read-only byte trust for the exact AOSP-built Cuttlefish host tools.
 
-The collector never executes Cuttlefish tools. It accepts only the canonical
-`launch_cvd` and `stop_cvd` files produced under one explicit AOSP workspace,
-hashes them with inode/size/mtime continuity checks, and emits no raw host path.
-Verification re-reads those same exact files and fails closed on any drift.
+Android 17 installs the legacy ``launch_cvd``/``stop_cvd`` entry points as
+symlinks in the Cuttlefish host bin directory. The collector accepts only
+those expected in-tree aliases, resolves them to canonical regular files in
+the same host bin directory, hashes the resolved bytes with inode/size/mtime
+continuity checks, and emits no raw host path. Verification repeats that same
+resolution and hashing and fails closed on any target drift.
 """
 from __future__ import annotations
 
@@ -76,15 +78,20 @@ def _workspace(path: Path) -> Path:
 def _tool_path(root: Path, name: str) -> Path:
     if name not in EXPECTED_TOOLS:
         raise CuttlefishHostToolEvidenceError("Unexpected Cuttlefish host tool.")
-    path = root / "out" / "host" / "linux-x86" / "bin" / name
-    if path.is_symlink():
-        raise CuttlefishHostToolEvidenceError(f"{name} must not be a symlink.")
+    bin_dir = root / "out" / "host" / "linux-x86" / "bin"
+    try:
+        canonical_bin = bin_dir.resolve(strict=True)
+    except (OSError, RuntimeError) as exc:
+        raise CuttlefishHostToolEvidenceError("AOSP Cuttlefish host bin directory is missing.") from exc
+    if canonical_bin != bin_dir or not canonical_bin.is_dir():
+        raise CuttlefishHostToolEvidenceError("AOSP Cuttlefish host bin directory must be canonical.")
+    path = bin_dir / name
     try:
         canonical = path.resolve(strict=True)
     except (OSError, RuntimeError) as exc:
         raise CuttlefishHostToolEvidenceError(f"{name} is missing from the exact AOSP host output.") from exc
-    if canonical != path:
-        raise CuttlefishHostToolEvidenceError(f"{name} must be the canonical file in the exact AOSP host output.")
+    if canonical.parent != canonical_bin:
+        raise CuttlefishHostToolEvidenceError(f"{name} must resolve inside the exact AOSP host bin directory.")
     return canonical
 
 
@@ -177,7 +184,7 @@ def capture_host_tools(workspace: Path) -> dict[str, object]:
         "physical_device_support_claimed": False,
         "capture_complete": True,
         "warnings": [
-            "This report hashes only the exact AOSP-built launch_cvd and stop_cvd host files; it does not execute them.",
+            "This report hashes only the exact AOSP-built launch_cvd and stop_cvd host entry points after resolving in-bin aliases; it does not execute them.",
             "Matching host-tool bytes do not prove Android boot, app runtime, physical-device support or beta readiness.",
             "No phone write, flash, root, release publication or status promotion is authorized by this evidence.",
         ],
