@@ -57,6 +57,33 @@ class CuttlefishHostToolEvidenceTests(unittest.TestCase):
             with self.assertRaises(CuttlefishHostToolEvidenceError):
                 verify_host_tools(root, evidence)
 
+    def test_accepts_android17_in_bin_symlink_aliases_and_detects_target_drift(self) -> None:
+        with TemporaryDirectory() as folder:
+            root = self._workspace(Path(folder))
+            bin_dir = root / "out" / "host" / "linux-x86" / "bin"
+            cvd = bin_dir / "cvd"
+            cvd.write_bytes(b"android-17-cvd")
+            cvd.chmod(0o755)
+            for name in EXPECTED_TOOLS:
+                alias = bin_dir / name
+                alias.unlink()
+                alias.symlink_to("cvd")
+
+            evidence = capture_host_tools(root)
+            self.assertEqual(
+                {item["path_identity_sha256"] for item in evidence["tools"]},
+                {hashlib.sha256(str(cvd).encode()).hexdigest()},
+            )
+            self.assertTrue(verify_host_tools(root, evidence)["tools_unchanged"])
+
+            replacement = bin_dir / "cvd-replacement"
+            replacement.write_bytes(b"android-17-cvd")
+            replacement.chmod(0o755)
+            (bin_dir / "launch_cvd").unlink()
+            (bin_dir / "launch_cvd").symlink_to("cvd-replacement")
+            with self.assertRaises(CuttlefishHostToolEvidenceError):
+                verify_host_tools(root, evidence)
+
     def test_rejects_relative_workspace_symlink_tool_wrong_permissions_and_size(self) -> None:
         with TemporaryDirectory() as folder:
             root = self._workspace(Path(folder))
