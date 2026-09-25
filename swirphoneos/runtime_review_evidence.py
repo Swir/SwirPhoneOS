@@ -176,9 +176,11 @@ def _validate_smoke(smoke: dict[str, object], packages: list[str], fingerprint: 
         seen.add(str(package))
 
 
-def _validate_i18n(i18n: dict[str, object], packages: list[str], fingerprint: str) -> list[str]:
+def _validate_i18n(
+    i18n: dict[str, object], packages: list[str], fingerprint: str
+) -> tuple[list[str], list[str]]:
     digest = _fingerprint_digest(fingerprint)
-    if i18n.get("schema_version") != 1 or i18n.get("locale_matrix_complete") is not True:
+    if i18n.get("schema_version") != 2 or i18n.get("locale_matrix_complete") is not True:
         raise RuntimeReviewEvidenceError("Runtime locale-matrix evidence is incomplete.")
     if (
         i18n.get("expected_product") != EXPECTED_PRODUCT
@@ -195,8 +197,14 @@ def _validate_i18n(i18n: dict[str, object], packages: list[str], fingerprint: st
         or i18n.get("rtl_visual_mirroring_verified") is not False
     ):
         raise RuntimeReviewEvidenceError("Runtime locale-matrix safety/restoration flags are invalid.")
-    if sorted(_unique_strings(i18n.get("tested_packages"), "tested_packages")) != packages:
-        raise RuntimeReviewEvidenceError("Runtime locale-matrix first-Beta package set is incomplete.")
+    if i18n.get("home_package") != EXPECTED_HOME_PACKAGE:
+        raise RuntimeReviewEvidenceError("Runtime locale-matrix did not bind the SwirLauncher HOME package.")
+    if sorted(_unique_strings(i18n.get("first_beta_app_packages"), "first_beta_app_packages")) != packages:
+        raise RuntimeReviewEvidenceError("Runtime locale-matrix frozen first-Beta app set is incomplete.")
+    locale_packages = _unique_strings(i18n.get("tested_packages"), "tested_packages")
+    expected_locale_packages = [EXPECTED_HOME_PACKAGE, *packages]
+    if locale_packages != expected_locale_packages:
+        raise RuntimeReviewEvidenceError("Runtime locale-matrix must cover SwirLauncher plus the frozen first-Beta apps.")
 
     locales = _unique_strings(i18n.get("tested_locales"), "tested_locales")
     expected_locales = list(LOCALES)
@@ -209,7 +217,7 @@ def _validate_i18n(i18n: dict[str, object], packages: list[str], fingerprint: st
         raise RuntimeReviewEvidenceError("Runtime locale-matrix RTL switch flag is inconsistent.")
 
     results = i18n.get("locale_results")
-    expected_count = len(packages) * len(expected_locales)
+    expected_count = len(locale_packages) * len(expected_locales)
     if not isinstance(results, list) or len(results) != expected_count:
         raise RuntimeReviewEvidenceError("Runtime locale-matrix result count is invalid.")
     seen: set[tuple[str, str]] = set()
@@ -220,16 +228,16 @@ def _validate_i18n(i18n: dict[str, object], packages: list[str], fingerprint: st
         locale = item.get("locale")
         component = item.get("component")
         key = (str(package), str(locale))
-        if package not in packages or locale not in expected_locales or key in seen:
+        if package not in locale_packages or locale not in expected_locales or key in seen:
             raise RuntimeReviewEvidenceError("Runtime locale-matrix package/locale pair is invalid or duplicated.")
         if not isinstance(component, str) or not component.startswith(str(package) + "/"):
             raise RuntimeReviewEvidenceError("Runtime locale-matrix launcher escaped its package.")
         if item.get("foreground_confirmed") is not True:
             raise RuntimeReviewEvidenceError("Runtime locale-matrix did not confirm a foreground launch.")
         seen.add(key)
-    if seen != {(package, locale) for locale in expected_locales for package in packages}:
-        raise RuntimeReviewEvidenceError("Runtime locale-matrix does not cover every first-Beta package/locale pair.")
-    return expected_locales
+    if seen != {(package, locale) for locale in expected_locales for package in locale_packages}:
+        raise RuntimeReviewEvidenceError("Runtime locale-matrix does not cover every first-Beta UI package/locale pair.")
+    return expected_locales, locale_packages
 
 
 def collect_runtime_review_evidence(
@@ -247,7 +255,7 @@ def collect_runtime_review_evidence(
 
     fingerprint = _validate_runtime(runtime, packages)
     _validate_smoke(smoke, packages, fingerprint)
-    locales = _validate_i18n(i18n, packages, fingerprint)
+    locales, locale_packages = _validate_i18n(i18n, packages, fingerprint)
 
     payload: dict[str, object] = {
         "schema_version": 1,
@@ -257,6 +265,7 @@ def collect_runtime_review_evidence(
         "build_fingerprint_sha256": _fingerprint_digest(fingerprint),
         "app_manifest_sha256": manifest_sha,
         "source_ready_packages": packages,
+        "locale_review_packages": locale_packages,
         "tested_locales": locales,
         "report_file_sha256": {
             "runtime": runtime_sha,
@@ -276,7 +285,7 @@ def collect_runtime_review_evidence(
         "device_write_allowed": False,
         "status_promotion_performed": False,
         "warnings": [
-            "This bundle proves exact Cuttlefish boot identity, SwirLauncher HOME resolution/foreground launch, frozen first-Beta app launch smoke and per-app locale switching/restoration only.",
+            "This bundle proves exact Cuttlefish boot identity, SwirLauncher HOME resolution/foreground launch, frozen first-Beta app launch smoke and locale switching/restoration across SwirLauncher/Setup plus every frozen first-Beta app.",
             "Post-Beta source-ready apps are intentionally non-blocking while the frozen first-Beta scope is active.",
             "Visual translation quality, RTL mirroring, text expansion, accessibility, fonts/input methods and physical-device behavior still require focused review.",
             "This evidence does not promote any application to ANDROID_RUNTIME automatically and never authorizes physical-device writes.",

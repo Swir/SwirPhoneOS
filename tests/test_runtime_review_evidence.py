@@ -76,8 +76,9 @@ class RuntimeReviewEvidenceTests(unittest.TestCase):
         }
         locales = list(LOCALES)
         rtl = [code for code in locales if LOCALES[code].direction == "rtl"]
+        self.locale_packages = [EXPECTED_HOME_PACKAGE, *self.packages]
         self.i18n = {
-            "schema_version": 1,
+            "schema_version": 2,
             "source": "local_cuttlefish_runtime_locale_matrix",
             "expected_product": EXPECTED_PRODUCT,
             "build_fingerprint": self.fingerprint,
@@ -85,7 +86,9 @@ class RuntimeReviewEvidenceTests(unittest.TestCase):
             "android_user_id": 0,
             "tested_locales": locales,
             "rtl_locales_exercised": rtl,
-            "tested_packages": self.packages,
+            "home_package": EXPECTED_HOME_PACKAGE,
+            "first_beta_app_packages": self.packages,
+            "tested_packages": self.locale_packages,
             "locale_results": [
                 {
                     "package": package,
@@ -94,7 +97,7 @@ class RuntimeReviewEvidenceTests(unittest.TestCase):
                     "foreground_confirmed": True,
                 }
                 for locale in locales
-                for package in self.packages
+                for package in self.locale_packages
             ],
             "locale_matrix_complete": True,
             "rtl_runtime_switch_exercised": bool(rtl),
@@ -134,6 +137,7 @@ class RuntimeReviewEvidenceTests(unittest.TestCase):
         self.assertTrue(report["locale_matrix_complete"])
         self.assertTrue(report["original_app_locales_restored"])
         self.assertEqual(report["source_ready_packages"], self.packages)
+        self.assertEqual(report["locale_review_packages"], self.locale_packages)
         self.assertEqual(report["tested_locales"], list(LOCALES))
         self.assertFalse(report["rtl_visual_mirroring_verified"])
         self.assertFalse(report["accessibility_review_complete"])
@@ -142,6 +146,15 @@ class RuntimeReviewEvidenceTests(unittest.TestCase):
         self.assertFalse(report["device_write_allowed"])
         self.assertFalse(report["status_promotion_performed"])
         self.assertRegex(report["runtime_review_sha256"], r"^[0-9a-f]{64}$")
+
+    def test_rejects_i18n_without_launcher_setup_surface(self):
+        i18n = copy.deepcopy(self.i18n)
+        i18n["tested_packages"] = self.packages
+        i18n["locale_results"] = [
+            item for item in i18n["locale_results"] if item["package"] != EXPECTED_HOME_PACKAGE
+        ]
+        with self.assertRaises(RuntimeReviewEvidenceError):
+            self._collect(i18n=i18n)
 
     def test_rejects_wrong_home_package(self):
         smoke = copy.deepcopy(self.smoke)

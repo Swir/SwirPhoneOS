@@ -8,6 +8,7 @@ import tempfile
 import unittest
 
 from swirphoneos.cuttlefish_evidence import EXPECTED_PRODUCT
+from swirphoneos.cuttlefish_smoke import EXPECTED_HOME_PACKAGE
 from swirphoneos.i18n import LOCALES
 from swirphoneos.runtime_review_trust_bundle import (
     RuntimeReviewTrustBundleError,
@@ -21,8 +22,9 @@ class RuntimeReviewTrustBundleTests(unittest.TestCase):
 
     def setUp(self) -> None:
         self.packages = sorted(
-            app.package for app in load_registry(Path("system_apps/manifest.json")).apps if app.source_ready
+            app.package for app in load_registry(Path("system_apps/manifest.json")).first_beta_apps
         )
+        self.locale_packages = [EXPECTED_HOME_PACKAGE, *self.packages]
         self.fingerprint_sha = hashlib.sha256(self.FINGERPRINT.encode("ascii")).hexdigest()
         self.manifest_sha = "c" * 64
 
@@ -87,6 +89,7 @@ class RuntimeReviewTrustBundleTests(unittest.TestCase):
             "build_fingerprint_sha256": self.fingerprint_sha,
             "app_manifest_sha256": self.manifest_sha,
             "source_ready_packages": list(self.packages),
+            "locale_review_packages": list(self.locale_packages),
             "tested_locales": locales,
             "report_file_sha256": {"runtime": "2" * 64, "smoke": "3" * 64, "i18n": "4" * 64},
             "boot_identity_complete": True,
@@ -131,6 +134,7 @@ class RuntimeReviewTrustBundleTests(unittest.TestCase):
         self.assertTrue(report["locale_review_chain_complete"])
         self.assertTrue(report["runtime_tool_unchanged_across_evidence_window"])
         self.assertEqual(report["source_ready_packages"], self.packages)
+        self.assertEqual(report["locale_review_packages"], self.locale_packages)
         self.assertEqual(report["tested_locales"], list(LOCALES))
         self.assertFalse(report["rtl_visual_mirroring_verified"])
         self.assertFalse(report["accessibility_review_complete"])
@@ -176,6 +180,15 @@ class RuntimeReviewTrustBundleTests(unittest.TestCase):
     def test_rejects_missing_home_surface_even_with_recomputed_digest(self) -> None:
         run, trust, review = self._reports()
         review["home_surface_complete"] = False
+        review["runtime_review_sha256"] = self._canonical(
+            review, {"runtime_review_sha256", "runtime_review_evidence_complete"}
+        )
+        with self.assertRaises(RuntimeReviewTrustBundleError):
+            self._collect(run=run, trust=trust, review=review)
+
+    def test_rejects_review_without_launcher_locale_surface(self) -> None:
+        run, trust, review = self._reports()
+        review["locale_review_packages"] = self.packages
         review["runtime_review_sha256"] = self._canonical(
             review, {"runtime_review_sha256", "runtime_review_evidence_complete"}
         )

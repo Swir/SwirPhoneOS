@@ -15,6 +15,7 @@ import sys
 from typing import Any
 
 from .cuttlefish_evidence import EXPECTED_PRODUCT
+from .cuttlefish_smoke import EXPECTED_HOME_PACKAGE
 from .i18n import LOCALES
 from .runtime_tool_evidence import MAX_TOOL_BYTES
 
@@ -155,7 +156,7 @@ def _validate_runtime_trust(
 
 def _validate_runtime_review(
     report: dict[str, object], *, fingerprint_digest: str, manifest_digest: str, packages: list[str]
-) -> tuple[str, list[str]]:
+) -> tuple[str, list[str], list[str]]:
     if (
         report.get("schema_version") != 1
         or report.get("source") != "local_cuttlefish_runtime_review_bundle"
@@ -188,6 +189,9 @@ def _validate_runtime_review(
         raise RuntimeReviewTrustBundleError("Runtime localization review belongs to a different system-app manifest.")
     if _unique_strings(report.get("source_ready_packages"), "source_ready_packages") != packages:
         raise RuntimeReviewTrustBundleError("Runtime localization review package set differs from the AOSP run.")
+    locale_packages = _unique_strings(report.get("locale_review_packages"), "locale_review_packages")
+    if locale_packages != [EXPECTED_HOME_PACKAGE, *packages]:
+        raise RuntimeReviewTrustBundleError("Runtime localization review must cover SwirLauncher plus the frozen first-Beta apps.")
 
     locales = _unique_strings(report.get("tested_locales"), "tested_locales")
     expected_locales = list(LOCALES)
@@ -200,7 +204,7 @@ def _validate_runtime_review(
     review_digest = _hex64(report.get("runtime_review_sha256"), "runtime_review_sha256")
     if review_digest != _canonical_sha256(report, {"runtime_review_sha256", "runtime_review_evidence_complete"}):
         raise RuntimeReviewTrustBundleError("Runtime localization review canonical digest is invalid.")
-    return review_digest, locales
+    return review_digest, locales, locale_packages
 
 
 def create_runtime_review_trust_bundle(
@@ -219,7 +223,7 @@ def create_runtime_review_trust_bundle(
         run_digest=run_digest,
         fingerprint_digest=fingerprint_digest,
     )
-    review_digest, locales = _validate_runtime_review(
+    review_digest, locales, locale_packages = _validate_runtime_review(
         runtime_review,
         fingerprint_digest=fingerprint_digest,
         manifest_digest=manifest_digest,
@@ -237,6 +241,7 @@ def create_runtime_review_trust_bundle(
         "build_fingerprint_sha256": fingerprint_digest,
         "app_manifest_sha256": manifest_digest,
         "source_ready_packages": packages,
+        "locale_review_packages": locale_packages,
         "tested_locales": locales,
         "adb_sha256": adb_sha,
         "adb_path_identity_sha256": adb_path_identity,

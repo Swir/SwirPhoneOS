@@ -26,6 +26,7 @@ from .cuttlefish_evidence import (
 )
 from .cuttlefish_smoke import (
     CuttlefishSmokeError,
+    EXPECTED_HOME_PACKAGE,
     foreground_contains_component,
     parse_am_start_wait,
 )
@@ -38,6 +39,8 @@ _LOCAL_SERIAL = re.compile(r"(?:emulator-[0-9]{1,5}|(?:127\.0\.0\.1|localhost|0\
 _LOCALE_TAG = re.compile(r"[A-Za-z]{2,3}(?:-[A-Za-z]{4})?(?:-(?:[A-Za-z]{2}|[0-9]{3}))?\Z")
 _MAX_ADB_OUTPUT = 4 * 1024 * 1024
 _MAX_USER_ID = 9999
+_HOME_ACTION = "android.intent.action.MAIN"
+_HOME_CATEGORY = "android.intent.category.HOME"
 
 
 class CuttlefishI18nError(RuntimeError):
@@ -145,6 +148,13 @@ class CuttlefishI18nRunner:
             and _COMPONENT.fullmatch(args[7]) is not None
         )
         activity_state = local and args[2:] == ("shell", "dumpsys", "activity", "activities")
+        home_resolution = (
+            local
+            and args[2:] == (
+                "shell", "cmd", "package", "resolve-activity", "--brief",
+                "-a", _HOME_ACTION, "-c", _HOME_CATEGORY,
+            )
+        )
         permitted = (
             args == ("devices", "-l")
             or current_user
@@ -153,6 +163,7 @@ class CuttlefishI18nRunner:
             or set_locale_value
             or component_launch
             or activity_state
+            or home_resolution
         )
         if not permitted:
             raise CuttlefishI18nError("Command is outside the emulator-only localization allowlist.")
@@ -217,6 +228,10 @@ class CuttlefishI18nRunner:
         locales = _supported_runtime_locales()
         if not beta_apps:
             raise CuttlefishI18nError("System-app registry has no frozen first-Beta packages.")
+        beta_packages = [app.package for app in beta_apps]
+        locale_packages = [EXPECTED_HOME_PACKAGE, *beta_packages]
+        if len(set(locale_packages)) != len(locale_packages):
+            raise CuttlefishI18nError("First-Beta locale-review package set is not unique.")
 
         original: dict[str, tuple[str, ...]] = {}
         results: list[LocaleLaunchResult] = []
@@ -224,32 +239,38 @@ class CuttlefishI18nRunner:
         restore_error: Exception | None = None
 
         try:
-            for app in beta_apps:
-                original[app.package] = self._get_locales(device.serial, app.package, user_id)
+            for package in locale_packages:
+                original[package] = self._get_locales(device.serial, package, user_id)
 
             for locale in locales:
-                for app in beta_apps:
-                    self._set_locales(device.serial, app.package, user_id, (locale,))
-                    observed = self._get_locales(device.serial, app.package, user_id)
+                for package in locale_packages:
+                    self._set_locales(device.serial, package, user_id, (locale,))
+                    observed = self._get_locales(device.serial, package, user_id)
                     if observed != (locale,):
                         raise CuttlefishI18nError("Android did not preserve the requested per-app locale override.")
 
-                    resolution = self.evidence._run(
-                        ("-s", device.serial, "shell", "cmd", "package", "resolve-activity", "--brief", app.package)
-                    )
+                    if package == EXPECTED_HOME_PACKAGE:
+                        resolution = self._run((
+                            "-s", device.serial, "shell", "cmd", "package", "resolve-activity", "--brief",
+                            "-a", _HOME_ACTION, "-c", _HOME_CATEGORY,
+                        ))
+                    else:
+                        resolution = self.evidence._run(
+                            ("-s", device.serial, "shell", "cmd", "package", "resolve-activity", "--brief", package)
+                        )
                     component = resolution.strip()
-                    if not parse_resolved_activity(component, app.package) or _COMPONENT.fullmatch(component) is None:
-                        raise CuttlefishI18nError("Localized first-Beta app has no package-local launcher activity.")
+                    if not parse_resolved_activity(component, package) or _COMPONENT.fullmatch(component) is None:
+                        raise CuttlefishI18nError("Localized first-Beta surface has no package-local launchable activity.")
 
                     launch_output = self._run(
                         ("-s", device.serial, "shell", "am", "start", "-W", "-n", component)
                     )
-                    parse_am_start_wait(launch_output, app.package, component)
+                    parse_am_start_wait(launch_output, package, component)
                     state = self._run(("-s", device.serial, "shell", "dumpsys", "activity", "activities"))
-                    foreground = foreground_contains_component(state, app.package, component)
+                    foreground = foreground_contains_component(state, package, component)
                     if not foreground:
-                        raise CuttlefishI18nError("Localized first-Beta app was not confirmed as resumed foreground activity.")
-                    results.append(LocaleLaunchResult(app.package, locale, component, foreground))
+                        raise CuttlefishI18nError("Localized first-Beta surface was not confirmed as resumed foreground activity.")
+                    results.append(LocaleLaunchResult(package, locale, component, foreground))
         except Exception as exc:
             primary_error = exc
         finally:
@@ -282,9 +303,9 @@ class CuttlefishI18nRunner:
             raise CuttlefishI18nError("Runtime fingerprint is missing from prerequisite evidence.")
 
         rtl_locales = [code for code in locales if LOCALES[code].direction == "rtl"]
-        expected_count = len(beta_apps) * len(locales)
+        expected_count = len(locale_packages) * len(locales)
         return {
-            "schema_version": 1,
+            "schema_version": 2,
             "source": "local_cuttlefish_runtime_locale_matrix",
             "expected_product": runtime["expected_product"],
             "build_fingerprint": fingerprint,
@@ -292,7 +313,9 @@ class CuttlefishI18nRunner:
             "android_user_id": user_id,
             "tested_locales": list(locales),
             "rtl_locales_exercised": rtl_locales,
-            "tested_packages": [app.package for app in beta_apps],
+            "home_package": EXPECTED_HOME_PACKAGE,
+            "first_beta_app_packages": beta_packages,
+            "tested_packages": locale_packages,
             "locale_results": [
                 {
                     "package": item.package,
@@ -313,7 +336,7 @@ class CuttlefishI18nRunner:
             "warnings": [
                 "This check changes only per-app locale overrides and foreground activity state on one exact disposable local Cuttlefish guest.",
                 "Every captured first-Beta app locale override must be restored exactly before evidence is accepted.",
-                "Post-Beta source-ready apps are intentionally non-blocking while the frozen first-Beta scope is active.",
+                "The locale matrix includes the SwirLauncher first-run/HOME surface plus every frozen first-Beta registry app; post-Beta apps remain non-blocking.",
                 "Locale switching and launch success do not prove visual translation quality, RTL mirroring, text expansion, accessibility, input methods, fonts, or physical-device behavior.",
                 "No package install, system-settings write, root, reboot, flash, erase, registry promotion, or physical-device operation is performed.",
             ],
@@ -322,7 +345,7 @@ class CuttlefishI18nRunner:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
-        description="Exercise every frozen first-Beta SwirPhoneOS app under every checked-in locale on exact local Cuttlefish."
+        description="Exercise SwirLauncher/Setup and every frozen first-Beta SwirPhoneOS app under every checked-in locale on exact local Cuttlefish."
     )
     parser.add_argument("--adb", required=True, type=Path, help="Absolute path to a trusted Android SDK adb executable")
     parser.add_argument("--manifest", type=Path, default=Path("system_apps/manifest.json"))

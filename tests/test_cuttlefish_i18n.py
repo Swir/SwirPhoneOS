@@ -12,6 +12,7 @@ from swirphoneos.cuttlefish_i18n import (
     parse_app_locales,
     parse_current_user,
 )
+from swirphoneos.cuttlefish_smoke import EXPECTED_HOME_PACKAGE
 from swirphoneos.i18n import LOCALES
 from swirphoneos.system_apps import load_registry
 
@@ -75,10 +76,14 @@ class CuttlefishI18nTests(unittest.TestCase):
             "expected_product": "swirphoneos_cf_x86_64",
             "build_fingerprint": "Swir/test:17/TEST/1:userdebug/test-keys",
         }
+        locale_packages = [EXPECTED_HOME_PACKAGE, *[app.package for app in apps]]
         current = {
             "component": "",
             "launch_count": 0,
-            "locales": {app.package: (() if index % 2 == 0 else ("nb",)) for index, app in enumerate(apps)},
+            "locales": {
+                package: (() if index % 2 == 0 else ("nb",))
+                for index, package in enumerate(locale_packages)
+            },
         }
         original = dict(current["locales"])
 
@@ -92,6 +97,11 @@ class CuttlefishI18nTests(unittest.TestCase):
                 return "List of devices attached\n127.0.0.1:6520 device product:swir\n"
             if args[2:] == ("shell", "am", "get-current-user"):
                 return "0\n"
+            if args[2:] == (
+                "shell", "cmd", "package", "resolve-activity", "--brief",
+                "-a", "android.intent.action.MAIN", "-c", "android.intent.category.HOME",
+            ):
+                return f"{EXPECTED_HOME_PACKAGE}/.MainActivity\n"
             if len(args) == 9 and args[2:6] == ("shell", "cmd", "locale", "get-app-locales"):
                 package = args[6]
                 tags = ",".join(current["locales"][package])
@@ -122,11 +132,16 @@ class CuttlefishI18nTests(unittest.TestCase):
 
             self.assertTrue(report["locale_matrix_complete"])
             self.assertTrue(report["original_app_locales_restored"])
-            self.assertEqual(report["tested_packages"], [app.package for app in apps])
+            beta_packages = [app.package for app in apps]
+            locale_packages = [EXPECTED_HOME_PACKAGE, *beta_packages]
+            self.assertEqual(report["schema_version"], 2)
+            self.assertEqual(report["home_package"], EXPECTED_HOME_PACKAGE)
+            self.assertEqual(report["first_beta_app_packages"], beta_packages)
+            self.assertEqual(report["tested_packages"], locale_packages)
             self.assertEqual(report["tested_locales"], list(LOCALES))
-            self.assertEqual(len(report["locale_results"]), len(apps) * len(LOCALES))
+            self.assertEqual(len(report["locale_results"]), len(locale_packages) * len(LOCALES))
             self.assertEqual(current["locales"], original)
-            self.assertEqual(current["launch_count"], len(apps) * len(LOCALES))
+            self.assertEqual(current["launch_count"], len(locale_packages) * len(LOCALES))
             self.assertEqual(
                 report["rtl_locales_exercised"],
                 [code for code in LOCALES if LOCALES[code].direction == "rtl"],
