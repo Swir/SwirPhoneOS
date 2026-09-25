@@ -108,7 +108,7 @@ public final class MainActivity extends Activity {
                 if (!PermissionReviewPolicy.matches(query, label, permissions)) continue;
                 addPermissionCard(packageManager, packageName, label, permissions);
                 shown++;
-            } catch (PackageManager.NameNotFoundException exception) {
+            } catch (PackageManager.NameNotFoundException | SecurityException exception) {
                 if (!PermissionReviewPolicy.matches(
                         query,
                         packageName,
