@@ -1,3 +1,11 @@
 <resources>
     <string name="app_name">Swir Privacy</string><string name="subtitle">Ett sted for Android-personvern og tillatelser</string><string name="search_hint">Søk i personvernkontroller</string><string name="search">Søk</string><string name="route_privacy">Personvernpanel</string><string name="route_permissions">Tillatelsesbehandling</string><string name="route_location">Posisjonskontroller</string><string name="route_apps">Apptillatelser og innstillinger</string><string name="route_special_access">Spesiell apptilgang</string><string name="scope_title">Gjeldende kildeomfang</string><string name="scope_body">Swir Privacy åpner bare gjennomgåtte Android-personvernflater på dette stadiet. Live-indikatorer og tilgangshistorikk hevdes ikke før plattformintegrasjonen er bygget og testet.</string>
+    <string name="permission_review_title">Tillatelsesoversikt for første beta</string>
+    <string name="permission_review_subtitle">Skrivebeskyttet status for deklarerte og innvilgede tillatelser i det låste betaomfanget</string>
+    <string name="permission_review_none">Ingen tillatelser forespurt</string>
+    <string name="permission_review_granted">innvilget</string>
+    <string name="permission_review_not_granted">ikke innvilget</string>
+    <string name="permission_review_line">%1$s — %2$s</string>
+    <string name="permission_review_app_unavailable">Appen er utilgjengelig</string>
+    <string name="permission_review_no_matches">Ingen samsvarende beta-tillatelsesoppføringer</string>
 </resources>
