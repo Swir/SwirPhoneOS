@@ -1,3 +1,11 @@
 <resources>
     <string name="app_name">Swir Privacy</string><string name="subtitle">Um lugar para revisar privacidade e permissões do Android</string><string name="search_hint">Pesquisar controles de privacidade</string><string name="search">Pesquisar</string><string name="route_privacy">Painel de privacidade</string><string name="route_permissions">Gerenciador de permissões</string><string name="route_location">Controles de localização</string><string name="route_apps">Permissões e configurações de apps</string><string name="route_special_access">Acesso especial de apps</string><string name="scope_title">Escopo atual do código</string><string name="scope_body">Nesta fase o Swir Privacy abre apenas superfícies Android revisadas. Indicadores ao vivo e histórico de acesso não são declarados antes da integração de plataforma ser construída e testada.</string>
+    <string name="permission_review_title">Revisão de permissões da primeira beta</string>
+    <string name="permission_review_subtitle">Estado somente leitura das permissões declaradas e concedidas no escopo congelado da beta</string>
+    <string name="permission_review_none">Nenhuma permissão solicitada</string>
+    <string name="permission_review_granted">concedida</string>
+    <string name="permission_review_not_granted">não concedida</string>
+    <string name="permission_review_line">%1$s — %2$s</string>
+    <string name="permission_review_app_unavailable">Aplicação indisponível</string>
+    <string name="permission_review_no_matches">Nenhuma entrada de permissão beta correspondente</string>
 </resources>

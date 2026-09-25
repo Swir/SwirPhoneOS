@@ -1,0 +1,9 @@
+{
+  "schema_version": 1,
+  "files": [
+    {
+      "source": "apps/SwirPrivacy/src/org/swir/phoneos/privacy/PermissionReviewPolicy.java",
+      "destination": "vendor/swir/apps/SwirPrivacy/src/org/swir/phoneos/privacy/PermissionReviewPolicy.java"
+    }
+  ]
+}

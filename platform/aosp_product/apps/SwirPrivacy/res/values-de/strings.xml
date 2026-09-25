@@ -1,3 +1,11 @@
 <resources>
     <string name="app_name">Swir Privacy</string><string name="subtitle">Ein Ort für Android-Datenschutz und Berechtigungen</string><string name="search_hint">Datenschutzsteuerungen suchen</string><string name="search">Suchen</string><string name="route_privacy">Datenschutz-Dashboard</string><string name="route_permissions">Berechtigungsmanager</string><string name="route_location">Standortsteuerungen</string><string name="route_apps">App-Berechtigungen und Einstellungen</string><string name="route_special_access">Spezieller App-Zugriff</string><string name="scope_title">Aktueller Quellumfang</string><string name="scope_body">Swir Privacy öffnet in dieser Phase nur geprüfte Android-Datenschutzseiten. Live-Indikatoren und Zugriffsverlauf werden erst nach gebauter und getesteter Plattformintegration beansprucht.</string>
+    <string name="permission_review_title">Berechtigungsprüfung für die erste Beta</string>
+    <string name="permission_review_subtitle">Schreibgeschützter Status deklarierter und erteilter Berechtigungen im eingefrorenen Beta-Umfang</string>
+    <string name="permission_review_none">Keine Berechtigungen angefordert</string>
+    <string name="permission_review_granted">erteilt</string>
+    <string name="permission_review_not_granted">nicht erteilt</string>
+    <string name="permission_review_line">%1$s — %2$s</string>
+    <string name="permission_review_app_unavailable">App nicht verfügbar</string>
+    <string name="permission_review_no_matches">Keine passenden Beta-Berechtigungseinträge</string>
 </resources>

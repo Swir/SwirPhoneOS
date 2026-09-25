@@ -45,6 +45,7 @@ jobs:
             'SwirGallery org/swir/phoneos/gallery MediaPolicy MediaPolicyHostTest' \
             'SwirClock org/swir/phoneos/clock ClockCore ClockCoreHostTest' \
             'SwirApps org/swir/phoneos/apps AppCatalogPolicy AppCatalogPolicyHostTest' \
+            'SwirPrivacy org/swir/phoneos/privacy PermissionReviewPolicy PermissionReviewPolicyHostTest' \
             'SwirRoot org/swir/phoneos/swirroot RootPolicy RootPolicyHostTest'
           do
             set -- $app

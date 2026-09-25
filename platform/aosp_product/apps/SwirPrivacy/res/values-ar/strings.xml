@@ -1,3 +1,11 @@
 <resources>
     <string name="app_name">Swir Privacy</string><string name="subtitle">مكان واحد لمراجعة الخصوصية والأذونات في Android</string><string name="search_hint">البحث في عناصر الخصوصية</string><string name="search">بحث</string><string name="route_privacy">لوحة الخصوصية</string><string name="route_permissions">مدير الأذونات</string><string name="route_location">إعدادات الموقع</string><string name="route_apps">أذونات وإعدادات التطبيقات</string><string name="route_special_access">وصول خاص للتطبيقات</string><string name="scope_title">نطاق المصدر الحالي</string><string name="scope_body">يفتح Swir Privacy في هذه المرحلة شاشات خصوصية Android التي تمت مراجعتها فقط. لا ندعي مؤشرات مباشرة أو سجل وصول حتى يتم بناء تكامل المنصة واختباره.</string>
+    <string name="permission_review_title">مراجعة أذونات النسخة التجريبية الأولى</string>
+    <string name="permission_review_subtitle">حالة للقراءة فقط للأذونات المعلنة والممنوحة ضمن نطاق النسخة التجريبية المجمّد</string>
+    <string name="permission_review_none">لم يتم طلب أي أذونات</string>
+    <string name="permission_review_granted">ممنوح</string>
+    <string name="permission_review_not_granted">غير ممنوح</string>
+    <string name="permission_review_line">%1$s — %2$s</string>
+    <string name="permission_review_app_unavailable">التطبيق غير متاح</string>
+    <string name="permission_review_no_matches">لا توجد إدخالات أذونات تجريبية مطابقة</string>
 </resources>
