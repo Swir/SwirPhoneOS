@@ -20,6 +20,12 @@
 
 </div>
 
+## 📸 Screenshot
+
+![SwirPhoneOS application screenshot](docs/screenshots/application.jpg)
+
+The real Windows SwirPhoneStudio companion in its initial read-only state, with no device selected. This screenshot does not show a booted SwirPhoneOS image or imply Android runtime or hardware verification.
+
 <img width="100%" src="https://raw.githubusercontent.com/Swir/Swir/main/assets/power-divider-v4.svg" alt="SWIR electric divider" />
 
 > [!IMPORTANT]
